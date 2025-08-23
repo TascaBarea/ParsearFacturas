@@ -1,0 +1,25 @@
+proveedor: "MAKRO"
+anchors:
+  fecha:
+    find: ["Fecha de Venta"]
+    direction: "right"
+    regex: "\\b\\d{2}/\\d{2}/\\d{4}\\b"
+  numero_factura:
+    find: ["Nº Factura", "Nº factura"]
+    direction: "right"
+    regex: "\\([0-9]{4}\\)[0-9]{6}"
+  lineas:
+    find: ["Descrip. artículo", "Importe"]
+    region: "lines"
+rules:
+  - NormalizarTextos
+  - UnicaLineaPorProducto
+  - IgnorarTotalesConIVA
+descripcion:
+  mode: "original"
+iva_default: 21
+grouping: lineas
+portes:
+  mode: "prorratear"
+precedence:
+  force_pattern_over_dictionary: false

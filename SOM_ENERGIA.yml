@@ -1,0 +1,25 @@
+proveedor: "SOM ENERGIA"
+anchors:
+  fecha:
+    find: ["Fecha", "FECHA"]
+    direction: "right"
+    regex: "\\b\\d{2}-\\d{2}-\\d{2}\\b"
+  numero_factura:
+    find: ["FE", "FACTURA"]
+    direction: "right"
+    regex: "FE[0-9]+"
+  base_iva_total:
+    find: ["(BASE IMPONIBLE)", "RESUMEN DE LA FACTURA", "IVA"]
+    region: "summary"
+rules:
+  - NormalizarTextos
+  - IgnorarTotalesConIVA
+descripcion:
+  mode: "fija"
+  fija: "ELECTRICIDAD"
+iva_default: 21      # puede aparecer 10 o 5 en <2025; se tomará el que figure en resumen
+grouping: por_iva
+portes:
+  mode: "ignorar"
+precedence:
+  force_pattern_over_dictionary: false

@@ -1,0 +1,23 @@
+proveedor: "QUESOS FELIX"
+anchors:
+  fecha:
+    find: ["Fecha"]
+    direction: "right"
+    regex: "\\b\\d{2}/\\d{2}/\\d{4}\\b"
+  numero_factura:
+    find: ["FACTURA", "Nº"]
+    direction: "right"
+    regex: "25-0{0,2}[0-9]{2,}"
+  base_iva_total:
+    find: ["DESGLOSE DEL I.V.A.", "B. Imponible"]
+    region: "summary"
+rules:
+  - NormalizarTextos
+descripcion:
+  mode: "original"
+iva_default: 4
+grouping: por_iva
+portes:
+  mode: "prorratear"
+precedence:
+  force_pattern_over_dictionary: false

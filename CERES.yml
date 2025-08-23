@@ -1,0 +1,31 @@
+proveedor: "CERES"
+aliases: ["CERES CERVEZA S.L.", "DAKAR"]
+anchors:
+  fecha:
+    find: ["Fecha", "FECHA"]
+    direction: "right"
+    regex: "\\b\\d{2}/\\d{2}/\\d{4}\\b"
+  numero_factura:
+    find: ["Número", "NUMERO"]
+    direction: "below"
+    regex: "[0-9]{7}"
+  lineas:
+    find: ["Artículo", "Importe"]
+    region: "lines"
+rules:
+  - NormalizarTextos
+  - IgnorarTotalesConIVA
+  - UnicaLineaPorProducto
+descripcion:
+  mode: "original"
+iva_default: 21
+grouping: lineas
+portes:
+  mode: "prorratear"
+precedence:
+  force_pattern_over_dictionary: false
+special:
+  extra_lines:
+    - when: "CLA: 1 €"
+      descripcion: "GASTOS VARIOS"
+      iva: 21

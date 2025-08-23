@@ -1,0 +1,25 @@
+proveedor: "FELISA"
+anchors:
+  fecha:
+    find: ["Fecha"]
+    direction: "right"
+    regex: "\\b\\d{2}/\\d{2}/\\d{4}\\b"
+  numero_factura:
+    find: ["Factura de cliente", "Nº"]
+    direction: "below"
+    regex: "(RTG\\d{4}/\\d{3}|TG[0-9]{4}/[0-9]{4})"
+  lineas:
+    find: ["Código", "Descripción", "Total"]
+    region: "lines"
+rules:
+  - NormalizarTextos
+  - UnicaLineaPorProducto
+  - RepartirPortes
+descripcion:
+  mode: "original"
+iva_default: 10
+grouping: lineas
+portes:
+  mode: "prorratear"
+precedence:
+  force_pattern_over_dictionary: false

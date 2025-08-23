@@ -1,0 +1,25 @@
+proveedor: "VINOS DE ARGANZA"
+anchors:
+  fecha:
+    find: ["FECHA"]
+    direction: "below"
+    regex: "\\b\\d{2}/\\d{2}/\\d{4}\\b"
+  numero_factura:
+    find: ["FACTURA"]
+    direction: "below"
+    regex: "F[A-Z0-9/]+"
+  lineas:
+    find: ["Descripción", "Importe"]
+    region: "lines"
+rules:
+  - NormalizarTextos
+  - UnicaLineaPorProducto
+  - RepartirPortes
+descripcion:
+  mode: "original"
+iva_default: 21
+grouping: lineas
+portes:
+  mode: "prorratear"
+precedence:
+  force_pattern_over_dictionary: false

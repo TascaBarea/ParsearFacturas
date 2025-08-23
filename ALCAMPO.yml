@@ -1,0 +1,25 @@
+proveedor: "ALCAMPO"
+anchors:
+  fecha:
+    find: ["Madrid", "Fecha"]
+    direction: "right"
+    regex: "\\b\\d{2}[-/]\\d{2}[-/]\\d{2,4}\\b|\\b\\d{1,2}\\s+de\\s+[A-Za-zÁÉÍÓÚáéíóú]+\\s+de\\s+\\d{4}\\b"
+  numero_factura:
+    find: ["Nº factura", "Nº Factura"]
+    direction: "right"
+    regex: "[0-9]{11,}"
+  lineas:
+    find: ["Descripción", "Importe"]
+    region: "lines"
+rules:
+  - NormalizarTextos
+  - IgnorarTotalesConIVA
+  - UnicaLineaPorProducto
+descripcion:
+  mode: "original"
+iva_default: 21
+grouping: lineas
+portes:
+  mode: "prorratear"
+precedence:
+  force_pattern_over_dictionary: false

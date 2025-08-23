@@ -1,0 +1,25 @@
+proveedor: "EL MAJADAL"
+aliases: ["Pilar Rodriguez Garcia", "Pilar Rodríguez García"]
+anchors:
+  fecha:
+    find: ["Fecha"]
+    direction: "right"
+    regex: "\\b\\d{2}/\\d{2}/\\d{4}\\b"
+  numero_factura:
+    find: ["Número:"]
+    direction: "right"
+    regex: "[A-Z0-9/]+"
+  base_iva_total:
+    find: ["% IVA", "Base"]
+    region: "summary"
+rules:
+  - NormalizarTextos
+descripcion:
+  mode: "fija"
+  fija: "Docenas de huevos"
+iva_default: 4
+grouping: por_iva
+portes:
+  mode: "ignorar"
+precedence:
+  force_pattern_over_dictionary: false

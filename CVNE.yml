@@ -1,0 +1,26 @@
+proveedor: "CVNE"
+aliases: ["COMPAÑIA VINICOLA DEL NORTE DE ESPAÑA", "C.V.N.E."]
+anchors:
+  fecha:
+    find: ["FECHA"]
+    direction: "right"
+    regex: "\b\d{2}/\d{2}/\d{4}\b"
+  numero_factura:
+    find: ["FACTURA", "NUMERO"]
+    direction: "right"
+    regex: "F[A-Z0-9/ -]+"
+  lineas:
+    find: ["DESCRIPCION", "IMPORTE"]
+    region: "lines"
+rules:
+  - NormalizarTextos
+  - UnicaLineaPorProducto
+  - RepartirPortes
+descripcion:
+  mode: "original"
+iva_default: 21
+grouping: lineas
+portes:
+  mode: "prorratear"
+precedence:
+  force_pattern_over_dictionary: false

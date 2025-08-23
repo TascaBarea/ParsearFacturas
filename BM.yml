@@ -1,0 +1,26 @@
+proveedor: "BM"
+anchors:
+  fecha:
+    find: ["Fecha"]
+    direction: "right"
+    regex: "\\b\\d{2}-\\d{2}-\\d{2}\\b"
+  numero_factura:
+    find: ["Datos FACTURA"]
+    direction: "below"
+    regex: "1423124[0-9]{6}"
+  lineas:
+    find: ["Descripción", "Importe"]
+    region: "lines"
+rules:
+  - NormalizarTextos
+  - IgnorarTotalesConIVA
+  - UnicaLineaPorProducto
+  - AplicarDescuentoLineaSiguiente   # descuento en línea azul negativa bajo el producto
+descripcion:
+  mode: "original"
+iva_default: 21
+grouping: lineas
+portes:
+  mode: "prorratear"
+precedence:
+  force_pattern_over_dictionary: false

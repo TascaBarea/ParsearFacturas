@@ -1,0 +1,27 @@
+proveedor: "LIDL"
+anchors:
+  fecha:
+    find: ["Fecha"]
+    direction: "right"
+    regex: "\\b\\d{2}/\\d{2}/\\d{4}\\b"
+  numero_factura:
+    find: ["Nº factura", "Nº FACTURA"]
+    direction: "right"
+    regex: "[0-9]{10,}"
+  lineas:
+    find: ["DESCRIPCIÓN", "IMPORTE"]
+    region: "lines"
+rules:
+  - NormalizarTextos
+  - IgnorarTotalesConIVA
+  - UnicaLineaPorProducto
+descripcion:
+  mode: "original"
+iva_default: 21
+grouping: lineas
+portes:
+  mode: "prorratear"
+precedence:
+  force_pattern_over_dictionary: false
+fuzzy:
+  threshold: 0.90
