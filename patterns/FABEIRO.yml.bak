@@ -1,0 +1,24 @@
+proveedor: "FABEIRO"
+anchors:
+  fecha:
+    find: ["Fecha Factura:"]
+    direction: "right"
+regex: '''\1'
+  numero_factura:
+    find: ["Nº Factura:"]
+    direction: "right"
+regex: '''\1'
+  lineas:
+    find: ["Descripción", "Importe", "I.V.A."]
+    region: "lines"
+rules:
+  - NormalizarTextos
+  - UnicaLineaPorProducto
+descripcion:
+  mode: "original"
+iva_default: 10
+grouping: lineas
+portes:
+  mode: "prorratear"
+precedence:
+  force_pattern_over_dictionary: false

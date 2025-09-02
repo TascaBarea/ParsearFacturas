@@ -1,0 +1,25 @@
+proveedor: "ICATU"
+aliases: ["ICATÚ"]
+anchors:
+  fecha:
+    find: ["Fecha"]
+    direction: "right"
+regex: '''\1'
+  numero_factura:
+    find: ["Factura", "Nº"]
+    direction: "right"
+regex: '''\1'
+  lineas:
+    find: ["Descripción", "Importe"]
+    region: "lines"
+rules:
+  - NormalizarTextos
+  - UnicaLineaPorProducto
+descripcion:
+  mode: "original"
+iva_default: 10
+grouping: lineas
+portes:
+  mode: "prorratear"
+precedence:
+  force_pattern_over_dictionary: false

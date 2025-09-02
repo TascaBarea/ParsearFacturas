@@ -1,0 +1,24 @@
+proveedor: "INMAREPRO"
+anchors:
+  fecha:
+    find: ["Fecha", "FECHA"]
+    direction: "right"
+regex: '''\1'
+  numero_factura:
+    find: ["Nº FACTURA", "FACTURA Nº"]
+    direction: "right"
+regex: '''\1'
+  lineas:
+    find: ["Descripción", "Importe", "IVA"]
+    region: "lines"
+rules:
+  - NormalizarTextos
+  - UnicaLineaPorProducto
+descripcion:
+  mode: "original"
+iva_default: 21
+grouping: lineas
+portes:
+  mode: "prorratear"
+precedence:
+  force_pattern_over_dictionary: false

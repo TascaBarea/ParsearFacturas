@@ -1,0 +1,12 @@
+pdfplumber
+pypdf
+pillow
+pytesseract
+pandas
+openpyxl
+python-dateutil
+pydantic
+rapidfuzz
+ruamel.yaml
+typer
+loguru

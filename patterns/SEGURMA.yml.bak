@@ -1,0 +1,25 @@
+proveedor: "SEGURMA"
+anchors:
+  fecha:
+    find: ["Fecha"]
+    direction: "right"
+regex: '''\1'
+  numero_factura:
+    find: ["Nº factura", "Factura nº"]
+    direction: "right"
+regex: '''\1'
+  base_iva_total:
+    find: ["Base imponible", "BASE IMPONIBLE"]
+    region: "summary"
+rules:
+  - NormalizarTextos
+  - IgnorarTotalesConIVA
+descripcion:
+  mode: "fija"
+  fija: "Servicio de seguridad y vigilancia"
+iva_default: 21
+grouping: por_iva
+portes:
+  mode: "ignorar"
+precedence:
+  force_pattern_over_dictionary: false

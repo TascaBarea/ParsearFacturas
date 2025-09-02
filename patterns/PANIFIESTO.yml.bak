@@ -1,0 +1,24 @@
+proveedor: "PANIFIESTO"
+anchors:
+  fecha:
+    find: ["Fecha", "FECHA"]
+    direction: "right"
+regex: '''\1'
+  numero_factura:
+    find: ["FACTURA"]
+    direction: "below"
+regex: '''\1'
+  base_iva_total:
+    find: ["Base imponible", "BASE IMPONIBLE"]
+    region: "summary"   # esquina inferior derecha
+rules:
+  - NormalizarTextos
+descripcion:
+  mode: "fija"
+  fija: "Pan"
+iva_default: 4
+grouping: por_iva
+portes:
+  mode: "ignorar"   # según decisión del usuario “no aparecerán”
+precedence:
+  force_pattern_over_dictionary: false

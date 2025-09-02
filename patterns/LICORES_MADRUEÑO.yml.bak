@@ -1,0 +1,24 @@
+proveedor: "LICORES MADRUEÑO"
+anchors:
+  fecha:
+    find: ["Fecha", "FECHA"]
+    direction: "below"
+regex: '''\1'
+  numero_factura:
+    find: ["SERIE", "NÚMERO", "NUMERO"]
+    direction: "below"
+regex: '''\1'
+  lineas:
+    find: ["DESCRIPCIÓN", "CANTIDAD", "PRECIO", "IMPORTE", "IVA"]
+    region: "lines"
+rules:
+  - NormalizarTextos
+  - UnicaLineaPorProducto
+descripcion:
+  mode: "original"
+iva_default: 21
+grouping: lineas
+portes:
+  mode: "prorratear"
+precedence:
+  force_pattern_over_dictionary: false

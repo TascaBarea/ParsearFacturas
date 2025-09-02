@@ -1,0 +1,25 @@
+proveedor: "YOIGO"
+anchors:
+  fecha:
+    find: ["Fecha de emisión:"]
+    direction: "right"
+regex: '''\1'
+  numero_factura:
+    find: ["Número de Factura:"]
+    direction: "right"
+regex: '''\1'
+  base_iva_total:
+    find: ["DESGLOSE FISCAL", "IVA 21%"]
+    region: "summary"
+rules:
+  - NormalizarTextos
+  - IgnorarTotalesConIVA
+descripcion:
+  mode: "fija"
+  fija: "FIBRA 100MB + LA SINFÍN 500MB"
+iva_default: 21
+grouping: por_iva
+portes:
+  mode: "ignorar"
+precedence:
+  force_pattern_over_dictionary: false
