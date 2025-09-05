@@ -1,4 +1,6 @@
 # ParsearFacturas
+![tests](https://github.com/TascaBarea/ParsearFacturas/actions/workflows/tests.yml/badge.svg)
+
 
 ## 📌 Objetivo del proyecto
 El proyecto **FACTURAS** tiene como finalidad automatizar la extracción, normalización y validación de datos de facturas PDF (y escaneadas vía OCR) para generar una tabla unificada y un Excel consolidado con metadatos.
