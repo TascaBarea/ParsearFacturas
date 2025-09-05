@@ -1,18 +1,28 @@
 
+# .gitignore recomendado para el proyecto de facturas
+
+# Archivos temporales de Python
 __pycache__/
 *.pyc
 *.pyo
-*.pyd
-*.egg-info/
-.env
-.venv
+
+# Entornos virtuales
+.venv/
 venv/
+
+# Archivos de salida
 *.xlsx
 *.csv
-/output/
-/dist/
-/build/
-/logs/
-/tmp/
+*.tsv
+
+# Datos sensibles o grandes
+/data/
+/samples/
+
+# Archivos del sistema operativo
 .DS_Store
 Thumbs.db
+
+# Configuración de editores
+.vscode/
+.idea/
