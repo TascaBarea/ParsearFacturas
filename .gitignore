@@ -1,28 +1,32 @@
 
-# .gitignore recomendado para el proyecto de facturas
-
-# Archivos temporales de Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
+
+# Output folder
+out/
+*.xlsx
+*.csv
+
+# PDF temporales o muestras
+*.pdf
+
+# Logs
+*.log
 
 # Entornos virtuales
 .venv/
+env/
 venv/
 
-# Archivos de salida
-*.xlsx
-*.csv
-*.tsv
-
-# Datos sensibles o grandes
-/data/
-/samples/
-
-# Archivos del sistema operativo
+# Archivos del sistema
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Configuración de editores
+# Archivos de VS Code (opcional)
 .vscode/
-.idea/
+
+# Archivos PowerShell si no los quieres en Git
+scan.ps1
