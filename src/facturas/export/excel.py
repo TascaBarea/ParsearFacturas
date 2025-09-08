@@ -24,10 +24,12 @@ def _order_columns(df: pd.DataFrame, include_es_portes: bool) -> pd.DataFrame:
         "NumeroArchivo", "Fecha", "NºFactura", "Proveedor",
         "Descripcion", "Categoria", "TipoIVA", "BaseImponible", "Observaciones",
     ]
+    # Solo mostramos la columna EsPortes si se solicita explícitamente
     if include_es_portes and "EsPortes" in df.columns:
         preferred.append("EsPortes")
 
-    cols = [c for c in preferred if c in df.columns] + [c for c in df.columns if c not in preferred]
+    # Construye el orden SIN agregar columnas no preferidas automáticamente al final
+    cols = [c for c in preferred if c in df.columns]
     return df.loc[:, cols]
 
 
@@ -40,7 +42,7 @@ def exportar_a_excel(
     """
     Exporta a Excel en dos hojas: Lineas y Metadata.
     - Renombra/crea siempre la columna 'Observaciones' (antes 'Flags').
-    - Permite excluir portes salvo que `include_es_portes=True`.
+    - No elimina filas de portes; solo oculta/enseña la columna 'EsPortes' según include_es_portes.
     - Aplica autofiltro y anchos cómodos.
     Devuelve la ruta final escrita (por si se renombra por archivo bloqueado).
     """
@@ -50,14 +52,15 @@ def exportar_a_excel(
     if "Observaciones" not in df.columns:
         df["Observaciones"] = ""
 
-    # 2) Filtrar portes si procede
+    # 2) No tocamos filas de portes. Solo decidimos si la columna se exporta.
+    #    Si NO queremos mostrarla, la eliminamos del DF antes de exportar.
     if not include_es_portes and "EsPortes" in df.columns:
-        df = df[df["EsPortes"] != True].copy()  # noqa: E712
+        df = df.drop(columns=["EsPortes"])
 
-    # 3) Orden de columnas sugerido
+    # 3) Orden de columnas (sin añadir “las demás” al final)
     df = _order_columns(df, include_es_portes)
 
-    # 4) Escritor y formato
+    # 4) Escritura con formato
     def _write(target_path: str):
         with pd.ExcelWriter(target_path, engine="xlsxwriter") as writer:
             # Hoja de líneas
