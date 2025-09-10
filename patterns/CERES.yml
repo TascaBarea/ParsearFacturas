@@ -1,36 +1,53 @@
-proveedor: "CERES"
-aliases: ["CERES CERVEZA S.L.", "DAKAR"]
+provider: "CERES"
+aliases:
+  - "CERES CERVEZA S.L."
+  - "CERES RC"
+  - "DAKAR"
 
-anchors:
-  fecha:
-    find: ["Fecha", "FECHA"]
-    direction: "right"
-    regex: "\\b\\d{2}/\\d{2}/\\d{4}\\b"
+date:
+  regex: "\\b\\d{2}/\\d{2}/\\d{4}\\b"
 
-  numero_factura:
-    # En sus facturas suele verse como "Número" o "NUMERO" encima y el valor debajo
-    find: ["Número", "NUMERO"]
-    direction: "below"
-    regex: "[0-9]{7}"
+ref:
+  regex: "\\b\\d{7}\\b"
 
-  lineas:
-    # Palabras típicas en el encabezado de la tabla
-    find: ["Artículo", "Importe"]
-    region: "lines"
+lines:
+  start_after:
+    - "CODIGO DESCRIPCION DEL PRODUCTO"
+    - "DESCRIPCION DEL PRODUCTO"
+  stop_before:
+    - "BASE IMPONIBLE"
+    - "TOTAL FACTURA"
+    - "RESUMEN"
+    - "CUOTA IVA"
+    - "IMPORTE R.E."
+    - "TOTAL"
+    - "IMPORTE IVA"
+  ignore_if_contains:
+    - "SUBTOTAL"
+    - "DTO"
+    - "DESCUENTO"
+    - "BASE"
+    - "IVA"
+    - "TOTAL"
+    - "ALBARAN"
+    - "PRODUCTO UDS"
+    - "IMPORTE IVA"
+    - "0,00"
+  normalize:
+    casefold: true
+    remove_accents: true
+    collapse_ws: true
+    strip_nbsp: true
+    drop_units: true
+    drop_codes: true
 
-rules:
-  - NormalizarTextos
-  - IgnorarTotalesConIVA
-  - UnicaLineaPorProducto
-
-descripcion:
-  mode: "original"
-
-iva_default: 21
-grouping: "lineas"
+  # Captura descripción + último número europeo con coma decimal
+  regex_linea: "^(?P<descripcion>.+?)\\s+(?P<base>\\d{1,3}(?:\\.\\d{3})*,\\d{2})$"
 
 portes:
-  mode: "prorratear"
+  keywords: ["PORTES", "TRANSPORTE", "ENVIO", "ENVÍO", "GASTOS ENVIO", "GASTOS ENVÍO", "FLETE"]
 
-precedence:
-  force_pattern_over_dictionary: false
+numbers:
+  decimal: ","
+  thousands: "."
+
