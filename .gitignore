@@ -47,3 +47,11 @@ scan.ps1
 # Ignorar copias y backups de patrones
 patterns/*.yml.bak
 patterns/*.yml.bak_migracion
+
+.venv/
+__pycache__/
+*.pyc
+out/
+patterns/*.yml.bak
+patterns/*.yml.bak_migracion
+DiccionarioProveedoresCategoria.validacion.txt
