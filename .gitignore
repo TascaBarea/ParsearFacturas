@@ -27,6 +27,23 @@ desktop.ini
 
 # Archivos de VS Code (opcional)
 .vscode/
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Test cache / IDE
+.pytest_cache/
+.vscode/
+
+# Copias de patrones
+patterns/*.yml.bak
+patterns/*.yml.bak_migracion
 
 # Archivos PowerShell si no los quieres en Git
 scan.ps1
+
+# Ignorar copias y backups de patrones
+patterns/*.yml.bak
+patterns/*.yml.bak_migracion
