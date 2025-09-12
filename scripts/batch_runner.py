@@ -1,22 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-Batch runner opcional con selector de carpeta.
-- NO toca la CLI (sigue siendo no interactiva). Solo la invoca por cada fichero.
-- Si usas --ask-dir y no pasas --input, abre un diálogo (tkinter) para elegir carpeta.
+Batch runner con selector de carpeta (opcional), robusto y sin romper la CLI batch.
+- Si usas --ask-dir (y no pasas --input), abre un diálogo (tkinter) para elegir carpeta.
 - Recuerda la última ruta en ~/.facturas_config.json.
-- Procesa PDF/JPG/PNG recursivamente.
-- Crea resumen CSV y log de errores.
+- Llama a la CLI no interactiva por cada fichero y captura su JSON.
+- Escribe errores con context manager, revisa returncode, y solo marca Excel si realmente existe.
+- Genera resumen CSV con columnas: Archivo, Proveedor, Fecha, NºFactura, Reconciliacion, Excel.
 
-Uso:
+Uso típico:
   python scripts/batch_runner.py --ask-dir --out out --excel
-  python scripts/batch_runner.py --input "C:\\ruta\\a\\carpeta" --out out --excel --reconcile
+  python scripts/batch_runner.py --input "C:\\Users\\TU\\Dropbox\\Facturas\\1T25" --out out --excel --reconcile
 """
 from __future__ import annotations
 
 import argparse
 import csv
 import json
-import os
 import re
 import subprocess
 import sys
@@ -24,7 +23,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List
 
 CONFIG_PATH = Path.home() / ".facturas_config.json"
-exts = {".pdf", ".jpg", ".jpeg", ".png"}
+EXTS = {".pdf", ".jpg", ".jpeg", ".png"}
 
 
 def load_config() -> Dict[str, Any]:
@@ -58,18 +57,18 @@ def guess_dropbox_default() -> Optional[Path]:
 
 def ask_directory(initial: Optional[Path]) -> Optional[Path]:
     """Devuelve una carpeta elegida por el usuario. GUI si hay tkinter; si no, consola."""
-    # 1) Probar GUI
     try:
         import tkinter as tk
         from tkinter import filedialog
-        root = tk.Tk()
-        root.withdraw()
+        root = tk.Tk(); root.withdraw()
         init = str(initial) if initial and initial.exists() else str(Path.home())
         chosen = filedialog.askdirectory(initialdir=init, title="Selecciona la carpeta con facturas")
-        root.update(); root.destroy()
+        try:
+            root.update(); root.destroy()
+        except Exception:
+            pass
         return Path(chosen) if chosen else None
     except Exception:
-        # 2) Fallback a consola (solo si el usuario pidió --ask-dir)
         try:
             p = input(f"Carpeta con facturas [{initial or ''}]: ").strip().strip('"')
             if not p and initial:
@@ -80,7 +79,7 @@ def ask_directory(initial: Optional[Path]) -> Optional[Path]:
 
 
 def run_cli_one(pdf: Path, outdir: Path, excel: bool, reconcile: bool, total: Optional[str]) -> Dict[str, Any]:
-    """Lanza la CLI por un fichero y devuelve el JSON parseado."""
+    """Lanza la CLI por un fichero y devuelve un dict normalizado para el resumen."""
     cmd: List[str] = [sys.executable, "-m", "src.facturas.cli", str(pdf), "--lines"]
     if reconcile:
         cmd.append("--reconcile")
@@ -94,30 +93,44 @@ def run_cli_one(pdf: Path, outdir: Path, excel: bool, reconcile: bool, total: Op
         xlsx_path = outdir / f"{safe_base}.xlsx"
         cmd += ["--excel", str(xlsx_path)]
 
-    out = subprocess.run(
+    proc = subprocess.run(
         cmd,
         capture_output=True,
         text=True,
         encoding="utf-8",
         errors="replace",
     )
-    # stderr a log
-    if out.stderr:
-        (outdir / "errors.log").open("a", encoding="utf-8").write(out.stderr + "\n")
 
+    if proc.stderr or proc.returncode != 0:
+        with (outdir / "errors.log").open("a", encoding="utf-8") as fh:
+            fh.write(f"[{pdf.name}] returncode={proc.returncode}\n")
+            if proc.stderr:
+                fh.write(proc.stderr + "\n")
+
+    # Parsear stdout -> JSON
     try:
-        obj = json.loads(out.stdout)
+        obj = json.loads(proc.stdout)
     except Exception:
-        (outdir / "errores_resumen.txt").open("a", encoding="utf-8").write(f"ERROR JSON: {pdf}\n")
+        snippet = (proc.stdout or "")[:400].replace("\n", "\\n")
+        with (outdir / "errores_resumen.txt").open("a", encoding="utf-8") as fh:
+            fh.write(f"ERROR JSON: {pdf} :: stdout[:400]={snippet}\n")
         obj = {}
 
-    # Normalizar por si la CLI imprime solo header
-    if "Header" in obj and isinstance(obj["Header"], dict):
+    # Normalizar header/estado
+    if isinstance(obj, dict) and "Header" in obj and isinstance(obj["Header"], dict):
         hdr = obj["Header"]
         estado = obj.get("Reconciliacion") or obj.get("Estado") or ""
+    elif isinstance(obj, dict):
+        hdr = obj
+        estado = obj.get("Estado") or ""
     else:
-        hdr = obj if isinstance(obj, dict) else {}
-        estado = obj.get("Estado") if isinstance(obj, dict) else ""
+        hdr = {}
+        estado = ""
+
+    # Solo afirmar Excel si realmente existe
+    excel_str = ""
+    if excel and xlsx_path and xlsx_path.exists():
+        excel_str = str(xlsx_path)
 
     return {
         "Archivo": hdr.get("Archivo", pdf.name),
@@ -125,7 +138,7 @@ def run_cli_one(pdf: Path, outdir: Path, excel: bool, reconcile: bool, total: Op
         "Fecha": hdr.get("Fecha", ""),
         "NºFactura": hdr.get("NºFactura", ""),
         "Reconciliacion": estado,
-        "Excel": str(xlsx_path) if excel and xlsx_path else "",
+        "Excel": excel_str,
     }
 
 
@@ -141,7 +154,6 @@ def main() -> None:
 
     cfg = load_config()
 
-    # Resolver input_dir
     input_dir: Optional[Path] = Path(args.input) if args.input else None
     if not input_dir and args.ask_dir:
         default = Path(cfg.get("last_input_dir")) if cfg.get("last_input_dir") else guess_dropbox_default()
@@ -153,11 +165,11 @@ def main() -> None:
 
     outdir = Path(args.out); outdir.mkdir(parents=True, exist_ok=True)
 
-    # Guardar última carpeta
+    # Guardar última carpeta usada
     cfg["last_input_dir"] = str(input_dir)
     save_config(cfg)
 
-    files = [p for p in input_dir.rglob("*") if p.is_file() and p.suffix.lower() in exts]
+    files = [p for p in input_dir.rglob("*") if p.is_file() and p.suffix.lower() in EXTS]
     files.sort()
     print(f"Procesando {len(files)} ficheros de {input_dir}…")
 
@@ -177,17 +189,21 @@ def main() -> None:
             }
         rows.append(row)
 
-    # Resumen CSV
     csv_path = outdir / "resumen_batch.csv"
     with csv_path.open("w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=["Archivo","Proveedor","Fecha","NºFactura","Reconciliacion","Excel"])
         w.writeheader()
         w.writerows(rows)
 
+    ok = sum(1 for r in rows if r.get("Reconciliacion", "") != "ERROR")
+    err = sum(1 for r in rows if r.get("Reconciliacion", "") == "ERROR")
+
     print("---------------------------------------------")
     print(f"Listo. Resumen: {csv_path}")
-    print(f"Errores (si los hubo): {outdir / 'errors.log'}")
+    print(f"Éxitos: {ok}  |  Errores: {err}  |  Total: {len(rows)}")
+    print(f"Errores detallados (si los hubo): {outdir / 'errors.log'}")
 
 
 if __name__ == "__main__":
     main()
+
