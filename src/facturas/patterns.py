@@ -1,4 +1,4 @@
-
+﻿
 from pathlib import Path
 from ruamel.yaml import YAML
 from pydantic import BaseModel, Field, ValidationError
@@ -43,6 +43,7 @@ def load_patterns(dirpath: Path) -> Dict[str, Pattern]:
                 for a in p.aliases:
                     patterns[a.upper()] = p
         except ValidationError as e:
-            raise RuntimeError(f"Patrón inválido {path.name}: {e}")
+            raise RuntimeError(f"PatrÃ³n invÃ¡lido {path.name}: {e}")
 
     return patterns
+

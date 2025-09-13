@@ -1,4 +1,4 @@
-
+﻿
 from decimal import Decimal, getcontext, ROUND_HALF_UP
 from pydantic import BaseModel, Field
 from typing import List, Optional, Literal
@@ -34,3 +34,4 @@ class Metadata(BaseModel):
     lineas: int
     desglose_iva: dict
     incidencias: List[str] = []
+

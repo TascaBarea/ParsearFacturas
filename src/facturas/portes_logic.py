@@ -1,12 +1,12 @@
-# src/facturas/portes_logic.py
+﻿# src/facturas/portes_logic.py
 from typing import List
 
 def detectar_lineas_portes(descripciones: List[str]) -> List[int]:
     claves = [
-        "porte", "portes", "transporte", "envío", "envio",
-        "gastos de envío", "gastos envio", "cargo transporte",
-        "manipulado", "reparto", "flete", "cla:", "clà:", "clá:",
-        "logística", "logistica"
+        "porte", "portes", "transporte", "envÃ­o", "envio",
+        "gastos de envÃ­o", "gastos envio", "cargo transporte",
+        "manipulado", "reparto", "flete", "cla:", "clÃ :", "clÃ¡:",
+        "logÃ­stica", "logistica"
     ]
     indices = []
     for i, desc in enumerate(descripciones):
@@ -60,3 +60,4 @@ def reconciliar_totales(bases: List[str], total_con_iva: str, tipo_ivas: List[in
             return (ajustadas, "AJUSTADO")
 
     return (bases, "DESCUDRE_GRAVE")
+
