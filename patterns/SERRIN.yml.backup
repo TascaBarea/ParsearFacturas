@@ -1,0 +1,90 @@
+extractor:
+  proveedor: "SERRIN NO CHAN"
+  match_if_contains:
+    - "SERRIN NO CHAN"
+    - "Nº Recibo"
+
+  campos:
+    #: "file[:4]"
+
+    FECHA:
+      buscar: "Fecha\s*:?\s*(\d{2}/\d{2}/\d{4})"
+      formatear_como: "DD-MM-YY"
+
+    NUM:
+      buscar: "Nº\s*Recibo\s*:?\s*([A-Z]{2}/\d{1,4}/\d{4})"
+
+    PROVEEDOR:
+      fijo: "SERRIN NO CHAN"
+
+    # -------- LÍNEAS DEL CUERPO --------
+    ARTICULO:
+      buscar_lineas:
+        ignorar_si_empieza_con:
+          - "Albarán"
+        patrones:
+          # Código | Referencia/Artículo | Cantidad | Precio Unitario | Tipo de I.V.A aplicado | Importe I.V.A. | Importe sin I.V.A. | Importe con I.V.A.
+          - "^\s*(?:[A-Z0-9_-]{2,})\s+(?P<desc>[^\t\n]+?)\s+\d+[,.]?\d*\s+[0-9]+[,.][0-9]{2}\s+(?P<iva>\d{1,2})%?\s+[0-9]+[,.][0-9]{2}\s+(?P<base>[0-9]+[,.][0-9]{2})\s+[0-9]+[,.][0-9]{2}\s*$"
+        campos:
+          ARTICULO: "desc"
+          BASE: "base"
+          TIPO IVA: "iva"
+        multilinea: true
+        repetir_sin_cabecera: true
+
+    # CATEGORÍA: diccionario proporcionado; si no hay coincidencia exacta, PENDIENTE
+    CATEGORIA:
+      diccionario:
+        "Alberte blanco": "VINOS"
+        "Alberte Ribeiro tinto": "VINOS"
+        "Chorizos lalinense 240g": "CHACINAS"
+        "Mariñeiras AOVE ECO": "DESPENSA"
+        "Mariñeiras AOVE ECO 180g": "DESPENSA"
+        "Mariñeiras AOVE ECO canapé 100g": "DESPENSA"
+        "Mariñeiras clásicas 180g": "DESPENSA"
+        "Mariñeiras mantequilla": "DESPENSA"
+        "Mariñeiras mantequilla 180g": "DESPENSA"
+        "Mariñeiras mantequilla 200g": "DESPENSA"
+        "Pack chorizos Lalinense 240g": "CHACINAS"
+        "Panceta rellena Lalinense": "CHACINAS"
+        "Patatotas 150g": "APERITIVOS"
+        "Paté de buey de mar ECO": "CONSERVAS PESCADO"
+        "Paté de carabineros ECO": "CONSERVAS PESCADO"
+        "Paté de mejillones ECO": "CONSERVAS PESCADO"
+        "Perusiñas canela": "DESPENSA"
+        "Perusiñas jengibre": "DESPENSA"
+        "Perusiñas limón": "DESPENSA"
+        "Perusiñas mantequilla": "DESPENSA"
+        "Vermú 0% blanco botella 75cl": "LICORES Y VERMUT"
+        "Vermú 0% rojo botella 75cl": "LICORES Y VERMUT"
+        "Vermú 75cl rojo": "LICORES Y VERMUT"
+        "Vermú blanco 5 cl": "LICORES Y VERMUT"
+        "Vermú blanco 75 cl": "LICORES Y VERMUT"
+        "Vermú blanco botella 75cl": "LICORES Y VERMUT"
+        "Vermú rojo 5 cl": "LICORES Y VERMUT"
+        "Vermú rojo 6cl": "LICORES Y VERMUT"
+        "Vermú rojo 75 cl": "LICORES Y VERMUT"
+        "Vermú rojo botella 75cl": "LICORES Y VERMUT"
+        "Zumiño kale 250ml ECO": "BODEGA"
+        "Zumiño manzana 250ml ECO": "BODEGA"
+        "Zumiño zanahoria 250ml ECO": "BODEGA"
+      por_defecto: "PENDIENTE"
+
+    # TIPO IVA: preferir el capturado en la línea; emitir como número entero (sin "%")
+    TIPO IVA:
+      casting: "int"
+
+    # Totales para validación (si existieran en el pie del documento)
+    TOTAL:
+      buscar: "Total\s*con\s*I\.V\.A\.?\s*([0-9]+[,.][0-9]{2})"
+      formato: "europeo"
+
+  validaciones:
+    - nombre: "Cuadre total factura"
+      tipo: "comparar_suma_base_mas_iva_con_total"
+      tolerancia: 0.01
+
+  salidas:
+    columnas_tsv: ["#", "FECHA", "NUM", "PROVEEDOR", "ARTICULO", "CATEGORIA", "TIPO IVA", "BASE"]
+    formatos:
+      BASE: "#,##0.00"

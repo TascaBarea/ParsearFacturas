@@ -1,0 +1,131 @@
+provider: FRANCISCO GUERRA
+name: FRANCISCO GUERRA
+source: OCR
+
+# ———————————————————————————————————————————
+#  Campos a exportar (un artículo por línea)
+# ———————————————————————————————————————————
+columns:
+  - name: articulo
+    from: descripcion
+    desc: true
+  - name: categoria
+    synthetic: true
+  - name: base
+    amount: true
+  - name: tipo_iva
+    static: 10
+
+# ———————————————————————————————————————————
+#  Anclajes de cabecera
+# ———————————————————————————————————————————
+anchors:
+  fecha:
+    find: ["Fecha", "Fecha factura", "Fecha de factura"]
+    direction: right
+    regex: '\\b\\d{2}/\\d{2}/\\d{4}\\b'
+    transform: "ddmmaaaa_to_ddmmaa"
+
+  numero_factura:
+    find: ["FACTURA Nº", "Factura Nº", "FACTURA No", "FACTURA N."]
+    direction: right
+    regex: "[0-9]{8}|[0-9]{6,}"
+
+  table_header:
+    find: ["Descripción", "DESCRIPCIÓN", "CANTIDAD", "PRECIO", "DTO", "Total"]
+    direction: below
+
+# ———————————————————————————————————————————
+#  Reglas de tabla / lectura del cuerpo
+# ———————————————————————————————————————————
+table_rules:
+  include_pages: "all"
+  # Descripción = todo el texto de la fila antes del último número (Total)
+  row_pattern:
+    regex: '^(?P<descripcion>.+?)\s+(?P<base>\d{1,3}(?:\\.\\d{3})*,\d{2,3})$'
+  take_desc_from: ["Descripción"]
+  take_amount_from: ["Total"]
+  keep_duplicates: true
+  row_must_match:
+    - last_number_is_money
+  ignore_rows:
+    - startswith: "Albarán"
+
+# Normalización de BASE: coma europea con 2 decimales
+compute:
+  base:
+    normalize_decimal: true   # 21,070 -> 21,07
+    rounding: 2
+
+# ———————————————————————————————————————————
+#  Diccionario INTERNO (única fuente)
+# ———————————————————————————————————————————
+dictionary:
+  enabled: true
+  field_in: articulo
+  field_out: categoria
+  fuzzy:
+    accept_if:
+      min_score: 92
+    maybe_if:
+      min_score: 84
+    on_ambiguous: "PENDIENTE"
+  on_miss: "PENDIENTE"
+  map:
+    - factura: "DESHUESADA A-20 ZAMBUDIO 200/220"
+      categoria: "ACEITUNAS Y/O VARIANTES"
+    - factura: "PIPARRAS GUIPUZCOANA GALON"
+      categoria: "PIPARRAS"
+    - factura: "PICADILLO GALÓN"
+      categoria: "PICADILLO DE VARIANTES"
+    - factura: "CHUPADEO ZAMBUDIO"
+      categoria: "ACEITUNAS Y/O VARIANTES"
+    - factura: "MZ LATAS 5 KG \" La Abuela\""
+      categoria: "ACEITUNAS Y/O VARIANTES"
+    - factura: "ALTRAMUCES super extrabolsa 2"
+      categoria: "ACEITUNAS Y/O VARIANTES"
+    - factura: "ARAGÓN CUBO 2 KILOS"
+      categoria: "ACEITUNAS Y/O VARIANTES"
+    - factura: "ALCAPARRON CUBO PEQUEÑO"
+      categoria: "ACEITUNAS Y/O VARIANTES"
+    - factura: "BANDERILLAS PICANTES SOTA 12xV-370"
+      categoria: "ACEITUNAS Y/O VARIANTES"
+    - factura: "EXPLANADA MANZ RELL DE NARANJA 15X12 OZ"
+      categoria: "ACEITUNAS Y/O VARIANTES"
+    - factura: "EXPLANADA MANZ RELL DE LIMÓN 15X10 OZ"
+      categoria: "ACEITUNAS Y/O VARIANTES"
+    - factura: "EXPLANADA GOURMET RELL JALAPEÑO 15x12oz"
+      categoria: "ACEITUNAS Y/O VARIANTES"
+    - factura: "EXPLANADA MZ RELL SALMÓN 15x10oz"
+      categoria: "ACEITUNAS Y/O VARIANTES"
+    - factura: "EXPLANADA MANZ RELL QUESO AZUL 15x12oz"
+      categoria: "ACEITUNAS Y/O VARIANTES"
+    - factura: "PELOTÍN"
+      categoria: "ACEITUNAS Y/O VARIANTES"
+    - factura: "MANZ RELLENA DE AJO"
+      categoria: "ACEITUNAS Y/O VARIANTES"
+    - factura: "ATUN PAND ESCAB ONGI"
+      categoria: "ATÚN O MELVA"
+    - factura: "AJOBLANCO (LATA) AMANIDA"
+      categoria: "ACEITUNAS Y/O VARIANTES"
+    - factura: "PEPINOS PEQUEÑOS CUBO"
+      categoria: "ACEITUNAS Y/O VARIANTES"
+    - factura: "PEPINILLOS FRASCO 350 GR EL FARO"
+      categoria: "ACEITUNAS Y/O VARIANTES"
+
+filters:
+  require_amount_column: base
+
+# ———————————————————————————————————————————
+#  Salida TSV estándar
+# ———————————————————————————————————————————
+output_map:
+  "#": file_prefix_4
+  FECHA: anchor.fecha
+  NUM: anchor.numero_factura
+  PROVEEDOR: literal("FRANCISCO GUERRA")
+  ARTÍCULO: column.articulo
+  CATEGORÍA: column.categoria
+  TIPO IVA: column.tipo_iva
+  BASE: column.base
+

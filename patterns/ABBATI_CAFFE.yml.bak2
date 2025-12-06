@@ -1,0 +1,38 @@
+# overlays/abbati_caffe.yml
+
+proveedor: ABBATI CAFFE
+match:
+  nombre: "ABBATI CAFFE"
+  cif: "B82567876"
+  contiene: ["Dosis Cafe", "Abbati Caffe"]
+
+campos:
+  fecha:
+    regex: "\\b(\\d{2})/(\\d{2})/(\\d{4})\\b"
+    formato: "DD-MM-YY"
+
+  ref:
+    regex: "\\b1\\s*/\\s*\\d{6}\\b"
+    normalizar: true
+
+  tipo_iva:
+    valor: "10%"
+
+lineas:
+  inicio: "Ref. Descripción"
+  fin: "Forma de pago"
+  columnas:
+    - articulo: ".*"
+    - base:
+        columna: "Total"
+        formato: "europeo"
+        tipo: "float"
+  clasificacion:
+    - regex: "CAFE": "CAFÉ"
+    - regex: "AZUCAR": "AZUCAR Y SIMILARES"
+
+notas:
+  - Categoría por palabra clave en campo ARTÍCULO.
+  - IVA fijo al 10%.
+  - Una o dos líneas por factura.
+

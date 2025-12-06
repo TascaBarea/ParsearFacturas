@@ -1,0 +1,37 @@
+name: CONTROLPLAGA
+pattern: "Javier Albor\u00e9s Rey"
+ref:
+  regex: '202\d{5}'
+  label: "N\u00ba factura"
+  area: "top-left"
+date:
+  regex: 'Madrid,\s+\d{2} DE [A-Z]+ DE \d{4}'
+  transform: "%d DE %B DE %Y => %d-%m-%y"
+  area: "right"
+provider: "CONTROLPLAGA"
+lines:
+  start_after: "DESCRIPCI\u00d3N PRECIO CONVENIDO"
+  stop_before: "Base imponible"
+  match: true
+  columns:
+    - name: ARTICULO
+      match: 'Tratamiento desinsectaci\u00f3n.*'
+category_map:
+  - match: ".*"
+    descripcion: "DESINSECTACION"
+iva:
+  tipo: "21%"
+portes:
+  match: ""
+  distribuir: false
+output:
+  format: TSV
+  columns:
+    - "#"
+    - "FECHA"
+    - "REF"
+    - "PROVEEDOR"
+    - "ARTÍCULO"
+    - "DESCRIPCIÓN"
+    - "TIPO IVA"
+    - "BASE"

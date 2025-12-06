@@ -1,0 +1,43 @@
+name: QUESOS NAVAS
+pattern: "QUESOS NAVAS, S.L"
+ref:
+  regex: 'A/\d{1,4}'
+  label: "Nº Factura"
+  area: "top"
+date:
+  regex: '\d{2}/\d{2}/\d{4}'
+  transform: "%d/%m/%Y => %d-%m-%y"
+  label: "Fecha"
+  area: "top"
+provider: "CARLOS NAVAS"
+lines:
+  start_after: "Articulo"
+  stop_before: "Subtotal"
+  match: true
+  columns:
+    - name: ARTICULO
+      match: ".*"
+    - name: BASE
+      regex: '\d{1,4},\d{2}'
+category_map:
+  - match: ".*"
+    descripcion: "QUESOS"
+iva:
+  match:
+    - regex: "4,00|4.00"
+      tipo: "4%"
+    - regex: "2,00|2.00"
+      tipo: "2%"
+    - regex: "0,00|0.00"
+      tipo: "0%"
+output:
+  format: TSV
+  columns:
+    - "#"
+    - "FECHA"
+    - "REF"
+    - "PROVEEDOR"
+    - "ARTÍCULO"
+    - "DESCRIPCIÓN"
+    - "TIPO IVA"
+    - "BASE"

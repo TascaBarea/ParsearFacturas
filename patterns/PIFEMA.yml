@@ -1,0 +1,36 @@
+name: PIFEMA
+pattern: "PIFEMA S.L."
+ref:
+  regex: 'A\d{2}/\d{1,5}'
+  label: "FACTURA"
+  area: "top"
+date:
+  regex: '\d{2}/\d{2}/\d{4}'
+  transform: "%d/%m/%Y => %d-%m-%y"
+  label: "CLIENTE NUMERO FECHA"
+  area: "top"
+provider: "PIFEMA"
+lines:
+  start_after: "CATEGORIA"
+  match: true
+  columns:
+    - name: ARTICULO
+      match: ".*"
+    - name: BASE
+      regex: '\d{1,4},\d{2}'
+category_map:
+  - match: ".*"
+    descripcion: "VINO COMES"
+iva:
+  tipo: "21%"
+output:
+  format: TSV
+  columns:
+    - "#"
+    - "FECHA"
+    - "REF"
+    - "PROVEEDOR"
+    - "ARTÍCULO"
+    - "DESCRIPCIÓN"
+    - "TIPO IVA"
+    - "BASE"

@@ -1,0 +1,84 @@
+extractor:
+  proveedor: "BORBOTON"
+  match_if_contains:
+    - "BODEGAS BORBOTON"
+    - "FECHA"
+    - "NUM."
+
+  campos:
+    #: "file[:4]"
+
+    FECHA:
+      buscar: "FECHA\s*(\d{2}/\d{2}/\d{4})"
+      formatear_como: "DD-MM-YY"
+
+    NUM:
+      # Ej.: 20425/25, 20378/24
+      buscar: "NUM\.?\s*(\d{5}/\d{2})"
+
+    PROVEEDOR:
+      fijo: "BORBOTON"
+
+    # -------- LÍNEAS (vino + promos negativas) --------
+    LINEAS:
+      buscar_lineas:
+        ignorar_si_empieza_con:
+          - "Albarán"
+        patrones:
+          # Línea principal de vino: Código, Descripción y TOTAL positivo
+          - "^(?P<cod>[A-Z]{3}\d{4})\s+(?P<desc>[^\n]+?)\s+\d+\s+[0-9]+[.,][0-9]{2}\s+\d+[.,]?\d*\s+[0-9]+[.,][0-9]{2}\s+(?P<total>[0-9]+[.,][0-9]{2})\s*€?\s*$"
+          # Línea de promoción/bonificación (importe negativo)
+          - "^(?:Promoci[oó]n(?:\s+especial)?|Promocion\s+especial)\s+\d+\s+-[0-9]+[.,][0-9]{2}\s+\d+[.,]?\d*\s+-[0-9]+[.,][0-9]{2}\s+(?P<promo>-?[0-9]+[.,][0-9]{2})\s*€?\s*$"
+        campos:
+          CODIGO: "cod"
+          ARTICULO: "desc"
+          TOTAL_LINEA: "total"
+          PROMO: "promo"
+        multilinea: true
+        repetir_sin_cabecera: true
+
+    # TIPO IVA fijo 21 (si cambia en el futuro, se puede leer del pie)
+    TIPO IVA:
+      fijo: 21
+
+    # TOTAL factura para validación
+    TOTAL_FACTURA:
+      buscar: "TOTAL\s*\n?\s*([0-9]+[.,][0-9]{2})\s*€?"
+      formato: "europeo"
+
+  ajustes:
+    # 1) Consolidar cada vino sumando sus promociones negativas contiguas (evita "efecto arrastre")
+    - nombre: "Consolidar vinos con promociones negativas"
+      tipo: "agrupar_y_sumar_promos"
+      parametros:
+        clave_agrupacion: "CODIGO"
+        suma_base: "TOTAL_LINEA + sum(PROMO)"  # PROMO ya viene negativa
+        descartar_lineas_promo: true
+
+    # 2) Definir BASE como el total consolidado por vino
+    - nombre: "Definir BASE consolidada"
+      tipo: "derivar_campo"
+      parametros:
+        destino: "BASE"
+        expresion: "TOTAL_LINEA_CONSOLIDADA"
+
+    # 3) Derivar CATEGORIA a partir del artículo
+    - nombre: "Clasificar categoría"
+      tipo: "mapear_categoria"
+      parametros:
+        reglas:
+          - si_contiene: "A RAS DE SUELO"
+            valor: "VINO A RAS DE SUELO"
+          - por_defecto: "VINOS"
+
+  validaciones:
+    - nombre: "Cuadre total factura"
+      tipo: "comparar_suma_base_mas_iva_con_total"
+      tolerancia: 0.01
+
+  salidas:
+    # Sólo emitimos una fila por vino (sin líneas de promoción)
+    filtrar_lineas: "PROMO == ''"
+    columnas_tsv: ["#", "FECHA", "NUM", "PROVEEDOR", "ARTICULO", "CATEGORIA", "TIPO IVA", "BASE"]
+    formatos:
+      BASE: "#,##0.00"

@@ -1,18 +1,11 @@
-#!/usr/bin/env python3
+##!/usr/bin/env python3
 """
-VALIDADOR DE PATRONES YAML
-===========================
-Comprueba que tus archivos YAML de patrones están bien escritos
-ANTES de ejecutar el procesamiento.
+VALIDADOR DE PATRONES YAML v2
+==============================
+Versión más flexible que solo marca errores de sintaxis reales.
 
 USO:
     python -m src.facturas.utils.validador patterns/
-    
-    O desde código:
-    from src.facturas.utils.validador import validar_patron, validar_carpeta
-    
-    resultado = validar_patron("patterns/BERNAL.yml")
-    print(resultado)
 """
 
 import re
@@ -70,14 +63,20 @@ def buscar_regex_en_dict(d: dict, path: str = "") -> List[Tuple[str, str]]:
             
             if key == 'regex' and isinstance(value, str):
                 encontrados.append((nueva_ruta, value))
-            elif key == 'pattern' and isinstance(value, str):
-                encontrados.append((nueva_ruta, value))
+            elif key == 'pattern' and isinstance(value, str) and not key == 'pattern':
+                # Solo si parece regex (contiene caracteres especiales)
+                if any(c in value for c in r'\^$.*+?[](){}|'):
+                    encontrados.append((nueva_ruta, value))
             else:
                 encontrados.extend(buscar_regex_en_dict(value, nueva_ruta))
     
     elif isinstance(d, list):
         for i, item in enumerate(d):
-            encontrados.extend(buscar_regex_en_dict(item, f"{path}[{i}]"))
+            if isinstance(item, str) and any(c in item for c in r'\^$.*+?[](){}|'):
+                # Parece una regex en una lista
+                encontrados.append((f"{path}[{i}]", item))
+            else:
+                encontrados.extend(buscar_regex_en_dict(item, f"{path}[{i}]"))
     
     return encontrados
 
@@ -85,18 +84,13 @@ def buscar_regex_en_dict(d: dict, path: str = "") -> List[Tuple[str, str]]:
 def validar_patron(archivo: str) -> ResultadoValidacion:
     """
     Valida un archivo YAML de patrón.
-    
-    Args:
-        archivo: Ruta al archivo .yml o .yaml
-    
-    Returns:
-        ResultadoValidacion con errores y avisos
+    Solo marca como ERROR los problemas de sintaxis.
     """
     resultado = ResultadoValidacion(archivo)
     
     # 1. Verificar que el archivo existe
     if not Path(archivo).exists():
-        resultado.errores.append(f"Archivo no encontrado: {archivo}")
+        resultado.errores.append(f"Archivo no encontrado")
         return resultado
     
     # 2. Intentar cargar el YAML
@@ -104,6 +98,7 @@ def validar_patron(archivo: str) -> ResultadoValidacion:
         with open(archivo, encoding='utf-8') as f:
             contenido = yaml.safe_load(f)
     except yaml.YAMLError as e:
+        # Este es el único ERROR real - sintaxis YAML inválida
         resultado.errores.append(f"Error de sintaxis YAML: {e}")
         return resultado
     except Exception as e:
@@ -111,19 +106,10 @@ def validar_patron(archivo: str) -> ResultadoValidacion:
         return resultado
     
     if not contenido:
-        resultado.errores.append("Archivo vacío o no es un diccionario")
+        resultado.errores.append("Archivo vacío")
         return resultado
     
-    # 3. Verificar campos básicos
-    campos_identificacion = ['name', 'provider', 'pattern']
-    tiene_identificacion = any(campo in contenido for campo in campos_identificacion)
-    
-    if not tiene_identificacion:
-        resultado.errores.append(
-            "Falta identificación del proveedor. Añade 'name', 'provider' o 'pattern'"
-        )
-    
-    # 4. Validar todas las regex del archivo
+    # 3. Validar todas las regex del archivo
     regex_encontradas = buscar_regex_en_dict(contenido)
     
     for ruta, regex_str in regex_encontradas:
@@ -131,15 +117,8 @@ def validar_patron(archivo: str) -> ResultadoValidacion:
         if not valida:
             resultado.errores.append(error)
     
-    # 5. Avisos
-    if 'output_map' not in contenido and 'output' not in contenido:
-        resultado.avisos.append("No tiene 'output_map' ni 'output' definido")
-    
-    if contenido.get('source') == 'OCR' and 'anchors' not in contenido:
-        resultado.avisos.append("Es OCR pero no tiene 'anchors' definidos")
-    
-    if 'category_map' not in contenido:
-        resultado.avisos.append("No tiene 'category_map'")
+    # 4. Solo AVISOS (no errores) para campos opcionales
+    # No marcar como error si falta name/provider/pattern
     
     return resultado
 
@@ -153,6 +132,8 @@ def validar_carpeta(carpeta: str) -> List[ResultadoValidacion]:
         return []
     
     archivos = list(carpeta_path.glob('*.yml')) + list(carpeta_path.glob('*.yaml'))
+    # Excluir backups
+    archivos = [a for a in archivos if '.bak' not in a.name and '.backup' not in a.name]
     
     if not archivos:
         print(f"⚠️  No se encontraron archivos YAML en {carpeta}")
@@ -170,7 +151,6 @@ def imprimir_resumen(resultados: List[ResultadoValidacion]):
     
     total = len(resultados)
     validos = sum(1 for r in resultados if r.valido)
-    con_avisos = sum(1 for r in resultados if r.valido and r.avisos)
     con_errores = sum(1 for r in resultados if not r.valido)
     
     print("=" * 50)
@@ -178,22 +158,25 @@ def imprimir_resumen(resultados: List[ResultadoValidacion]):
     print("=" * 50)
     print(f"Total patrones: {total}")
     print(f"✅ Válidos:     {validos}")
-    print(f"⚠️  Con avisos:  {con_avisos}")
     print(f"❌ Con errores: {con_errores}")
     print("=" * 50)
     print()
     
+    # Solo mostrar los que tienen errores
     for resultado in resultados:
-        print(resultado)
+        if not resultado.valido:
+            print(resultado)
     
     print()
     if con_errores == 0:
-        print("✅ Todos los patrones son válidos")
+        print("✅ ¡Todos los patrones son válidos!")
     else:
-        print(f"❌ Hay {con_errores} patrón(es) con errores que debes corregir")
+        print(f"❌ Hay {con_errores} patrón(es) con errores de sintaxis")
+        print()
+        print("💡 Para corregir errores de comillas, usa:")
+        print("   python fix_quotes_v2.py patterns")
 
 
-# Ejecución desde línea de comandos
 if __name__ == '__main__':
     import sys
     

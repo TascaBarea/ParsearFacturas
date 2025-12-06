@@ -1,0 +1,47 @@
+extractor:
+  proveedor: "PURÍSIMA"
+  match_if_contains:
+    - "BODEGAS LA PURISIMA"
+    - "Número factura:"
+  campos:
+    #: "file[:4]"
+    FECHA:
+      buscar: 'Fecha factura:\s*(\d{2}/\d{2}/\d{4})'
+      formatear_como: "DD-MM-YY"
+    REF:
+      buscar: 'Número factura:\s*(\d{2}[-−]\d{2}[-−]\d{3})'
+    PROVEEDOR:
+      fijo: "PURÍSIMA"
+    ARTÍCULO:
+      buscar_lineas:
+        patrones:
+          - '\d{5}\s+(.*?)\s{2,}\d+\s+\d+[,.]\d{2}\s+\d+\s+[,.\d]+'
+        multilinea: true
+        repetir_sin_cabecera: true
+    DESCRIPCIÓN:
+      condiciones:
+        - si_igual: "FILARMONIA MSM PROD.ECOLOGICA CAJA"
+          valor: "VINO MONASTRELL"
+        - si_igual: "LA PURISIMA BLANCO CAJA 6"
+          valor: "VINO BLANCO MACABEO"
+        - si_igual: "VERMOUTH CAJA 6"
+          valor: "VERMUT CHIVO LOCO"
+        - si_igual: "FILARMONIA BLANCO  PROD.ECOLOGICA"
+          valor: "VINO BLANCO GENERICO"
+        - si_igual: "OLD HANDS JOVEN PROD.ECOLOGICA"
+          valor: "VINO TINTO GENERICO"
+        - si_igual: "ACEITE OLIVA VIRGEN GARR.PET 5L."
+          valor: "ACEITE DE OLIVA"
+        - por_defecto: "PENDIENTE"
+    TIPO IVA:
+      buscar: '(\d{1,2})%\s*$'
+    BASE:
+      buscar_lineas:
+        patrones:
+          - '\d{5}\s+.*?\s{2,}\d+\s+\d+[,.]\d{2}\s+\d+\s+([,.\d]+)'
+        formato: "europeo"
+
+  validaciones:
+    - nombre: "Verificación de total"
+      tipo: "comparar_suma_base_mas_iva_con_total"
+      tolerancia: 0.01

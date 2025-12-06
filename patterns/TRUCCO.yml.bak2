@@ -1,0 +1,30 @@
+proveedor: TRUCCO
+match:
+  nombre: "TRUCCO"
+  contiene: ["Isaac Rodríguez Pacha", "TRUCCO COPIAS"]
+
+campos:
+  fecha:
+    regex: "Fecha:\s*(\d{2}/\d{2}/\d{4})"
+    formato: "DD-MM-YY"
+
+  ref:
+    regex: "Número de factura:\s*(\d{4}-\d{4})"
+
+  tipo_iva:
+    valor: "21%"
+
+lineas:
+  unico: true
+  base:
+    regex: "Total Base Imponible:\s*([\d.,]+) €"
+    formato: "europeo"
+    tipo: "float"
+  categoria:
+    valor: "GASTOS VARIOS"
+
+notas:
+  - Proveedor fijo TRUCCO, IVA y categoría constantes.
+  - Fecha y número extraídos por regex exacta.
+  - Campo base identificado por texto "Total Base Imponible".
+  - No hay líneas de productos, se extrae un total único por factura.

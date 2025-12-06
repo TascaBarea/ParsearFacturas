@@ -1,0 +1,62 @@
+provider: KINEMA
+name: KINEMA
+source: OCR
+
+columns:
+  - name: articulo
+    from: concepto | descripcion | articulo
+    desc: true
+  - name: base
+    from: importe
+    amount: true
+  - name: tipo_iva
+    from: iva | "%"
+  - name: categoria
+    static: "GESTORIA"
+
+anchors:
+  fecha:
+    find: ["Fecha", "Fecha factura"]
+    direction: right
+    regex: "\\b\\d{2}/\\d{2}/\\d{4}\\b"
+    transform: "ddmmaaaa_to_ddmmaa"
+
+  numero_factura:
+    find: ["Documento Número", "Documento N.", "Documento Nº"]
+    direction: right
+    regex: "\\b\\d{6}\\b"
+
+  table_header:
+    find: ["ARTÍCULO", "CONCEPTO", "IMPORTE", "I.V.A."]
+    direction: below
+
+# Reglas de tabla
+table_rules:
+  include_pages: "all"
+  take_desc_from: ["ARTÍCULO", "CONCEPTO", "DESCRIPCIÓN"]
+  take_amount_from: ["IMPORTE"]
+  take_vat_from: ["I.V.A."]
+  keep_duplicates: true
+  row_must_match:
+    - last_number_is_money
+
+iva_overrides:
+  - match_regex: ".*"
+    rule: |
+      if not tipo_iva:
+          return 21
+      else:
+          return tipo_iva
+
+filters:
+  require_amount_column: base
+
+output_map:
+  "#": file_prefix_4
+  FECHA: anchor.fecha
+  NUM: anchor.numero_factura
+  PROVEEDOR: literal("KINEMA")
+  ARTÍCULO: column.articulo
+  CATEGORÍA: column.categoria
+  TIPO IVA: column.tipo_iva
+  BASE: column.base

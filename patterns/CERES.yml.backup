@@ -42,7 +42,7 @@ lines:
     drop_codes: true
 
   # Captura descripción + último número europeo con coma decimal
-  regex_linea: '^(?P<descripcion>.+?)\\s+(?P<base>\\d{1,3}(?:\\.\\d{3})*,\\d{2})$'
+  regex_linea: "^(?P<descripcion>.+?)\\s+(?P<base>\\d{1,3}(?:\\.\\d{3})*,\\d{2})$"
 
 portes:
   keywords: ["PORTES", "TRANSPORTE", "ENVIO", "ENVÍO", "GASTOS ENVIO", "GASTOS ENVÍO", "FLETE"]

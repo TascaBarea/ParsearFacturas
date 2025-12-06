@@ -1,0 +1,30 @@
+proveedor: "FELISA"
+aliases: null
+anchors:
+  fecha:
+    find: ["Fecha"]
+    direction: "right"
+    regex: '\b\d{2}[-/]\d{2}[-/]\d{2,4}\b|\b\d{1,2}\s+de\s+[A-Za-zÁÉÍÓÚáéíóú]+\s+de\s+\d{4}\b'
+  numero_factura:
+    find: ["Factura"]
+    direction: "right"
+    regex: '[A-Z0-9/-]{3,}'
+  lineas:
+    find: ["Descripción", "Importe"]
+    region: "lines"
+
+rules:
+  - NormalizarTextos
+  - UnicaLineaPorProducto
+
+descripcion:
+  mode: "original"
+
+iva_default: 21
+grouping: lineas
+
+portes:
+  mode: "prorratear"
+
+precedence:
+  force_pattern_over_dictionary: false

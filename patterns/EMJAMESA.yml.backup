@@ -1,0 +1,85 @@
+name: EMJAMESA
+pattern: "EMJAMESA"
+ref:
+  regex: '\b\d{9}\b'
+  label: "Número // Serie"
+  area: "top"
+date:
+  regex: '\d{2}/\d{2}/\d{4}'
+  transform: "%d/%m/%Y => %d-%m-%y"
+  label: "FECHA"
+  area: "top"
+provider: "EMJAMESA"
+lines:
+  start_after: "CÓDIGO"
+  stop_before: "BASE IMPONIBLE"
+  match: true
+  columns:
+    - name: ARTICULO
+      from: "DESCRIPCIÓN"
+      exclude: ["Portes de género"]
+    - name: IVA
+      from: "% IVA"
+      regex: "10|10,00|10.00"
+    - name: BASE
+      from: "IMPORTE"
+      regex: '\d{1,5}[\.,]\d{2}'
+category_map:
+  - match: "LOMITO IBERICO BELLOTA"
+    descripcion: "CHACINAS"
+  - match: "PALETA DE BELLOTA IBERICA 50% raza ibérica \(DESHUESADA\)"
+    descripcion: "CHACINAS"
+  - match: "LONGANIZA DE CERDO IBERICO EXTRA CEBO DE CAMPO"
+    descripcion: "CHACINAS"
+  - match: "LONGANIZA IBERICA EXTRA CASERA\s+BELLOTA"
+    descripcion: "CHACINAS"
+  - match: "SALCHICHON IBERICO EXTRA SARTA\s+CASERO BELLOTA"
+    descripcion: "CHACINAS"
+  - match: "TACOS DE JAMON CEBO IBERICO 50% raza ibérica"
+    descripcion: "CHACINAS"
+  - match: "CAÑA DE LOMO DE BELLOTA IBERICO 50 % RAZA IBERICA\*"
+    descripcion: "CHACINAS"
+  - match: "PANCETA CEBO IBERICA \(ADOBADA\)"
+    descripcion: "CHACINAS"
+  - match: "SALCHICHON IBERICO EXTRA CULAR BELLOTA"
+    descripcion: "CHACINAS"
+  - match: "MORCON DE BELLOTA IBERICO"
+    descripcion: "CHACINAS"
+  - match: "LENGUA IBERICA CURADA"
+    descripcion: "CHACINAS"
+  - match: "JAMON CEBO IBERICO 50 % RAZA IBERICA \(DESHUESADO\)"
+    descripcion: "CHACINAS"
+  - match: "LONGANIZA IBERICA EXTRA CEBO CAMPO \(PICANTE\)"
+    descripcion: "CHACINAS"
+  - match: "LOMITO IBERICO$"
+    descripcion: "CHACINAS"
+  - match: "CHORIZO IBERICO EXTRA CULAR BELLOTA"
+    descripcion: "CHACINAS"
+  - match: ".*"
+    descripcion: "CHACINAS"
+iva:
+  match:
+    - regex: "10|10,00|10.00"
+      tipo: "10%"
+portes:
+  match: "Portes de género"
+  distribuir: true
+  conversion:
+    from_iva: "21%"
+    to_line_iva: true
+    formula: "base_equiv = base_portes * (1+from)/(1+to)"
+  metodo_reparto: "proporcional_base"
+  rounding:
+    base_decimals: 2
+    penny_balance: true
+output:
+  format: TSV
+  columns:
+    - "#"
+    - "FECHA"
+    - "REF"
+    - "PROVEEDOR"
+    - "ARTÍCULO"
+    - "DESCRIPCIÓN"
+    - "TIPO IVA"
+    - "BASE"

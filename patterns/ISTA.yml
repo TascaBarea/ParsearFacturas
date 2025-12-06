@@ -1,0 +1,69 @@
+extractor:
+  proveedor: "ISTA"
+  match_if_contains:
+    - "ISTA"
+    - "Liquidación de Consumos"
+
+  campos:
+    #: "file[:4]"
+
+    FECHA:
+      # Usar la fecha de recibo
+      buscar: 'Fecha de recibo:\s*(\d{2}/\d{2}/\d{4})'
+      formatear_como: "DD-MM-YY"
+
+    NUM:
+      # Tomar el número con formato 8 digitos + '/' + 2 dígitos (p.ej. 31281219/25)
+      buscar: '\b(\d{8}/\d{2})\b'
+
+    PROVEEDOR:
+      fijo: "ISTA"
+
+    # -------- LÍNEAS --------
+    ARTICULO:
+      buscar_lineas:
+        patrones:
+          # Formato habitual en el bloque de conceptos
+          - '(?P<desc>Consumo \(A\.Fria\)|Cuotas de Servicio del Canal de Isabel II \(A\.Fria\))\s*(?P<importe>[0-9]+[.,][0-9]{2})\s*€?'
+          # Variante donde aparece cantidad y después el concepto pegado al %IVA
+          - '(?P<importe>[0-9]+[.,][0-9]{2})\s*\d{1,2}%\s*(?P<desc>Consumo \(A\.Fria\)|Cuotas de Servicio del Canal de Isabel II \(A\.Fria\))'
+        campos:
+          ARTICULO: "desc"
+          BASE: "importe"
+        multilinea: true
+        repetir_sin_cabecera: true
+
+    CATEGORIA:
+      fijo: "SUMINISTROS AGUA"
+
+    # IVA: extraer % y devolver número (sin '%')
+    TIPO IVA:
+      detectar_desde_tabla:
+        # Bloque inferior de IVA
+        encabezado: "I.V.A."
+        columnas: ["Base", "% IVA", "Cuota"]
+        estrategia: "si hay un solo %IVA -> usarlo; si hay varios, mapear por base proporcional"
+      fallback:
+        # Si no se localiza la tabla, buscar un % inmediato junto a 'Consumo (A.Fria)'
+        buscar: '(\d{1,2})%\s*Consumo \(A\.Fria\)'
+      salida: "numero"
+
+    # Totales para validación
+    TOTAL:
+      # "Importe total" mostrado al pie
+      buscar: 'Importe total\s*\n\s*([0-9]+[.,][0-9]{2})'
+      formato: "europeo"
+
+  validaciones:
+    - nombre: "Cuadre contra Importe total"
+      tipo: "comparar_suma_base_mas_iva_con_total"
+      tolerancia: 0.01
+
+  salidas:
+    # TSV en el orden solicitado
+    columnas_tsv: ["#", "FECHA", "NUM", "PROVEEDOR", "ARTICULO", "CATEGORIA", "TIPO IVA", "BASE"]
+    formatos:
+      BASE: "#,##0.00"
+    # Mostrar TIPO IVA como número (10, 21, ...)
+    casting:
+      TIPO IVA: "int"
