@@ -1,0 +1,295 @@
+{
+  "id_ejecucion": "2025-12-06_1811",
+  "modo": "descarga",
+  "dry_run": false,
+  "emails_procesados": [
+    {
+      "gmail_id": "19af3c3844b7e175",
+      "remitente": "Tasca Barea <tascabarea@gmail.com>",
+      "asunto": "Fwd: FACTURA 639/25 CONSERVAS EL MODESTO",
+      "fecha": "Sat, 6 Dec 2025 14:04:15 +0100",
+      "adjuntos": [
+        {
+          "nombre_original": "639_25 COMESTIBLES BAREA.pdf",
+          "es_factura": true,
+          "descargado": true,
+          "ruta_local": "downloads\\2025-12-06\\639_25 COMESTIBLES BAREA_1.pdf"
+        }
+      ],
+      "marcado_leido": true
+    },
+    {
+      "gmail_id": "19af3c33bd32bf4b",
+      "remitente": "Tasca Barea <tascabarea@gmail.com>",
+      "asunto": "Fwd: Garda Import, S.L.U. - Factura venta 2511F4089",
+      "fecha": "Sat, 6 Dec 2025 14:03:55 +0100",
+      "adjuntos": [
+        {
+          "nombre_original": "VZGL9AOWRRU4.0I7KN438TAFZ2@GNAVISION.jpg",
+          "es_factura": false,
+          "descargado": false,
+          "ruta_local": null
+        },
+        {
+          "nombre_original": "Factura venta 2511F4089.pdf",
+          "es_factura": true,
+          "descargado": true,
+          "ruta_local": "downloads\\2025-12-06\\Factura venta 2511F4089_1.pdf"
+        }
+      ],
+      "marcado_leido": true
+    },
+    {
+      "gmail_id": "19af3c248bac3326",
+      "remitente": "Tasca Barea <tascabarea@gmail.com>",
+      "asunto": "Fwd: Proforma nuevo pedido",
+      "fecha": "Sat, 6 Dec 2025 14:02:54 +0100",
+      "adjuntos": [
+        {
+          "nombre_original": "PRG200.pdf",
+          "es_factura": true,
+          "descargado": true,
+          "ruta_local": "downloads\\2025-12-06\\PRG200_1.pdf"
+        },
+        {
+          "nombre_original": "CERTIFICADO DE TITULARIDAD DE CUENTA.pdf",
+          "es_factura": false,
+          "descargado": false,
+          "ruta_local": null
+        }
+      ],
+      "marcado_leido": true
+    },
+    {
+      "gmail_id": "19af3c18084aeda1",
+      "remitente": "Tasca Barea <tascabarea@gmail.com>",
+      "asunto": "Fwd: EMJAMESA FACTURA",
+      "fecha": "Sat, 6 Dec 2025 14:02:01 +0100",
+      "adjuntos": [
+        {
+          "nombre_original": "firma.png",
+          "es_factura": false,
+          "descargado": false,
+          "ruta_local": null
+        },
+        {
+          "nombre_original": "FRA 2500559 TASCABAREASLL.pdf",
+          "es_factura": true,
+          "descargado": true,
+          "ruta_local": "downloads\\2025-12-06\\FRA 2500559 TASCABAREASLL_1.pdf"
+        }
+      ],
+      "marcado_leido": true
+    },
+    {
+      "gmail_id": "19af3c1463d10011",
+      "remitente": "Tasca Barea <tascabarea@gmail.com>",
+      "asunto": "Fwd: Factura Milagros Alpénderez Domínguez",
+      "fecha": "Sat, 6 Dec 2025 14:01:47 +0100",
+      "adjuntos": [
+        {
+          "nombre_original": "IMG-20251120-WA0002.jpg",
+          "es_factura": false,
+          "descargado": false,
+          "ruta_local": null
+        }
+      ]
+    },
+    {
+      "gmail_id": "19af3c0c8442ba14",
+      "remitente": "Tasca Barea <tascabarea@gmail.com>",
+      "asunto": "Fwd: Factura 1-250231.pdf",
+      "fecha": "Sat, 6 Dec 2025 14:01:15 +0100",
+      "adjuntos": [
+        {
+          "nombre_original": "Factura 1-250231.pdf",
+          "es_factura": true,
+          "descargado": true,
+          "ruta_local": "downloads\\2025-12-06\\Factura 1-250231_1.pdf"
+        }
+      ],
+      "marcado_leido": true
+    },
+    {
+      "gmail_id": "19af3c0a2bb10ff9",
+      "remitente": "Tasca Barea <tascabarea@gmail.com>",
+      "asunto": "Fwd: FACTURA TITO",
+      "fecha": "Sat, 6 Dec 2025 14:01:02 +0100",
+      "adjuntos": [
+        {
+          "nombre_original": "image001.png",
+          "es_factura": false,
+          "descargado": false,
+          "ruta_local": null
+        },
+        {
+          "nombre_original": "F458 TASCA BAREA.pdf",
+          "es_factura": true,
+          "descargado": true,
+          "ruta_local": "downloads\\2025-12-06\\F458 TASCA BAREA_1.pdf"
+        }
+      ],
+      "marcado_leido": true
+    },
+    {
+      "gmail_id": "19af3c0635c69577",
+      "remitente": "Tasca Barea <tascabarea@gmail.com>",
+      "asunto": "Fwd: Envío su e-Factura -11474",
+      "fecha": "Sat, 6 Dec 2025 14:00:49 +0100",
+      "adjuntos": [
+        {
+          "nombre_original": "2025-11474.PDF",
+          "es_factura": true,
+          "descargado": true,
+          "ruta_local": "downloads\\2025-12-06\\2025-11474_1.PDF"
+        }
+      ],
+      "marcado_leido": true
+    },
+    {
+      "gmail_id": "19af3c02784a7a0a",
+      "remitente": "Tasca Barea <tascabarea@gmail.com>",
+      "asunto": "Fwd: Factura 25-100101-0000387 (30-nov-2025) de TASCA BAREA",
+      "fecha": "Sat, 6 Dec 2025 14:00:34 +0100",
+      "adjuntos": [
+        {
+          "nombre_original": "Factura 25-100101-0000387 (30-nov-2025) de TASCA BAREA.pdf",
+          "es_factura": true,
+          "descargado": true,
+          "ruta_local": "downloads\\2025-12-06\\Factura 25-100101-0000387 (30-nov-2025) de TASCA BAREA_1.pdf"
+        }
+      ],
+      "marcado_leido": true
+    },
+    {
+      "gmail_id": "19af3bfd8b4594ba",
+      "remitente": "Tasca Barea <tascabarea@gmail.com>",
+      "asunto": "Fwd: Factura 06406_2548124_TASCA BAREA. CERES CERVEZA S L",
+      "fecha": "Sat, 6 Dec 2025 14:00:13 +0100",
+      "adjuntos": [
+        {
+          "nombre_original": "064062548124TASCA BAREA.PDF",
+          "es_factura": true,
+          "descargado": true,
+          "ruta_local": "downloads\\2025-12-06\\064062548124TASCA BAREA_1.PDF"
+        }
+      ],
+      "marcado_leido": true
+    },
+    {
+      "gmail_id": "19af3bfa7d3c896f",
+      "remitente": "Tasca Barea <tascabarea@gmail.com>",
+      "asunto": "Fwd: C.V.N.E. [A48002893] - Factura F26-40-08002",
+      "fecha": "Sat, 6 Dec 2025 14:00:01 +0100",
+      "adjuntos": [
+        {
+          "nombre_original": "tmp5E2E.jpg",
+          "es_factura": false,
+          "descargado": false,
+          "ruta_local": null
+        },
+        {
+          "nombre_original": "Ventas Factura F26-40-08002.pdf",
+          "es_factura": true,
+          "descargado": true,
+          "ruta_local": "downloads\\2025-12-06\\Ventas Factura F26-40-08002_1.pdf"
+        }
+      ],
+      "marcado_leido": true
+    },
+    {
+      "gmail_id": "19af3bf6537b42ac",
+      "remitente": "Tasca Barea <tascabarea@gmail.com>",
+      "asunto": "Fwd: FACT. NOVIEMBRE 25",
+      "fecha": "Sat, 6 Dec 2025 13:59:44 +0100",
+      "adjuntos": [
+        {
+          "nombre_original": "Outlook-5oq2g0j2.png",
+          "es_factura": false,
+          "descargado": false,
+          "ruta_local": null
+        },
+        {
+          "nombre_original": "025-FACTURA 5469.pdf",
+          "es_factura": true,
+          "descargado": true,
+          "ruta_local": "downloads\\2025-12-06\\025-FACTURA 5469_1.pdf"
+        }
+      ],
+      "marcado_leido": true
+    },
+    {
+      "gmail_id": "19af3bf120e4726a",
+      "remitente": "Tasca Barea <tascabarea@gmail.com>",
+      "asunto": "Fwd: Factura de Venta 02F-3973",
+      "fecha": "Sat, 6 Dec 2025 13:59:24 +0100",
+      "adjuntos": [
+        {
+          "nombre_original": "Factura de Venta 02F-3973.PDF",
+          "es_factura": true,
+          "descargado": true,
+          "ruta_local": "downloads\\2025-12-06\\Factura de Venta 02F-3973_1.PDF"
+        }
+      ],
+      "marcado_leido": true
+    },
+    {
+      "gmail_id": "19af3bec1122a0a2",
+      "remitente": "Tasca Barea <tascabarea@gmail.com>",
+      "asunto": "Fwd: Factura proforma",
+      "fecha": "Sat, 6 Dec 2025 13:58:58 +0100",
+      "adjuntos": [
+        {
+          "nombre_original": "image001.png",
+          "es_factura": false,
+          "descargado": false,
+          "ruta_local": null
+        },
+        {
+          "nombre_original": "2025-12-01 Ofe. FP25-106 0565 (FACPROF de B24416869).pdf",
+          "es_factura": true,
+          "descargado": true,
+          "ruta_local": "downloads\\2025-12-06\\2025-12-01 Ofe. FP25-106 0565 (FACPROF de B24416869)_1.pdf"
+        }
+      ],
+      "marcado_leido": true
+    },
+    {
+      "gmail_id": "19af3bdc0a9cc998",
+      "remitente": "Tasca Barea <tascabarea@gmail.com>",
+      "asunto": "Fwd: La Campera Andaluza noviembre",
+      "fecha": "Sat, 6 Dec 2025 13:57:56 +0100",
+      "adjuntos": [
+        {
+          "nombre_original": "Factura-gtc134116.pdf",
+          "es_factura": true,
+          "descargado": true,
+          "ruta_local": "downloads\\2025-12-06\\Factura-gtc134116_1.pdf"
+        }
+      ],
+      "marcado_leido": true
+    }
+  ],
+  "resumen": {
+    "emails_total": 15,
+    "facturas_ok": 14,
+    "facturas_error": 0,
+    "archivos_descargados": [
+      "downloads\\2025-12-06\\639_25 COMESTIBLES BAREA_1.pdf",
+      "downloads\\2025-12-06\\Factura venta 2511F4089_1.pdf",
+      "downloads\\2025-12-06\\PRG200_1.pdf",
+      "downloads\\2025-12-06\\FRA 2500559 TASCABAREASLL_1.pdf",
+      "downloads\\2025-12-06\\Factura 1-250231_1.pdf",
+      "downloads\\2025-12-06\\F458 TASCA BAREA_1.pdf",
+      "downloads\\2025-12-06\\2025-11474_1.PDF",
+      "downloads\\2025-12-06\\Factura 25-100101-0000387 (30-nov-2025) de TASCA BAREA_1.pdf",
+      "downloads\\2025-12-06\\064062548124TASCA BAREA_1.PDF",
+      "downloads\\2025-12-06\\Ventas Factura F26-40-08002_1.pdf",
+      "downloads\\2025-12-06\\025-FACTURA 5469_1.pdf",
+      "downloads\\2025-12-06\\Factura de Venta 02F-3973_1.PDF",
+      "downloads\\2025-12-06\\2025-12-01 Ofe. FP25-106 0565 (FACPROF de B24416869)_1.pdf",
+      "downloads\\2025-12-06\\Factura-gtc134116_1.pdf"
+    ]
+  },
+  "alertas": []
+}

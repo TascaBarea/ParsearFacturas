@@ -1,0 +1,30 @@
+{
+  "id_ejecucion": "2025-12-06_1821",
+  "modo": "descarga",
+  "dry_run": true,
+  "emails_procesados": [
+    {
+      "gmail_id": "19af3c1463d10011",
+      "remitente": "Tasca Barea <tascabarea@gmail.com>",
+      "asunto": "Fwd: Factura Milagros Alpénderez Domínguez",
+      "fecha": "Sat, 6 Dec 2025 14:01:47 +0100",
+      "adjuntos": [
+        {
+          "nombre_original": "IMG-20251120-WA0002.jpg",
+          "es_factura": true,
+          "descargado": true,
+          "ruta_local": "downloads\\2025-12-06\\IMG-20251120-WA0002.jpg"
+        }
+      ]
+    }
+  ],
+  "resumen": {
+    "emails_total": 1,
+    "facturas_ok": 1,
+    "facturas_error": 0,
+    "archivos_descargados": [
+      "downloads\\2025-12-06\\IMG-20251120-WA0002.jpg"
+    ]
+  },
+  "alertas": []
+}

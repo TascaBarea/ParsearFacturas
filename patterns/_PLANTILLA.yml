@@ -1,0 +1,159 @@
+# =============================================================================
+# PLANTILLA YAML v2.0 - EXTRACTORES DE FACTURAS
+# =============================================================================
+# Copiar este archivo y renombrar a NOMBRE_PROVEEDOR.yml
+# Ubicación: ParsearFacturas/patterns/
+# 
+# Documentación: docs/ESTADO_PROYECTO.md
+# Última actualización: 2025-12-07
+# =============================================================================
+
+extractor:
+  # ─────────────────────────────────────────────────────────────────────────
+  # METADATOS
+  # ─────────────────────────────────────────────────────────────────────────
+  version: "2.0"
+  proveedor: "NOMBRE_PROVEEDOR"          # Nombre normalizado (MAYÚSCULAS)
+  autor: "Claude"                         # Quién creó este patrón
+  fecha_creacion: "2025-12-07"
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # DATOS FISCALES
+  # ─────────────────────────────────────────────────────────────────────────
+  cif: ""                                 # CIF/NIF del proveedor
+  iban: ""                                # IBAN para pagos (opcional)
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # IDENTIFICACIÓN AUTOMÁTICA
+  # ─────────────────────────────────────────────────────────────────────────
+  # El sistema usará este patrón si el texto del PDF contiene alguna de estas cadenas
+  match_if_contains:
+    - "Texto único que aparece en facturas de este proveedor"
+    - "Otro texto identificador (CIF, dirección, etc.)"
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # EXTRACCIÓN DE CABECERA
+  # ─────────────────────────────────────────────────────────────────────────
+  campos:
+    fecha:
+      patron: '(\d{2}[/-]\d{2}[/-]\d{2,4})'
+      formato_entrada: "DD/MM/YYYY"       # Cómo viene en el PDF
+      formato_salida: "DD-MM-YY"          # Cómo lo queremos
+      buscar_cerca_de: "Fecha"            # Palabra ancla (opcional)
+    
+    numero_factura:
+      patron: '(?:Factura|Fra|Nº)[:\s]*([A-Z0-9/-]+)'
+      buscar_cerca_de: "Factura"
+    
+    total_factura:
+      patron: 'TOTAL[:\s]*([\d.,]+)\s*€?'
+      formato_numero: "europeo"           # 1.234,56 → 1234.56
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # EXTRACCIÓN DE LÍNEAS DE DETALLE
+  # ─────────────────────────────────────────────────────────────────────────
+  lineas:
+    # Delimitadores de zona
+    inicio_despues: "DESCRIPCION"         # Empezar a buscar después de esta palabra
+    fin_antes: "TOTAL"                    # Dejar de buscar antes de esta palabra
+    
+    # Patrón principal de línea
+    # Usar grupos nombrados (?P<nombre>...) o numerados
+    patron: |
+      ^(?P<codigo>\w+)\s+
+      (?P<articulo>.+?)\s+
+      (?P<cantidad>[\d,]+)\s+
+      (?P<precio>[\d,]+)\s+
+      (?P<importe>[\d,]+)$
+    
+    # Mapeo de grupos (si no usas grupos nombrados)
+    grupos:
+      codigo: 1
+      articulo: 2
+      cantidad: 3
+      precio: 4
+      importe: 5
+    
+    # IVA por defecto si no se detecta
+    iva_default: 21
+    
+    # Excepciones de IVA basadas en patrones
+    iva_excepciones:
+      - patron: "TRANSPORTE|PORTES|ENVIO"
+        iva: 21
+      - patron: "PAN|MOLLETE|BARRA"
+        iva: 4
+      - patron: "ACEITE|LECHE|HUEVO"
+        iva: 4
+      - patron: "FRUTA|VERDURA|HORTALIZA"
+        iva: 4
+    
+    # Líneas a ignorar (cabeceras, totales, etc.)
+    ignorar_si_contiene:
+      - "TOTAL"
+      - "SUBTOTAL"
+      - "BASE IMPONIBLE"
+      - "IVA"
+      - "Albarán"
+      - "Lote:"
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # TRATAMIENTO DE PORTES
+  # ─────────────────────────────────────────────────────────────────────────
+  portes:
+    modo: "prorratear"                    # prorratear | linea_separada | ignorar
+    patron: 'PORTES?\s+([\d,]+)'
+    iva: 21
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # DESCUENTOS
+  # ─────────────────────────────────────────────────────────────────────────
+  descuentos:
+    modo: "prorratear"                    # prorratear | linea_separada | ignorar
+    patron: 'DESC(?:UENTO)?\s+([\d,]+)'
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # VALIDACIONES
+  # ─────────────────────────────────────────────────────────────────────────
+  validaciones:
+    cuadre_total:
+      activo: true
+      tolerancia: 0.02                    # € de diferencia permitida
+    
+    minimo_lineas:
+      activo: true
+      valor: 1                            # Alertar si hay menos líneas
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # NOTAS Y PARTICULARIDADES
+  # ─────────────────────────────────────────────────────────────────────────
+  notas: |
+    Añadir aquí cualquier particularidad del proveedor:
+    - Formatos especiales
+    - Problemas conocidos
+    - Casos edge detectados
+
+
+# =============================================================================
+# EJEMPLOS DE PATRONES COMUNES
+# =============================================================================
+#
+# Fecha DD/MM/YYYY:
+#   patron: '(\d{2}/\d{2}/\d{4})'
+#
+# Fecha DD-MM-YY:
+#   patron: '(\d{2}-\d{2}-\d{2})'
+#
+# CIF con letra:
+#   patron: '(?:CIF|NIF)[:\s]*([A-Z]\d{8})'
+#
+# Importe europeo (1.234,56):
+#   patron: '([\d.]+,\d{2})'
+#
+# Código producto alfanumérico:
+#   patron: '([A-Z]{2,4}\d{3,6})'
+#
+# Línea completa con todo pegado:
+#   patron: '(\d+,\d{2})(\d+,\d{2})([A-Z]+)'  # importe+cantidad+codigo
+#
+# =============================================================================
