@@ -1,0 +1,115 @@
+Archivo: DiccionarioProveedoresCategoria.xlsx
+Filas reglas: 681
+Categorias hoja: 153
+
+ERRORES (108):
+  - Fila 249: campos vacíos en Proveedor/ArticuloPattern/Categoria
+  - Fila 250: campos vacíos en Proveedor/ArticuloPattern/Categoria
+  - Fila 251: campos vacíos en Proveedor/ArticuloPattern/Categoria
+  - Fila 252: campos vacíos en Proveedor/ArticuloPattern/Categoria
+  - Fila 253: campos vacíos en Proveedor/ArticuloPattern/Categoria
+  - Fila 254: campos vacíos en Proveedor/ArticuloPattern/Categoria
+  - Fila 634: campos vacíos en Proveedor/ArticuloPattern/Categoria
+  - Fila 635: campos vacíos en Proveedor/ArticuloPattern/Categoria
+  - Fila 636: campos vacíos en Proveedor/ArticuloPattern/Categoria
+  - Fila 637: campos vacíos en Proveedor/ArticuloPattern/Categoria
+  - Fila 638: campos vacíos en Proveedor/ArticuloPattern/Categoria
+  - Fila 639: campos vacíos en Proveedor/ArticuloPattern/Categoria
+  - Fila 634: Categoria '' no está en hoja CATEGORIAS
+  - Fila 635: Categoria '' no está en hoja CATEGORIAS
+  - Fila 636: Categoria '' no está en hoja CATEGORIAS
+  - Fila 637: Categoria '' no está en hoja CATEGORIAS
+  - Fila 638: Categoria '' no está en hoja CATEGORIAS
+  - Fila 639: Categoria '' no está en hoja CATEGORIAS
+  - [STRICT] Duplicado activo: Proveedor='ALCAMPO', Patron='BOLSA 50X60CM', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='ALCAMPO', Patron='BOLSA 50X60CM', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='ALCAMPO', Patron='HUEVOS CAMPEROS', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='ALCAMPO', Patron='HUEVOS CAMPEROS', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='ALCAMPO', Patron='PATATA DE COCER', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='ALCAMPO', Patron='PATATA DE COCER', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='EL CARRASCAL', Patron='', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='EL CARRASCAL', Patron='', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='EL CARRASCAL', Patron='', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='EL CARRASCAL', Patron='', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='EL CARRASCAL', Patron='', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='EL CARRASCAL', Patron='', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='FRANCISCO GUERRA', Patron='ALCAPARRON CUBO PEQUEÑO', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='FRANCISCO GUERRA', Patron='ALCAPARRON CUBO PEQUEÑO', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MAKRO', Patron='SSA VALENTINA E.NEGRA 370ML', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MAKRO', Patron='SSA VALENTINA E.AMARILLA 370ML', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MAKRO', Patron='B.BAS AZU AUT MPRO 30L 4X15UD', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MAKRO', Patron='BROCHETA BAMB 15CM MPRO 200UX5', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MAKRO', Patron='GASTOS NO PERTENECIENTES A TASCA', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MAKRO', Patron='GASTOS NO PERTENECIENTES A TASCA', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MAKRO', Patron='GASTOS NO PERTENECIENTES A TASCA', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MAKRO', Patron='SSA VALENTINA E.NEGRA 370ML', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MAKRO', Patron='SSA VALENTINA E.AMARILLA 370ML', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MAKRO', Patron='B.BAS AZU AUT MPRO 30L 4X15UD', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MAKRO', Patron='BROCHETA BAMB 15CM MPRO 200UX5', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MAKRO', Patron='Portes', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MAKRO', Patron='Portes', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MARITA', Patron='PATÉ DE ATÚN PICANTE', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MARITA', Patron='PATÉ DE ATÚN PICANTE', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MARITA', Patron='PICOS JAMÓN 120G', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MARITA', Patron='PICOS JAMÓN 120G', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MARITA', Patron='VINAGRE BADIA VERMUT 250ML', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MARITA', Patron='VINAGRE BADIA VERMUT 250ML', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MIGUEZ CAL', Patron='FP-5 LIMPIADOR LIMON BIOALCOHOL GARRAFA 5 L', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='MIGUEZ CAL', Patron='FP-5 LIMPIADOR LIMON BIOALCOHOL GARRAFA 5 L', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='BODEGAS MUNOZ MARTIN', Patron='R CAJA 6 BOT. VIÑA JESUSA TINTO', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Duplicado activo: Proveedor='BODEGAS MUNOZ MARTIN', Patron='R CAJA 6 BOT. VIÑA JESUSA TINTO', Tipo='SUBSTR' (revisar Prioridad/Activa)
+  - [STRICT] Solape SUBSTR en 'ALCAMPO': 'BOLSA 50X60CM' contiene 'BOLSA 50X60CM' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'ALCAMPO': 'HUEVOS CAMPEROS' contiene 'HUEVOS CAMPEROS' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'ALCAMPO': 'PATATA DE COCER' contiene 'PATATA DE COCER' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'BM': 'ACT.KEL PICUAL VIRGEN EXTRA*' contiene 'ACT.KEL PICUAL VIRGEN EXTRA' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'BM': 'ACT.KOIPESOL GIRASOL BT.1L *' contiene 'ACT.KOIPESOL GIRASOL BT.1L' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'BM': 'ACT.KOIPESOL GIRASOL BT.750M' contiene 'ACT.KOIPESOL GIRASOL BT.750' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'BM': 'GELATINA BM LIMON 8 PORC' contiene 'LIMON' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'BM': 'JAMON DUROC HOGUERA GR CENTR' contiene 'JAMON DUROC HOGUERA GR CENT' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'BM': 'LIMON MALLA 1KG' contiene 'LIMON' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'BM': 'LIMON SIN SEMILLAS MALLA 750' contiene 'LIMON' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'BM': 'LIMONADA VIANATURE 750ML' contiene 'LIMON' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'BM': 'QUESO LA COFRADIA D.O.IBORES' contiene 'QUESO LA COFRADIA D.O.IBORE' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'BM': 'SARDINA ALBO PICANTE L/120G*' contiene 'SARDINA ALBO PICANTE L/120G' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'BM': 'ZUMO VIANATURE DETOX 750ML *' contiene 'ZUMO VIANATURE DETOX 750ML' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'BODEGAS MUNOZ MARTIN': 'R CAJA 6 BOT. VIÑA JESUSA TINTO' contiene 'R CAJA 6 BOT. VIÑA JESUSA TINTO' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'CVNE': 'VALSANGIACOMO VERMUT VITTORE ROJO B' contiene 'VALSANGIACOMO VERMUT VITTORE' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'EMJAMESA': 'LOMITO IBERICO BELLOTA' contiene 'LOMITO IBERICO' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'FRANCISCO GUERRA': 'ALCAPARRON CUBO PEQUEÑO' contiene 'ALCAPARRON CUBO PEQUEÑO' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MAKRO': 'SSA VALENTINA E.NEGRA 370ML' contiene 'SSA VALENTINA E.NEGRA 370ML' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MAKRO': 'SSA VALENTINA E.AMARILLA 370ML' contiene 'SSA VALENTINA E.AMARILLA 370ML' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MAKRO': 'B.BAS AZU AUT MPRO 30L 4X15UD' contiene 'B.BAS AZU AUT MPRO 30L 4X15UD' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MAKRO': 'BROCHETA BAMB 15CM MPRO 200UX5' contiene 'BROCHETA BAMB 15CM MPRO 200UX5' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MAKRO': 'GASTOS NO PERTENECIENTES A TASCA' contiene 'GASTOS NO PERTENECIENTES A TASCA' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MAKRO': 'GASTOS NO PERTENECIENTES A TASCA' contiene 'GASTOS NO PERTENECIENTES A TASCA' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MAKRO': 'GASTOS NO PERTENECIENTES A TASCA' contiene 'GASTOS NO PERTENECIENTES A TASCA' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MAKRO': 'Portes' contiene 'Portes' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MARITA': 'BADIA VINAGRE BALSAMICO AGRIDULCE VERMUT' contiene 'BADIA VINAGRE BALSAMICO' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MARITA': 'LA RUSTICA TORREZNOS DE SORIA 200GR' contiene 'TORREZNOS DE SORIA 200GR' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MARITA': 'LUÇAS PATÉ DE ATÚN 75GR' contiene 'PATÉ DE ATÚN' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MARITA': 'LUÇAS PATÉ DE ATÚN PICANTE 75GR' contiene 'PATÉ DE ATÚN' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MARITA': 'LUÇAS PATÉ DE ATÚN PICANTE 75GR' contiene 'PATÉ DE ATÚN PICANTE' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MARITA': 'LUÇAS PATÉ DE ATÚN PICANTE 75GR' contiene 'PATÉ DE ATÚN PICANTE' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MARITA': 'LUÇAS PATÉ DE SARDINA PICANTE 75 GR' contiene 'PATÉ DE SARDINA' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MARITA': 'LUÇAS PATÉ DE SARDINA PICANTE 75 GR' contiene 'PATÉ DE SARDINA PICANTE' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MARITA': 'LUÇAS PATÉ DE SARDINAS 75GR - L094M' contiene 'PATÉ DE SARDINA' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MARITA': 'PATÉ DE ATÚN PICANTE' contiene 'PATÉ DE ATÚN' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MARITA': 'PATÉ DE ATÚN PICANTE' contiene 'PATÉ DE ATÚN' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MARITA': 'PATÉ DE ATÚN PICANTE' contiene 'PATÉ DE ATÚN PICANTE' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MARITA': 'PATÉ DE SARDINA PICANTE' contiene 'PATÉ DE SARDINA' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MARITA': 'PICOS JAMÓN 120G' contiene 'PICOS JAMÓN 120G' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MARITA': 'VINAGRE BADIA VERMUT 250ML' contiene 'VINAGRE BADIA VERMUT 250ML' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'MIGUEZ CAL': 'FP-5 LIMPIADOR LIMON BIOALCOHOL GARRAFA 5 L' contiene 'FP-5 LIMPIADOR LIMON BIOALCOHOL GARRAFA 5 L' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'QUESERIA NAVAS': 'QUESO GRAN RESERVA 10 MESES' contiene 'QUESO GRAN RESERVA' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'QUESERIA NAVAS': 'QUESO DE OVEJA SELECCION ORO 15 MESES' contiene 'QUESO DE OVEJA SELECCION ORO 15 MESE' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'SABORES PATERNA': '25CHICHARRON ESPECIAL' contiene 'CHICHARRON ESPECIAL' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'SABORES PATERNA': '5CABEZA LOMO MECHADA SAB' contiene 'CABEZA LOMO MECHADA SAB' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'SABORES PATERNA': '5LOMO EN MANTECA VACIO 1KG' contiene 'LOMO EN MANTECA VACIO 1KG' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'SERRIN NO CHAO': 'Mariñeiras AOVE ECO 180g' contiene 'Mariñeiras AOVE ECO' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'SERRIN NO CHAO': 'Mariñeiras AOVE ECO canapé 100g' contiene 'Mariñeiras AOVE ECO' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'SERRIN NO CHAO': 'Mariñeiras mantequilla 180g' contiene 'Mariñeiras mantequilla' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'SERRIN NO CHAO': 'Mariñeiras mantequilla 200g' contiene 'Mariñeiras mantequilla' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'ZUCCA': 'Eenvio  Frio 13:30' contiene 'Eenvio  Frio' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+  - [STRICT] Solape SUBSTR en 'ZUCCA': 'Scamorza Ahumada Kg' contiene 'Scamorza Ahumada' pero Prioridad 10 ≥ 10 (ajustar Prioridad)
+
+WARNINGS (0):

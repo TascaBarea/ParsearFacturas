@@ -1,0 +1,25 @@
+extractor:
+  proveedor: "GRUPO CAMPERO"
+  match_if_contains:
+    - "GRUPO TERRITORIO CAMPERO"
+  campos:
+    #: "file[:4]"
+    FECHA:
+      buscar: '\d{1,2} de [A-Za-z]+ del \d{4}'
+      formatear_como: "DD-MM-YY"
+    REF:
+      buscar: 'NÚMERO DE FACTURA:\s*(\d+)'
+    PROVEEDOR:
+      fijo: "GRUPO CAMPERO"
+    ARTÍCULO:
+      buscar_linea: "PATATAS FRITAS ARTESANAS"
+    DESCRIPCIÓN:
+      condiciones:
+        - si_contiene: "ACEITE DE OLIVA"
+          valor: "ACEITE DE OLIVA"
+        - por_defecto: "PATATAS FRITAS"
+    TIPO IVA:
+      buscar: "IVA.*?([0-9]{1,2}%)"
+    BASE:
+      buscar: 'BASE:\s*([\d,.]+) €'
+      formato: "europeo"

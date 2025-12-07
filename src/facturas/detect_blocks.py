@@ -1,4 +1,4 @@
-# src/facturas/detect_blocks.py
+﻿# src/facturas/detect_blocks.py
 from __future__ import annotations
 import re
 from typing import Dict, List, Optional
@@ -14,12 +14,12 @@ except Exception as _e1:
         PdfReader = None
         _PDF_IMPORT_ERROR = (_e1, _e2)
 
-# nº europeo: 1.234,56 o 12,34
+# nÂº europeo: 1.234,56 o 12,34
 EU_MONEY_RX = re.compile(r"\b\d{1,3}(?:\.\d{3})*,\d{2}\b")
 
 HEADER_HINTS = [
-    "factura", "cliente", "proveedor", "fecha", "albarán", "albaran",
-    "nº", "numero", "artículo", "articulo", "descripción", "descripcion",
+    "factura", "cliente", "proveedor", "fecha", "albarÃ¡n", "albaran",
+    "nÂº", "numero", "artÃ­culo", "articulo", "descripciÃ³n", "descripcion",
     "cantidad", "precio", "total", "iva", "base imponible"
 ]
 
@@ -111,3 +111,4 @@ def detect_blocks_minimal(pdf_path: str, provider: Optional[str] = None) -> Dict
             out.append(c)
 
     return {"lines_text": out}
+

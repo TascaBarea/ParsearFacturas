@@ -1,0 +1,61 @@
+name: CROQUELLANAS (PRODUCTOS ADELL, S.L.)
+pattern: 'CROQUELLANAS|PRODUCTOS ADELL, S\\.L\\.'
+ref:
+  regex: 'A/\\d{1,4}'
+  label: "Nº Factura"
+  area: "top"
+date:
+  regex: '\\d{2}/\\d{2}/\\d{4}'
+  transform: "%d/%m/%Y => %d-%m-%y"
+  label: "Fecha Referencia"
+  area: "top"
+provider: "CROQUELLANAS"
+summary:
+  base_imponible:
+    regex: 'Base Imponible\\s*([0-9]+[\\.,][0-9]{2})'
+  tipo_iva:
+    regex: 'IVA\\s*\\n?\\s*([0-9]{1,2}[\\.,]?[0-9]{0,2})%'
+    default: "10%"
+  subtotal:
+    regex: 'Importe IVA\\s*([0-9]+[\\.,][0-9]{2})'
+    compute_if_missing: "BI * tipo_iva/100"
+
+category_map:
+  - match: 'MOUSSE ALCACHOFA\\s*110\\s*GR'
+    descripcion: "CONSERVAS VEGETALES"
+  - match: 'ALCACHOFAS EN ACEITE\\s*330\\s*GR'
+    descripcion: "CONSERVAS VEGETALES"
+  - match: 'CIERVO AL BRANDY TRUFADO\\s*380\\s*GR'
+    descripcion: "CONSERVAS MONTAÑA"
+  - match: 'MOUSSE QUESO\\s*110\\s*GR'
+    descripcion: "CONSERVAS"
+  - match: 'MOUSSE SETAS\\s*110\\s*GR'
+    descripcion: "CONSERVAS VEGETALES"
+  - match: 'FRITO MIXTO DE CERDO\\s*390\\s*GR'
+    descripcion: "CONSERVAS MONTAÑA"
+  - match: 'PAT[ÉE]\\s*CECINA\\s*110\\s*GR'
+    descripcion: "CONSERVAS MONTAÑA"
+  - match: ".*"
+    descripcion: "PENDIENTE"
+
+iva:
+  tipo: "10%"
+
+duplicates:
+  check: true
+  key: "Nº Factura"
+  action: "alerta"
+
+notes:
+  diccionario_auxiliar: 'C:\\_ARCHIVOS\\TRABAJO\\Facturas\\ParsearFacturas-main\\DiccionarioProveedoresCategoria.xlsx'
+  matching: "parcial (regex contains)"
+
+output:
+  format: TSV
+  columns:
+    - "Proveedor"
+    - "Fecha"
+    - "Número de Factura"
+    - "B.I. (€)"
+    - "Tipo de IVA"
+    - "Subtotal (€)"

@@ -1,0 +1,55 @@
+provider: JULIO GARCIA VIVAS
+name: JULIO GARCIA VIVAS
+source: OCR
+
+# No se extraen líneas del cuerpo: generamos 2 filas desde el total base.
+columns:
+  - name: articulo
+    synthetic: true
+  - name: descripcion
+    synthetic: true
+  - name: base
+    amount: true
+  - name: tipo_iva
+    synthetic: true
+
+anchors:
+  fecha:
+    find: ["Fecha", "Fecha factura", "Fecha Factura"]
+    direction: "right"
+    regex: "\\b\\d{2}/\\d{2}/\\d{4}\\b"
+    transform: "ddmmaaaa_to_ddmmaa"
+
+  numero_factura:
+    find: ["Factura", "Nº", "Nº Factura", "N° Factura"]
+    direction: "right"
+    # En los PDFs: 8 dígitos (ej. 28629008 / 28624601)
+    regex: "\\b\\d{8}\\b"
+
+  total_base:
+    find: ["TOTAL BASE IMPONIBLE", "Total Base Imponible"]
+    direction: "right"
+    # Formato europeo con coma decimal (admite miles opcionales)
+    regex: "\\b\\d{1,3}(?:\\.\\d{3})*,\\d{2}\\b"
+
+synthesis:
+  from_anchor: total_base
+  rounding:
+    mode: "residual"         # 1ª línea redondea, 2ª = total - 1ª (garantiza suma exacta)
+    decimals: 2
+  lines:
+    - articulo: "LIMON"
+      descripcion: "LIMON"
+      base_percent: 50
+      tipo_iva: 4
+    - articulo: "GENERICO PARA VERDURAS"
+      descripcion: "GENERICO PARA VERDURAS"
+      base_percent: 50
+      tipo_iva: 4
+
+filters:
+  require_amount_column: base
+
+precedence:
+  use_dictionary: false
+  force_pattern_over_dictionary: true

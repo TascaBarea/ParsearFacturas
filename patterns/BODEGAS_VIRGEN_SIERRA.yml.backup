@@ -1,0 +1,45 @@
+name: VIRGEN DE LA SIERRA
+pattern: "BODEGA VIRGEN DE LA SIERRA"
+ref:
+  regex: 'FV\\d{8}'
+  area: "top-right"
+date:
+  regex: '\\d{2}-\\d{2}-\\d{4}'
+  label: "Fecha"
+  area: "top-right"
+provider: "BODEGAS VIRGEN DE LA SIERRA"
+lines:
+  start_after: "Albar\u00e1n N\u00ba"
+  stop_before: "Total bruto"
+  match: true
+  columns:
+    - name: ARTICULO
+      match: "C\\.P\\. VENDIMIA SELECCIONADA 202\\d|ALBADA TINTO 202\\d"
+
+    - name: UNIDADES
+      regex: '\\d{1,2},\\d{2}'
+    - name: PRECIO
+      regex: '\\d{1,3},\\d{2}'
+    - name: LOTE
+      match: "LOTE \\d{5}"
+category_map:
+  - match: "C\.P\. VENDIMIA SELECCIONADA.*"
+    descripcion: "VINO GARNACHA"
+  - match: "ALBADA TINTO.*"
+    descripcion: "VINO GARNACHA"
+iva:
+  tipo: "21%"
+portes:
+  match: "PORTES TRANSPORTE"
+  distribuir: true
+output:
+  format: TSV
+  columns:
+    - "#"
+    - "FECHA"
+    - "REF"
+    - "PROVEEDOR"
+    - "ARTÍCULO"
+    - "DESCRIPCIÓN"
+    - "TIPO IVA"
+    - "BASE"

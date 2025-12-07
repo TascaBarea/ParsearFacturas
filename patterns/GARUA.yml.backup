@@ -1,0 +1,43 @@
+name: GARUA
+pattern: "GAR\u00daA INTERVENCI\u00d3N EDUCATIVA"
+ref:
+  regex: 'ECM-\d{2}-\d{3}'
+  label: "Factura n\u00ba"
+  area: "bottom"
+date:
+  regex: '\d{1,2} de [a-zA-Z]+ de \d{4}'
+  transform: "%d de %B de %Y => %d-%m-%y"
+  area: "bottom"
+provider: "GARUA"
+lines:
+  start_after: "CONCEPTO IMPORTE"
+  stop_before: "Base imponible"
+  match: true
+  columns:
+    - name: ARTICULO
+      match: "Venta de productos ecol\u00f3gicos.*"
+category_logic:
+  base_split:
+    - descripcion: "LIMON"
+      ratio: 0.70
+    - descripcion: "GENERICO PARA VERDURAS"
+      ratio: 0.30
+iva:
+  match:
+    - regex: "IVA 0%"
+      tipo: "0%"
+    - regex: "IVA 2%"
+      tipo: "2%"
+    - regex: "IVA 4%"
+      tipo: "4%"
+output:
+  format: TSV
+  columns:
+    - "#"
+    - "FECHA"
+    - "REF"
+    - "PROVEEDOR"
+    - "ARTÍCULO"
+    - "DESCRIPCIÓN"
+    - "TIPO IVA"
+    - "BASE"

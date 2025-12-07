@@ -1,0 +1,27 @@
+[2153 2T24 0613 COAM SON 2 FACTURAS EF.pdf] returncode=1
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\_ARCHIVOS\TRABAJO\Facturas\ParsearFacturas-main\src\facturas\cli.py", line 324, in <module>
+    main()
+    ~~~~^^
+  File "C:\_ARCHIVOS\TRABAJO\Facturas\ParsearFacturas-main\src\facturas\cli.py", line 234, in main
+    header = scan_pdf(args.pdf)
+  File "C:\_ARCHIVOS\TRABAJO\Facturas\ParsearFacturas-main\src\facturas\cli.py", line 199, in scan_pdf
+    txt = _read_first_page_text(pdf_path)
+  File "C:\_ARCHIVOS\TRABAJO\Facturas\ParsearFacturas-main\src\facturas\cli.py", line 109, in _read_first_page_text
+    reader = PdfReader(pdf_path)
+  File "C:\Users\jaime\AppData\Local\Programs\Python\Python313\Lib\site-packages\PyPDF2\_reader.py", line 339, in __init__
+    self._encryption.verify(pwd) == PasswordType.NOT_DECRYPTED
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\jaime\AppData\Local\Programs\Python\Python313\Lib\site-packages\PyPDF2\_encryption.py", line 785, in verify
+    key, rc = self.verify_v4(pwd) if self.algV <= 4 else self.verify_v5(pwd)
+                                                         ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\jaime\AppData\Local\Programs\Python\Python313\Lib\site-packages\PyPDF2\_encryption.py", line 841, in verify_v5
+    key = AlgV5.verify_user_password(self.algR, password, u_entry, ue_entry)
+  File "C:\Users\jaime\AppData\Local\Programs\Python\Python313\Lib\site-packages\PyPDF2\_encryption.py", line 549, in verify_user_password
+    return AES_CBC_decrypt(tmp_key, iv, ue_value)
+  File "C:\Users\jaime\AppData\Local\Programs\Python\Python313\Lib\site-packages\PyPDF2\_encryption.py", line 165, in AES_CBC_decrypt
+    raise DependencyError("PyCryptodome is required for AES algorithm")
+PyPDF2.errors.DependencyError: PyCryptodome is required for AES algorithm
+

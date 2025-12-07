@@ -1,0 +1,61 @@
+name: BERZAL HERMANOS
+pattern: "BERZAL HERMANOS"
+ref:
+  # Número que aparece bajo la palabra FACTURA en cabecera
+  regex: "(?<=FACTURA\s*[\r\n]+)\d{2,5}"
+  label: "FACTURA"
+  area: "top"
+date:
+  regex: "\d{2}/\d{2}/\d{2}"
+  transform: "%d/%m/%y => %d-%m-%y"
+  label: "FECHA"
+  area: "top"
+provider: "BERZAL HNOS"
+lines:
+  start_after: "CONCEPTO"
+  stop_before: "TOTAL FACTURA"
+  match: true
+  columns:
+    - name: ARTICULO
+      from: "CONCEPTO"
+      match: ".*"
+    - name: BASE
+      from: "IMPORTE"
+      regex: "\d{1,5}[\.,]\d{2}"
+category_map:
+  # Coincidencia PARCIAL (regex) -> categoría exacta según tu tabla
+  - match: "Mantequilla\s*\"Los Doce Linajes de Soria\"\s*natural\s*250\s*grs"
+    descripcion: "DESPENSA"
+  - match: "Mantequilla\s*\"Los Doce Linajes de Soria\"\s*salada\s*250\s*grs"
+    descripcion: "DESPENSA"
+  - match: "Pate\s+al\s+Moscatel\s*130\s*grs\s*116"
+    descripcion: "CONSERVAS MONTAÑA"
+  - match: "Mantequilla\s*\"Cañada Real\"\s*dulce\s*120\s*grs"
+    descripcion: "DESPENSA"
+  - match: "Mousse\s+de\s+Oca\s+con\s+Hongos\s+Rollo\s*1,5\s*kg"
+    descripcion: "CONSERVAS MONTAÑA"
+  - match: "Arroz\s+con\s+Leche\s*140\s*grs"
+    descripcion: "DESPENSA"
+  - match: "Flan\s+de\s+Huevo\s*\"Cañada Real\"\s*2x110\s*grs"
+    descripcion: "DESPENSA"
+  - match: "Trufa\s+Rallada\s*\"Arotz\"\s*50\s*grs"
+    descripcion: "CONSERVAS VEGETALES"
+  # Fallback: si no coincide, marcar como PENDIENTE
+  - match: ".*"
+    descripcion: "PENDIENTE"
+iva:
+  tipo: "10%"
+notes:
+  diccionario_auxiliar: "C:\\_ARCHIVOS\\TRABAJO\\Facturas\\ParsearFacturas-main\\DiccionarioProveedoresCategoria.xlsx"
+  matching: "parcial (regex contains)"
+output:
+  format: TSV
+  columns:
+    - "#"
+    - "FECHA"
+    - "REF"
+    - "PROVEEDOR"
+    - "ARTÍCULO"
+    - "DESCRIPCIÓN"
+    - "TIPO IVA"
+    - "BASE"

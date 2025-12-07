@@ -1,0 +1,19 @@
+proveedor: JIMELUZ
+aliases: [JIMELUZ]
+
+header:
+  fecha_regex:
+    - '(?i)fecha[:\s]*([0-3]?\d[/-][01]?\d[/-]\d{2,4})'
+  ref_regex:
+    - '(?i)factura\s*N[\u00BAo]?\s*[:\-]?\s*([A-Z0-9\-\/\.]{4,})'
+    - '(?i)factura[:\s\-]*([A-Z0-9\-\/\.]{4,})'
+
+lineas:
+  start_after: "(?i)^\\s*CANT\\.?\\s+DESCRIPCI[oÓ]N\\s+%\\s*IVA\\s+IMPORTE"
+  stop_before: "(?i)^\\s*TOTAL\\s+(COMPRA|FACTURA)"
+  regex_linea: >
+    ^\s*(?P<Cantidad>\d+)\s+
+    (?P<Descripcion>.+?)\s+
+    (?P<PorcIVA>\d{1,2},\d{2})\s+
+    (?P<Importe>\d{1,3}(?:[.,]\d{2}))\s*$
+

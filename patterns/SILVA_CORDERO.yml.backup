@@ -1,0 +1,88 @@
+extractor:
+  proveedor: "SILVA CORDERO"
+  match_if_contains:
+    - "SILVA CORDERO"
+    - "FACTURA"
+
+  campos:
+    #: "file[:4]"
+    FECHA:
+      buscar: "(\d{2}/\d{2}/\d{4})"
+      contexto: "Fecha"
+      formatear_como: "DD-MM-YY"
+    NUM:
+      buscar: "F(\d{2})/(\d{4})"
+      formatear_como: "F\1/\2"
+    PROVEEDOR:
+      fijo: "SILVA CORDERO"
+
+    # --- CUERPO DE LÍNEAS ---
+    ARTICULO:
+      buscar_lineas:
+        ignorar_si_empieza_con:
+          - "Albarán"
+        patrones:
+          - "^\s*(?:[A-Z0-9_-]{2,}\s+)?(?P<desc>[^\t\n]+?)\s+\d+[.,]?\d*\s+[0-9]+[.,][0-9]{2}\s+(?P<importe>[0-9]+[.,][0-9]{2})\s*$"
+        campos:
+          ARTICULO: "desc"
+          BASE: "importe"
+        multilinea: true
+        repetir_sin_cabecera: true
+    CATEGORIA:
+      fijo: "QUESO PARA TABLA"
+
+    # --- TIPO DE IVA (detección real desde el cuadro de IVA) ---
+    TIPO IVA:
+      detectar_desde_tabla:
+        encabezado: "I.V.A."
+        columnas: ["Base", "% IVA", "Cuota IVA"]
+        estrategia: "usar % IVA distinto de 21 para productos; si hay varios, mapear por base proporcional"
+      fallback_por_fecha:
+        antes_de: "01-01-25"
+        valor_antes: 0
+        valor_despues_o_igual: 4
+      salida: "numero"   # 4, 2, 21 ... sin símbolo
+
+    # --- TRANSPORTE EN CUADRO DE IVA (para absorción proporcional) ---
+    TRANSPORTE_BASE_21:
+      buscar_tabla:
+        encabezado: "I.V.A."
+        columnas: ["Base", "% IVA", "Cuota IVA"]
+        fila_condicion: "% IVA == 21"
+        devolver: "Base"
+      formato: "europeo"
+    TRANSPORTE_CUOTA_21:
+      buscar_tabla:
+        encabezado: "I.V.A."
+        columnas: ["Base", "% IVA", "Cuota IVA"]
+        fila_condicion: "% IVA == 21"
+        devolver: "Cuota IVA"
+      formato: "europeo"
+
+    TOTAL_FACTURA:
+      buscar: "TOTAL\s*FACTURA\s*([0-9.,]+)"
+      formato: "europeo"
+
+  ajustes:
+    - nombre: "Absorber y repartir TRANSPORTE (21%) respetando IVA de cada artículo"
+      tipo: "absorber_transporte_proporcional"
+      parametros:
+        transporte_bruto: "TRANSPORTE_BASE_21 + TRANSPORTE_CUOTA_21"
+        filtrar_lineas: "ARTICULO !~ 'TRANSPORTE'"
+        ponderar_por: "BASE"
+        modo_respetar_iva: true   # divide la parte de transporte por (1+IVA_linea) antes de sumarla a BASE
+        eliminar_lineas_transporte: true
+        redondeo_linea: 0.01
+
+  validaciones:
+    - nombre: "Cuadre total con absorción de transporte"
+      tipo: "comparar_suma_base_mas_iva_con_total"
+      tolerancia: 0.01
+
+  salidas:
+    columnas_tsv: ["#", "FECHA", "NUM", "PROVEEDOR", "ARTICULO", "CATEGORIA", "TIPO IVA", "BASE"]
+    formatos:
+      BASE: "#,##0.00"
+    ocultar_lineas:
+      - "ARTICULO ~ 'TRANSPORTE'"
+

@@ -1,0 +1,35 @@
+name: LA BARRA DULCE
+pattern: "LA BARRA DULCE"
+ref:
+  regex: '(?<=N\u00ba de factura\s)\d{3}'
+  area: "top"
+date:
+  regex: '\d{2}\.\d{2}\.\d{4}'
+  transform: "%d.%m.%Y => %d-%m-%y"
+  label: "Fecha"
+  area: "top-right"
+provider: "LA BARRA DULCE"
+lines:
+  start_after: "CATEGORIA"
+  match: true
+  columns:
+    - name: ARTICULO
+      match: ".*"
+    - name: BASE
+      regex: '\d{1,4},\d{2}'
+category_map:
+  - match: ".*"
+    descripcion: "DULCES"
+iva:
+  tipo: "10%"
+output:
+  format: TSV
+  columns:
+    - "#"
+    - "FECHA"
+    - "REF"
+    - "PROVEEDOR"
+    - "ARTÍCULO"
+    - "DESCRIPCIÓN"
+    - "TIPO IVA"
+    - "BASE"

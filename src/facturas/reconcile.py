@@ -1,4 +1,4 @@
-from decimal import Decimal, ROUND_HALF_UP
+﻿from decimal import Decimal, ROUND_HALF_UP
 from typing import List, Tuple, Optional
 import re
 
@@ -41,3 +41,4 @@ def reconciliar_totales(bases: List[str], total_con_iva: str, tipo_ivas: List[in
             return (ajustadas, "AJUSTADO")
 
     return (bases, "DESCUDRE_GRAVE")
+

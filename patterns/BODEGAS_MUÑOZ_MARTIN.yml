@@ -1,0 +1,37 @@
+proveedor: BODEGAS MUÑOZ MARTIN
+match:
+  nombre: "BODEGAS MUÑOZ MARTIN"
+  contiene: ["Viña Jesusa", "Pecado Original", "Bag in Box", "Vermouth"]
+
+campos:
+  fecha:
+    regex: 'Fecha:\s*(\d{2}/\d{2}/\d{4})'
+    formato: "DD-MM-YY"
+
+  ref:
+    regex: 'Número:\s*(\w{3}\d{5})'
+
+  tipo_iva:
+    valor: "21%"
+
+lineas:
+  inicio: "Descripción"
+  fin: "Forma pago"
+  articulo_columna: "Descripción"
+  base:
+    fuente: "pie_factura"
+    campo: "Base Imponible"
+    repartir_portes: true
+    criterio: "proporcional"
+  clasificacion:
+    diccionario:
+      "VIÑA JESUSA": "VINO TEMPRANILLO"
+      "PECADO ORIGINAL": "VINO TINTO GENERICO"
+      "VERMOUTH": "VERMUT BAG IN BOX 5L"
+
+notas:
+  - La base imponible se toma de la sección final de la factura.
+  - Si hay solo un artículo, los portes se suman directamente a esa línea.
+  - Si hay más de un artículo, los portes se reparten proporcionalmente.
+  - IVA fijo 21%, categoría según diccionario por palabras clave en ARTICULO.
+  - Formato de salida para TSV: fecha en DD-MM-AA, con strip() aplicado a todos los campos textuales.
