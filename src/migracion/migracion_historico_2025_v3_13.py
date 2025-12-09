@@ -1,9 +1,40 @@
 #!/usr/bin/env python3
 """
-MIGRACIÓN HISTÓRICO 2025 - v3.11
+MIGRACIÓN HISTÓRICO 2025 - v3.13
 ================================
 Extrae líneas detalladas de facturas, categoriza artículos,
 prorratrea gastos y descuentos, y actualiza maestros.
+
+v3.13 - Añadidos 6 nuevos extractores:
+      - PRODUCTOS ADELL / Croquellanas (conservas gourmet)
+        CIF: B12711636, IVA: 10%, IBAN: ES62 3058 7413 2127 2000 8367
+      - ECOFICUS (higos ecológicos)
+        CIF: B10214021, IVA: 10%, IBAN: ES23 2103 7136 4700 3002 4378
+      - QUESOS ROYCA / Comercial Royca (quesos)
+        CIF: E06388631, IVA: 4%, categoría: QUESOS
+      - IBARRAKO PIPARRAK (guindillas)
+        CIF: F20532297, IVA: 10%, categoría fija: PIPARRAS
+        IBAN: ES69 2095 5081 9010 6181 7077
+      - ANA CABALLO VERMOUTH (vermuts)
+        CIF: B87925970, IVA: 21%, categoría fija: LICORES Y VERMUS
+        IBAN: ES75 2100 1360 2202 0006 0355
+      - MARTIN ABENZA / El Modesto (conservas artesanas)
+        NIF: 74305431K, IVA: 10%, categoría fija: CONSERVAS VEGETALES
+
+v3.12 - Añadido extractor TRUCCO COPIAS / Isaac Rodríguez Pacha (imprenta)
+      - NIF: 05247386M, IVA: 21%, categoría fija: GASTOS VARIOS
+      - Sin IBAN (pago por tarjeta)
+      - Añadido IBAN EMJAMESA: ES08 3016 0206 5221 8503 2527
+      - Añadido extractor LA BARRA DULCE (pastelería)
+      - CIF: B19981141, IVA: 10%, categoría fija: DULCES
+      - IBAN: ES76 2100 5606 4802 0017 4138
+      - Añadido extractor GRUPO TERRITORIO CAMPERO (patatas fritas)
+      - CIF: B16690141, IVA: 10%, categoría fija: PATATAS FRITAS APERITIVO
+      - Sin IBAN (pendiente)
+      - Añadido extractor ZUBELZU PIPARRAK (guindillas y mousse)
+      - CIF: B75079608, IVA: 10%
+      - Categorías: GUINDILLAS→PIPARRAS, MOUSSE PIPARRA→CONSERVAS VEGETALES
+      - IBAN: ES?? 3035 0141 82 1410019635 (formato parcial en factura)
 
 v3.11 - Añadido extractor MRM / Industrias Cárnicas MRM-2 (patés, mousses, salmón)
       - CIF: A80280845, IVA: 10%, IBAN: ES28 2100 8662 5702 0004 8824
@@ -151,7 +182,7 @@ PROVEEDORES_CONOCIDOS = {
     'FELISA': {'cif': 'B72113897', 'iban': 'ES68 0182 1076 9502 0169 3908'},
     'JAMONES BERNAL': {'cif': 'B67784231', 'iban': 'ES49 2100 7191 2902 0003 7620'},
     'BERNAL': {'cif': 'B67784231', 'iban': 'ES49 2100 7191 2902 0003 7620'},
-    'EMJAMESA': {'cif': 'B37352077', 'iban': ''},
+    'EMJAMESA': {'cif': 'B37352077', 'iban': 'ES08 3016 0206 5221 8503 2527'},
     'MAKRO': {'cif': 'A28647451', 'iban': ''},  # Pago tarjeta
     # Adeudos (no necesitan IBAN)
     'YOIGO': {'cif': 'A82528548', 'iban': ''},
@@ -182,6 +213,40 @@ PROVEEDORES_CONOCIDOS = {
     # v3.11 - DISBER / Grupo Disber
     'DISBER': {'cif': 'B46144424', 'iban': 'ES39 2100 8617 1502 0002 4610'},
     'GRUPO DISBER': {'cif': 'B46144424', 'iban': 'ES39 2100 8617 1502 0002 4610'},
+    # v3.12 - TRUCCO COPIAS / Isaac Rodríguez Pacha (imprenta) - sin IBAN (pago tarjeta)
+    'TRUCCO': {'cif': '05247386M', 'iban': ''},
+    'TRUCCO COPIAS': {'cif': '05247386M', 'iban': ''},
+    'ISAAC RODRIGUEZ': {'cif': '05247386M', 'iban': ''},
+    'ISAAC RODRIGUEZ PACHA': {'cif': '05247386M', 'iban': ''},
+    # v3.12 - LA BARRA DULCE (pastelería)
+    'LA BARRA DULCE': {'cif': 'B19981141', 'iban': 'ES76 2100 5606 4802 0017 4138'},
+    'BARRA DULCE': {'cif': 'B19981141', 'iban': 'ES76 2100 5606 4802 0017 4138'},
+    # v3.12 - GRUPO TERRITORIO CAMPERO (patatas fritas)
+    'GRUPO TERRITORIO CAMPERO': {'cif': 'B16690141', 'iban': ''},
+    'TERRITORIO CAMPERO': {'cif': 'B16690141', 'iban': ''},
+    'GRUPO CAMPERO': {'cif': 'B16690141', 'iban': ''},
+    # v3.12 - ZUBELZU PIPARRAK (guindillas y mousse)
+    'ZUBELZU': {'cif': 'B75079608', 'iban': ''},
+    'ZUBELZU PIPARRAK': {'cif': 'B75079608', 'iban': ''},
+    # v3.13 - PRODUCTOS ADELL / Croquellanas
+    'PRODUCTOS ADELL': {'cif': 'B12711636', 'iban': 'ES62 3058 7413 2127 2000 8367'},
+    'CROQUELLANAS': {'cif': 'B12711636', 'iban': 'ES62 3058 7413 2127 2000 8367'},
+    # v3.13 - ECOFICUS
+    'ECOFICUS': {'cif': 'B10214021', 'iban': 'ES23 2103 7136 4700 3002 4378'},
+    # v3.13 - QUESOS ROYCA / Comercial Royca
+    'QUESOS ROYCA': {'cif': 'E06388631', 'iban': ''},
+    'COMERCIAL ROYCA': {'cif': 'E06388631', 'iban': ''},
+    'ROYCA': {'cif': 'E06388631', 'iban': ''},
+    # v3.13 - IBARRAKO PIPARRAK
+    'IBARRAKO PIPARRAK': {'cif': 'F20532297', 'iban': 'ES69 2095 5081 9010 6181 7077'},
+    'IBARRAKO': {'cif': 'F20532297', 'iban': 'ES69 2095 5081 9010 6181 7077'},
+    # v3.13 - ANA CABALLO VERMOUTH
+    'ANA CABALLO': {'cif': 'B87925970', 'iban': 'ES75 2100 1360 2202 0006 0355'},
+    'ANA CABALLO VERMOUTH': {'cif': 'B87925970', 'iban': 'ES75 2100 1360 2202 0006 0355'},
+    # v3.13 - MARTIN ABENZA / El Modesto
+    'MARTIN ABENZA': {'cif': '74305431K', 'iban': ''},
+    'MARTIN ARBENZA': {'cif': '74305431K', 'iban': ''},
+    'EL MODESTO': {'cif': '74305431K', 'iban': ''},
 }
 
 
@@ -555,6 +620,86 @@ def extraer_fecha(texto: str, yaml_config: Optional[Dict] = None, proveedor: str
             d, m, y = patron.groups()
             return f"{d}-{m}-{y[-2:]}"
     
+    # v3.12 - TRUCCO: Fecha: DD/MM/YYYY
+    if 'TRUCCO' in proveedor_upper or 'ISAAC RODRIGUEZ' in proveedor_upper or '05247386M' in texto:
+        patron = re.search(r'Fecha:\s*(\d{2})/(\d{2})/(\d{4})', texto)
+        if patron:
+            d, m, y = patron.groups()
+            return f"{d}-{m}-{y[-2:]}"
+    
+    # v3.12 - LA BARRA DULCE: Fecha DD.MM.YYYY
+    if 'BARRA DULCE' in proveedor_upper or 'B19981141' in texto:
+        patron = re.search(r'Fecha\s*\n?\s*(\d{2})\.(\d{2})\.(\d{4})', texto)
+        if patron:
+            d, m, y = patron.groups()
+            return f"{d}-{m}-{y[-2:]}"
+    
+    # v3.12 - GRUPO TERRITORIO CAMPERO: "31 de Marzo del 2025"
+    if 'CAMPERO' in proveedor_upper or 'TERRITORIO' in proveedor_upper or 'B16690141' in texto:
+        meses = {'enero': '01', 'febrero': '02', 'marzo': '03', 'abril': '04',
+                 'mayo': '05', 'junio': '06', 'julio': '07', 'agosto': '08',
+                 'septiembre': '09', 'octubre': '10', 'noviembre': '11', 'diciembre': '12'}
+        patron = re.search(r'(\d{1,2})\s+de\s+(\w+)\s+del?\s+(\d{4})', texto, re.IGNORECASE)
+        if patron:
+            d, mes_texto, y = patron.groups()
+            m = meses.get(mes_texto.lower(), '00')
+            return f"{d.zfill(2)}-{m}-{y[-2:]}"
+    
+    # v3.12 - ZUBELZU: Fecha DD/MM/YY en cabecera
+    if 'ZUBELZU' in proveedor_upper or 'B75079608' in texto:
+        patron = re.search(r'B87760575\s+(\d{2})/(\d{2})/(\d{2})', texto)
+        if patron:
+            d, m, y = patron.groups()
+            return f"{d}-{m}-{y}"
+    
+    # v3.13 - PRODUCTOS ADELL: "Fecha: 07/04/2025" o "07/04/2025" después de Nº Factura
+    if 'ADELL' in proveedor_upper or 'CROQUELLANAS' in proveedor_upper or 'B12711636' in texto:
+        patron = re.search(r'Fecha[:\s]*(\d{2})/(\d{2})/(\d{4})', texto)
+        if patron:
+            d, m, y = patron.groups()
+            return f"{d}-{m}-{y[-2:]}"
+    
+    # v3.13 - ECOFICUS: "Fecha: 04/06/2025"
+    if 'ECOFICUS' in proveedor_upper or 'B10214021' in texto:
+        patron = re.search(r'Fecha:\s*(\d{2})/(\d{2})/(\d{4})', texto)
+        if patron:
+            d, m, y = patron.groups()
+            return f"{d}-{m}-{y[-2:]}"
+    
+    # v3.13 - QUESOS ROYCA: "FECHA: 31/05/2025"
+    if 'ROYCA' in proveedor_upper or 'E06388631' in texto:
+        patron = re.search(r'FECHA:\s*(\d{2})/(\d{2})/(\d{4})', texto)
+        if patron:
+            d, m, y = patron.groups()
+            return f"{d}-{m}-{y[-2:]}"
+    
+    # v3.13 - IBARRAKO PIPARRAK: "EGUNA / FECHA" seguido de fecha, o "Fecha Factura: DD/MM/YYYY"
+    if 'IBARRAKO' in proveedor_upper or 'F20532297' in texto:
+        # Formato nuevo: "20/5/2025" en cabecera
+        patron = re.search(r'EGUNA\s*/\s*FECHA\s*\n?\s*(\d{1,2})/(\d{1,2})/(\d{4})', texto)
+        if patron:
+            d, m, y = patron.groups()
+            return f"{d.zfill(2)}-{m.zfill(2)}-{y[-2:]}"
+        # Formato antiguo
+        patron = re.search(r'Fecha Factura:\s*(\d{2})/(\d{2})/(\d{4})', texto)
+        if patron:
+            d, m, y = patron.groups()
+            return f"{d}-{m}-{y[-2:]}"
+    
+    # v3.13 - ANA CABALLO: "Fecha: 18-09-2025"
+    if 'ANA CABALLO' in proveedor_upper or 'B87925970' in texto:
+        patron = re.search(r'Fecha:\s*(\d{2})-(\d{2})-(\d{4})', texto)
+        if patron:
+            d, m, y = patron.groups()
+            return f"{d}-{m}-{y[-2:]}"
+    
+    # v3.13 - MARTIN ABENZA: "Fecha Factura: DD/MM/YYYY"
+    if 'MARTIN' in proveedor_upper and ('ABENZA' in proveedor_upper or 'ARBENZA' in proveedor_upper) or 'MODESTO' in proveedor_upper or '74305431K' in texto:
+        patron = re.search(r'Fecha Factura:\s*(\d{2})/(\d{2})/(\d{4})', texto)
+        if patron:
+            d, m, y = patron.groups()
+            return f"{d}-{m}-{y[-2:]}"
+    
     # ===== PATRONES GENÉRICOS =====
     
     # Buscar con etiqueta FECHA (varios formatos)
@@ -777,6 +922,70 @@ def extraer_ref(texto: str, yaml_config: Optional[Dict] = None, proveedor: str =
     # v3.11 - DISBER: Factura FCVD250100023
     if 'DISBER' in proveedor_upper or 'B46144424' in texto:
         patron = re.search(r'Factura\s*\n?\s*(FCVD\d+)', texto)
+        if patron:
+            return patron.group(1)
+    
+    # v3.12 - TRUCCO: Número de factura: 2025-3928
+    if 'TRUCCO' in proveedor_upper or 'ISAAC RODRIGUEZ' in proveedor_upper or '05247386M' in texto:
+        patron = re.search(r'N[úu]mero de factura:\s*(\d{4}-\d+)', texto)
+        if patron:
+            return patron.group(1)
+    
+    # v3.12 - LA BARRA DULCE: Nº factura después del teléfono
+    if 'BARRA DULCE' in proveedor_upper or 'B19981141' in texto:
+        # El nº factura está en: "Teléfono: 91 846 83 85 530"
+        patron = re.search(r'91 846 83 85\s+(\d+)', texto)
+        if patron:
+            return patron.group(1)
+    
+    # v3.12 - GRUPO TERRITORIO CAMPERO: NÚMERO DE FACTURA: 99220
+    if 'CAMPERO' in proveedor_upper or 'TERRITORIO' in proveedor_upper or 'B16690141' in texto:
+        patron = re.search(r'N[ÚU]MERO DE FACTURA:\s*(\d+)', texto)
+        if patron:
+            return patron.group(1)
+    
+    # v3.12 - ZUBELZU: Nº FACTURA A 51.993
+    if 'ZUBELZU' in proveedor_upper or 'B75079608' in texto:
+        patron = re.search(r'[A-Z]\s+(\d{2}\.\d{3})', texto)
+        if patron:
+            return patron.group(1)
+    
+    # v3.13 - PRODUCTOS ADELL: "Nº Factura A/328"
+    if 'ADELL' in proveedor_upper or 'CROQUELLANAS' in proveedor_upper or 'B12711636' in texto:
+        patron = re.search(r'N[ºo°]\s*Factura\s*\n?\s*(A/\d+)', texto, re.IGNORECASE)
+        if patron:
+            return patron.group(1)
+    
+    # v3.13 - ECOFICUS: "Número: F25/0000109"
+    if 'ECOFICUS' in proveedor_upper or 'B10214021' in texto:
+        patron = re.search(r'N[úu]mero:\s*(F\d+/\d+)', texto)
+        if patron:
+            return patron.group(1)
+    
+    # v3.13 - QUESOS ROYCA: "Nº FACTURA: 1 /252164"
+    if 'ROYCA' in proveedor_upper or 'E06388631' in texto:
+        patron = re.search(r'N[ºo°]\s*FACTURA:\s*(\d+\s*/\s*\d+)', texto)
+        if patron:
+            return patron.group(1).replace(' ', '')
+    
+    # v3.13 - IBARRAKO PIPARRAK: "FRA. ZENB. / NUM. FRA. FV24-0240" o "Nº FACTURA 11.942.488"
+    if 'IBARRAKO' in proveedor_upper or 'F20532297' in texto:
+        patron = re.search(r'FRA\.\s*ZENB\.\s*/\s*NUM\.\s*FRA\.\s*\n?\s*(FV\d+-\d+)', texto)
+        if patron:
+            return patron.group(1)
+        patron = re.search(r'N[ºo°]\s*FACTURA\s+(\d+[\.\d]*)', texto)
+        if patron:
+            return patron.group(1)
+    
+    # v3.13 - ANA CABALLO: "Factura FAC2025A234"
+    if 'ANA CABALLO' in proveedor_upper or 'B87925970' in texto:
+        patron = re.search(r'Factura\s+(FAC\d+[A-Z]*\d*)', texto)
+        if patron:
+            return patron.group(1)
+    
+    # v3.13 - MARTIN ABENZA: "Número de Factura: 639/25"
+    if 'MARTIN' in proveedor_upper and ('ABENZA' in proveedor_upper or 'ARBENZA' in proveedor_upper) or 'MODESTO' in proveedor_upper or '74305431K' in texto:
+        patron = re.search(r'N[úu]mero de Factura:\s*(\d+/\d+)', texto)
         if patron:
             return patron.group(1)
     
@@ -2755,6 +2964,560 @@ def extraer_lineas_disber(texto: str) -> List[Dict]:
     return lineas
 
 
+def extraer_lineas_trucco(texto: str) -> List[Dict]:
+    """Extrae líneas de facturas TRUCCO COPIAS / Isaac Rodríguez Pacha - v3.12.
+    
+    NIF: 05247386M
+    Servicios: Impresión, copias, papelería
+    IVA: siempre 21%
+    Categoría fija: GASTOS VARIOS
+    Sin IBAN (pago por tarjeta)
+    
+    Formato típico:
+    Concepto                              Cantidad      Base imp.     IVA
+    IMPRESIONES                          1 x 6,45 €     6,45 €    21% (1,35 €)
+    
+    Total Base Imponible: 6,45 €
+    """
+    lineas = []
+    
+    # Patrón para línea de concepto - captura el texto y la base imponible
+    # Formato: Concepto    1 x XX,XX €    XX,XX €    21% (X,XX €)
+    patron = re.compile(
+        r'^([A-ZÁÉÍÓÚÑ][A-Za-záéíóúñÁÉÍÓÚÑ\s]+?)\s+'  # Concepto (empieza con mayúscula)
+        r'(\d+)\s*x\s*'                                 # Cantidad (1 x)
+        r'(\d+[.,]\d{2})\s*€\s+'                        # Precio unitario
+        r'(\d+[.,]\d{2})\s*€\s+'                        # Base imponible
+        r'21%',                                          # IVA 21%
+        re.MULTILINE | re.IGNORECASE
+    )
+    
+    for match in patron.finditer(texto):
+        concepto, cantidad, precio_unit, base = match.groups()
+        
+        lineas.append({
+            'codigo': '',
+            'articulo': concepto.strip()[:50],
+            'cantidad': int(cantidad),
+            'precio_unitario': float(precio_unit.replace(',', '.')),
+            'iva': 21,
+            'base': float(base.replace(',', '.')),
+            'categoria': 'GASTOS VARIOS'  # Forzar categoría
+        })
+    
+    # Si no encontramos líneas con el patrón detallado, usar Total Base Imponible
+    if not lineas:
+        patron_total = re.search(r'Total Base Imponible:\s*(\d+[.,]\d{2})\s*€', texto)
+        if patron_total:
+            base = float(patron_total.group(1).replace(',', '.'))
+            
+            # Buscar concepto en la tabla
+            concepto_match = re.search(
+                r'Concepto\s+Cantidad\s+Base imp\.\s+IVA\s*\n'
+                r'([A-Za-záéíóúñÁÉÍÓÚÑ\s]+?)\s+\d+\s*x',
+                texto
+            )
+            concepto = concepto_match.group(1).strip() if concepto_match else 'Trabajos de impresión'
+            
+            lineas.append({
+                'codigo': '',
+                'articulo': concepto[:50],
+                'cantidad': 1,
+                'precio_unitario': base,
+                'iva': 21,
+                'base': round(base, 2),
+                'categoria': 'GASTOS VARIOS'  # Forzar categoría
+            })
+    
+    return lineas
+
+
+def extraer_lineas_barra_dulce(texto: str) -> List[Dict]:
+    """Extrae líneas de facturas LA BARRA DULCE (pastelería) - v3.12.
+    
+    CIF: B19981141
+    Productos: Palmeritas, buñuelos, rosquillas, etc.
+    IVA: siempre 10%
+    Categoría fija: DULCES
+    IBAN: ES76 2100 5606 4802 0017 4138
+    
+    Formato línea:
+    Descripción Unidades Precio Unitario
+    Palmeritas 1 43,78 43,78
+    Desayuno 21/11 1 11,23 11,23
+    """
+    lineas = []
+    
+    # Primero extraer solo la zona de productos (entre cabecera y Observaciones/Base)
+    zona_match = re.search(
+        r'Descripción\s+Unidades\s+Precio Unitario\s*\n(.*?)(?=Observaciones:|Base Imponible)',
+        texto, re.DOTALL
+    )
+    
+    if not zona_match:
+        return lineas
+    
+    zona = zona_match.group(1)
+    
+    # Patrón para líneas de producto dentro de la zona
+    # Formato: Descripción UNIDADES PRECIO_UNIT TOTAL
+    # Descripción puede incluir números y / (para fechas como "21/11" o "12 de septiembre")
+    patron = re.compile(
+        r'^([A-Za-záéíóúñÁÉÍÓÚÑ][A-Za-záéíóúñÁÉÍÓÚÑ\s\d/]+?)\s+'  # Descripción con números
+        r'(\d+)\s+'                                                  # Unidades
+        r'(\d+[.,]\d{2})\s+'                                        # Precio unitario
+        r'(\d+[.,]\d{2})\s*$',                                      # Total
+        re.MULTILINE
+    )
+    
+    for match in patron.finditer(zona):
+        descripcion, unidades, precio_unit, total = match.groups()
+        
+        base = float(total.replace(',', '.'))
+        
+        lineas.append({
+            'codigo': '',
+            'articulo': descripcion.strip()[:50],
+            'cantidad': int(unidades),
+            'precio_unitario': float(precio_unit.replace(',', '.')),
+            'iva': 10,
+            'base': round(base, 2),
+            'categoria': 'DULCES'  # Forzar categoría
+        })
+    
+    return lineas
+
+
+def extraer_lineas_grupo_campero(texto: str) -> List[Dict]:
+    """Extrae líneas de facturas GRUPO TERRITORIO CAMPERO (patatas fritas) - v3.12.
+    
+    CIF: B16690141
+    Productos: Patatas fritas artesanas
+    IVA: siempre 10%
+    Categoría fija: PATATAS FRITAS APERITIVO
+    
+    Formato línea:
+    Cantidad Producto Precio/Ud IVA Suma Base
+    16 PATATAS FRITAS ARTESANAS 9.90 € 10% 158.40 €
+    """
+    lineas = []
+    
+    # Patrón para líneas de producto
+    # Formato: CANTIDAD PRODUCTO PRECIO € IVA% TOTAL €
+    patron = re.compile(
+        r'^(\d+)\s+'                                              # Cantidad
+        r'([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s]+?)\s+'                        # Producto
+        r'(\d+[.,]\d{2})\s*€\s+'                                  # Precio/Ud
+        r'(\d+)%\s+'                                               # IVA
+        r'(\d+[.,]\d{2})\s*€',                                    # Suma Base
+        re.MULTILINE
+    )
+    
+    for match in patron.finditer(texto):
+        cantidad, producto, precio_unit, iva, total = match.groups()
+        
+        base = float(total.replace(',', '.'))
+        
+        lineas.append({
+            'codigo': '',
+            'articulo': producto.strip()[:50],
+            'cantidad': int(cantidad),
+            'precio_unitario': float(precio_unit.replace(',', '.')),
+            'iva': int(iva),
+            'base': round(base, 2),
+            'categoria': 'PATATAS FRITAS APERITIVO'  # Forzar categoría
+        })
+    
+    return lineas
+
+
+def extraer_lineas_zubelzu(texto: str) -> List[Dict]:
+    """Extrae líneas de facturas ZUBELZU PIPARRAK - v3.12.
+    
+    CIF: B75079608
+    Productos: Guindillas de Ibarra, Mousse de piparra
+    IVA: siempre 10%
+    Categorías:
+      - GUINDILLAS de IBARRA -> PIPARRAS
+      - MOUSSE DE PIPARRA -> CONSERVAS VEGETALES
+    
+    Formato línea (con espacios entre caracteres):
+    1901 MOUSSE DE PIPARRA 400 g 2 12 5,630 67,56
+    150 GUINDILLAS de IBARRA 1/2 GALON 12 72 11,450 824,40
+    """
+    lineas = []
+    
+    # Buscar zona de productos (entre ALBARAN y BRUTO)
+    zona_match = re.search(r'\*\*\* ALBARAN.*?(?=BRUTO)', texto, re.DOTALL)
+    if not zona_match:
+        return lineas
+    
+    zona = zona_match.group(0)
+    
+    for linea in zona.split('\n'):
+        # Ignorar líneas de LOTE, CONSUMO, ALBARAN
+        if 'LOTE:' in linea or 'CONSUMO' in linea or 'ALBARAN' in linea or not linea.strip():
+            continue
+        
+        # Buscar números decimales (formato: X X X , X X con espacios)
+        numeros = re.findall(r'(\d(?:\s*\d)*\s*,\s*\d(?:\s*\d)?)', linea)
+        
+        if len(numeros) >= 2:
+            # Último = total, penúltimo = precio unitario
+            total_raw = numeros[-1]
+            precio_raw = numeros[-2]
+            
+            total = float(total_raw.replace(' ', '').replace(',', '.'))
+            precio = float(precio_raw.replace(' ', '').replace(',', '.'))
+            
+            # Extraer código (al inicio, puede tener espacios entre dígitos)
+            codigo_match = re.match(r'^\s*(\d(?:\s*\d){2,3})', linea)
+            if codigo_match:
+                codigo = codigo_match.group(1).replace(' ', '')
+                
+                # Extraer descripción
+                resto = linea[codigo_match.end():]
+                desc_match = re.match(r'\s*([A-Za-z].*?)(?=\s+\d)', resto)
+                if desc_match:
+                    descripcion = desc_match.group(1).strip()
+                    
+                    # Determinar categoría según artículo
+                    desc_upper = descripcion.upper()
+                    if 'GUINDILLA' in desc_upper:
+                        categoria = 'PIPARRAS'
+                    elif 'MOUSSE' in desc_upper and 'PIPARRA' in desc_upper:
+                        categoria = 'CONSERVAS VEGETALES'
+                    else:
+                        categoria = 'PENDIENTE'
+                    
+                    # Extraer cantidad
+                    numeros_enteros = re.findall(r'(\d(?:\s*\d)*)', resto)
+                    enteros = [n.replace(' ', '') for n in numeros_enteros 
+                              if ',' not in n and n.replace(' ','').isdigit()]
+                    cantidad = int(enteros[1]) if len(enteros) >= 2 else 1
+                    
+                    lineas.append({
+                        'codigo': codigo,
+                        'articulo': descripcion[:50],
+                        'cantidad': cantidad,
+                        'precio_unitario': precio,
+                        'iva': 10,
+                        'base': round(total, 2),
+                        'categoria': categoria
+                    })
+    
+    return lineas
+
+
+def extraer_lineas_productos_adell(texto: str) -> List[Dict]:
+    """Extrae líneas de facturas PRODUCTOS ADELL / Croquellanas - v3.13.
+    
+    CIF: B12711636
+    Productos: Conservas gourmet (alcachofas, patés, mousses)
+    IVA: 10%
+    
+    Formato línea (OCR):
+    24,000ALCACHOFAS EN ACEITE 330 GR 4,920 10,00 118,08250128 - 28/01/2027 2 cajas de
+    8,000PATÉ CECINA 110 GR 3,700 10,00 29,60240613 - 13/12/2025 1 caja de 8u
+    """
+    lineas = []
+    
+    # Patrón: CANTIDAD + DESCRIPCION + PRECIO + IVA + SUBTOTAL + LOTE
+    patron = re.compile(
+        r'(\d+[,.]\d+)'                         # Cantidad (ej: 24,000 o 8,000)
+        r'([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s\d]+?)\s+'   # Descripción (mayúsculas)
+        r'(\d+[,.]\d+)\s+'                       # Precio
+        r'(\d+[,.]\d+)\s+'                       # IVA
+        r'(\d+[,.]\d+)'                          # Subtotal
+        r'\d+\s*-\s*\d{2}/\d{2}/\d{4}',          # Lote - Caducidad
+        re.MULTILINE
+    )
+    
+    for match in patron.finditer(texto):
+        cantidad, descripcion, precio, iva, subtotal = match.groups()
+        
+        lineas.append({
+            'codigo': '',
+            'articulo': descripcion.strip()[:50],
+            'cantidad': int(float(cantidad.replace(',', '.'))),
+            'precio_unitario': float(precio.replace(',', '.')),
+            'iva': int(float(iva.replace(',', '.'))),
+            'base': round(float(subtotal.replace(',', '.')), 2),
+            'categoria': ''  # Se asignará del diccionario
+        })
+    
+    return lineas
+
+
+def extraer_lineas_ecoficus(texto: str) -> List[Dict]:
+    """Extrae líneas de facturas ECOFICUS - v3.13.
+    
+    CIF: B10214021
+    Productos: Higos ecológicos (pan de higo, bombones, biosnacks)
+    IVA: 10%
+    
+    Formato línea (OCR - columnas desordenadas):
+    PH200NFB
+    2,550
+    12,00
+    30,60
+    Pan de Higo ecológico Naranja 200g Ecoficus
+    092/09125
+    1,00
+    €/uni
+    30/11/25
+    """
+    lineas = []
+    
+    # Patrón: CODIGO + PRECIO + CANTIDAD + IMPORTE + DESCRIPCION + LOTE + CAJAS + €/uni + CADUCIDAD
+    # El OCR mezcla las columnas, buscar patrón en texto lineal
+    patron = re.compile(
+        r'([A-Z]{2}\d+[A-Z]*)\s*\n'              # Código (ej: PH200NFB, LB18)
+        r'(\d+[,.]\d+)\s*\n'                     # Precio
+        r'(\d+[,.]\d+)\s*\n'                     # Cantidad
+        r'(\d+[,.]\d+)\s*\n'                     # Importe
+        r'([A-Za-záéíóúñÁÉÍÓÚÑ][^\n]+?)\s*\n'  # Descripción
+        r'[\d/]+\s*\n'                           # Lote
+        r'(\d+[,.]\d+)\s*\n'                     # Cajas
+        r'€/uni',                                # Marcador
+        re.MULTILINE
+    )
+    
+    for match in patron.finditer(texto):
+        codigo, precio, cantidad, importe, descripcion, cajas = match.groups()
+        
+        # Ignorar muestras gratuitas (precio 0)
+        if float(precio.replace(',', '.')) == 0:
+            continue
+        
+        lineas.append({
+            'codigo': codigo,
+            'articulo': descripcion.strip()[:50],
+            'cantidad': int(float(cantidad.replace(',', '.'))),
+            'precio_unitario': float(precio.replace(',', '.')),
+            'iva': 10,
+            'base': round(float(importe.replace(',', '.')), 2),
+            'categoria': ''  # Se asignará del diccionario
+        })
+    
+    return lineas
+
+
+def extraer_lineas_quesos_royca(texto: str) -> List[Dict]:
+    """Extrae líneas de facturas QUESOS ROYCA / Comercial Royca - v3.13.
+    
+    CIF: E06388631
+    Productos: Quesos (La Barranquera)
+    IVA: 4%
+    
+    Formato línea (ASCII art):
+    QS0002 │QUESO LA BARRANQUERA │ │11,160 │15,60 │ │174,10 │
+    """
+    lineas = []
+    
+    # Patrón para líneas de producto (ignorar PORTES)
+    patron = re.compile(
+        r'(Q[SV]\d+)\s*│\s*'                    # Código (QS0002, QV0027)
+        r'([^│]+?)\s*│'                          # Descripción
+        r'[^│]*│\s*'                             # PZS (vacío)
+        r'(\d+[,.]\d+)\s*│\s*'                   # Unidades/Cantidad
+        r'(\d+[,.]\d+)\s*│'                      # Precio
+        r'[^│]*│\s*'                             # Dto (vacío)
+        r'(\d+[,.]\d+)\s*│',                     # Importe
+        re.MULTILINE
+    )
+    
+    for match in patron.finditer(texto):
+        codigo, descripcion, cantidad, precio, importe = match.groups()
+        
+        # Ignorar líneas de PORTES
+        if 'PORTE' in descripcion.upper():
+            continue
+        
+        lineas.append({
+            'codigo': codigo,
+            'articulo': descripcion.strip()[:50],
+            'cantidad': int(float(cantidad.replace(',', '.'))),
+            'precio_unitario': float(precio.replace(',', '.')),
+            'iva': 4,  # Quesos al 4%
+            'base': round(float(importe.replace(',', '.')), 2),
+            'categoria': 'QUESOS'  # Categoría fija
+        })
+    
+    return lineas
+
+
+def extraer_lineas_ibarrako_piparrak(texto: str) -> List[Dict]:
+    """Extrae líneas de facturas IBARRAKO PIPARRAK - v3.13.
+    
+    CIF: F20532297
+    Productos: Guindillas de Ibarra (piparras)
+    IVA: 10%
+    Categoría fija: PIPARRAS
+    
+    Formato nuevo:
+    2008 GALON IBARLUR PET 8,00 21,00 0,00 168,00
+    
+    Formato antiguo (OCR):
+    2004  12,00  0,00BOTES GALON 1ª  12,00  144,00
+    """
+    lineas = []
+    
+    # Patrón formato nuevo: CODIGO DESCRIPCION CANTIDAD PRECIO DTO IMPORTE
+    patron_nuevo = re.compile(
+        r'^(\d{4})\s+'                          # Código (4 dígitos)
+        r'([A-ZÁÉÍÓÚÑ][A-Za-záéíóúñº\s]+?)\s+'  # Descripción
+        r'(\d+[,.]\d+)\s+'                       # Cantidad
+        r'(\d+[,.]\d+)\s+'                       # Precio
+        r'\d+[,.]\d+\s+'                         # Dto (ignorar)
+        r'(\d+[,.]\d+)',                         # Importe
+        re.MULTILINE
+    )
+    
+    # Patrón formato antiguo: CODIGO PRECIO DTO DESCRIPCION CANTIDAD IMPORTE
+    patron_antiguo = re.compile(
+        r'^(\d{4})\s+'                          # Código (4 dígitos)
+        r'(\d+[,.]\d+)\s+'                       # Precio
+        r'\d+[,.]\d+\s*'                         # Dto (ignorar)
+        r'([A-ZÁÉÍÓÚÑ][A-Za-záéíóúñº\s]+?)\s+'  # Descripción
+        r'(\d+[,.]\d+)\s+'                       # Cantidad
+        r'(\d+[,.]\d+)',                         # Importe
+        re.MULTILINE
+    )
+    
+    # Intentar formato nuevo primero
+    for match in patron_nuevo.finditer(texto):
+        codigo, descripcion, cantidad, precio, importe = match.groups()
+        
+        lineas.append({
+            'codigo': codigo,
+            'articulo': descripcion.strip()[:50],
+            'cantidad': int(float(cantidad.replace(',', '.'))),
+            'precio_unitario': float(precio.replace(',', '.')),
+            'iva': 10,
+            'base': round(float(importe.replace(',', '.')), 2),
+            'categoria': 'PIPARRAS'  # Categoría fija
+        })
+    
+    # Si no hay líneas, intentar formato antiguo
+    if not lineas:
+        for match in patron_antiguo.finditer(texto):
+            codigo, precio, descripcion, cantidad, importe = match.groups()
+            
+            lineas.append({
+                'codigo': codigo,
+                'articulo': descripcion.strip()[:50],
+                'cantidad': int(float(cantidad.replace(',', '.'))),
+                'precio_unitario': float(precio.replace(',', '.')),
+                'iva': 10,
+                'base': round(float(importe.replace(',', '.')), 2),
+                'categoria': 'PIPARRAS'  # Categoría fija
+            })
+    
+    return lineas
+
+
+def extraer_lineas_ana_caballo(texto: str) -> List[Dict]:
+    """Extrae líneas de facturas ANA CABALLO VERMOUTH - v3.13.
+    
+    CIF: B87925970
+    Productos: Vermuts (rojo, blanco, amenities)
+    IVA: 21%
+    Categoría fija: LICORES Y VERMUS
+    
+    Formato línea:
+    Botella 75 cl. Ana Caballo Vermouth Rojo. L011223 12 15,80 20,00% 151,68
+    """
+    lineas = []
+    
+    # Buscar zona de productos (entre DESCRIPCIÓN y Neto:)
+    zona_match = re.search(r'DESCRIPCI[ÓO]N\s+CANT\.\s+PRECIO.*?(?=Neto:)', texto, re.DOTALL)
+    if not zona_match:
+        return lineas
+    
+    zona = zona_match.group(0)
+    
+    # Patrón para líneas de producto
+    patron = re.compile(
+        r'^(.+?)\s+'                            # Descripción
+        r'(\d+)\s+'                              # Cantidad
+        r'(\d+[,.]\d+)\s+'                       # Precio
+        r'(\d+[,.]\d+)%\s+'                      # Dto %
+        r'(\d+[,.]\d+)',                         # Neto
+        re.MULTILINE
+    )
+    
+    for match in patron.finditer(zona):
+        descripcion, cantidad, precio, dto, neto = match.groups()
+        
+        # Ignorar promocionales (precio 0)
+        if float(precio.replace(',', '.')) == 0:
+            continue
+        
+        # Limpiar descripción (quitar lote)
+        desc_limpia = re.sub(r'\s*L\d+$', '', descripcion.strip())
+        desc_limpia = re.sub(r'\s*\d{6}$', '', desc_limpia)  # Quitar lote tipo 011222
+        
+        lineas.append({
+            'codigo': '',
+            'articulo': desc_limpia[:50],
+            'cantidad': int(cantidad),
+            'precio_unitario': float(precio.replace(',', '.')),
+            'iva': 21,
+            'base': round(float(neto.replace(',', '.')), 2),
+            'categoria': 'LICORES Y VERMUS'  # Categoría fija
+        })
+    
+    return lineas
+
+
+def extraer_lineas_martin_abenza(texto: str) -> List[Dict]:
+    """Extrae líneas de facturas MARTIN ABENZA / El Modesto - v3.13.
+    
+    NIF: 74305431K
+    Productos: Conservas artesanas (alcachofas, piparras, escalivada)
+    IVA: 10%
+    Categoría fija: CONSERVAS VEGETALES
+    
+    Formato línea (columnas separadas en OCR):
+    CANTIDAD CONCEPTO - REFERENCIA PRECIO IMPORTE
+    3                              31,80 95,40 €
+    [luego más abajo]
+    CAJAS PIPARRAS
+    """
+    lineas = []
+    
+    # El formato de MARTIN ABENZA tiene cantidades/precios separados de descripciones
+    # Buscar patrón: CANTIDAD + PRECIO + IMPORTE en una zona
+    numeros = re.findall(r'^(\d+)\s+(\d+[,.]\d+)\s+(\d+[,.]\d+)\s*€?', texto, re.MULTILINE)
+    
+    # Buscar descripciones en otra zona (después de DESCUENTO o IVA)
+    descripciones = re.findall(r'(CAJA[S]?\s+[A-ZÁÉÍÓÚÑ\s/\d]+|LOTES?\s+CONSERVAS\s+VARIADAS)', texto)
+    
+    # Filtrar descripciones que no sean "PORTE"
+    descripciones = [d for d in descripciones if 'PORTE' not in d.upper()]
+    
+    # Emparejar números con descripciones
+    for i, (cantidad, precio, importe) in enumerate(numeros):
+        # Ignorar si es PORTE (generalmente el último)
+        if i < len(descripciones):
+            descripcion = descripciones[i]
+        else:
+            descripcion = f"CONSERVA {i+1}"
+        
+        lineas.append({
+            'codigo': '',
+            'articulo': descripcion.strip()[:50],
+            'cantidad': int(cantidad),
+            'precio_unitario': float(precio.replace(',', '.')),
+            'iva': 10,
+            'base': round(float(importe.replace(',', '.')), 2),
+            'categoria': 'CONSERVAS VEGETALES'  # Categoría fija
+        })
+    
+    return lineas
+
+
 def extraer_lineas_generico(texto: str) -> List[Dict]:
     """Extrae líneas con patrón genérico."""
     lineas = []
@@ -3032,6 +3795,36 @@ def procesar_factura(ruta: Path, indice: Dict, carpeta_yaml: Path = None) -> Fac
     # v3.11 - DISBER / Grupo Disber (vinos, conservas)
     elif 'DISBER' in proveedor_upper or 'B46144424' in texto:
         lineas_raw = extraer_lineas_disber(texto)
+    # v3.12 - TRUCCO COPIAS / Isaac Rodríguez Pacha (imprenta)
+    elif 'TRUCCO' in proveedor_upper or 'ISAAC RODRIGUEZ' in proveedor_upper or '05247386M' in texto:
+        lineas_raw = extraer_lineas_trucco(texto)
+    # v3.12 - LA BARRA DULCE (pastelería)
+    elif 'BARRA DULCE' in proveedor_upper or 'B19981141' in texto:
+        lineas_raw = extraer_lineas_barra_dulce(texto)
+    # v3.12 - GRUPO TERRITORIO CAMPERO (patatas fritas)
+    elif 'CAMPERO' in proveedor_upper or 'TERRITORIO' in proveedor_upper or 'B16690141' in texto:
+        lineas_raw = extraer_lineas_grupo_campero(texto)
+    # v3.12 - ZUBELZU PIPARRAK (guindillas y mousse)
+    elif 'ZUBELZU' in proveedor_upper or 'B75079608' in texto:
+        lineas_raw = extraer_lineas_zubelzu(texto)
+    # v3.13 - PRODUCTOS ADELL / Croquellanas
+    elif 'ADELL' in proveedor_upper or 'CROQUELLANAS' in proveedor_upper or 'B12711636' in texto:
+        lineas_raw = extraer_lineas_productos_adell(texto)
+    # v3.13 - ECOFICUS
+    elif 'ECOFICUS' in proveedor_upper or 'B10214021' in texto:
+        lineas_raw = extraer_lineas_ecoficus(texto)
+    # v3.13 - QUESOS ROYCA
+    elif 'ROYCA' in proveedor_upper or 'E06388631' in texto:
+        lineas_raw = extraer_lineas_quesos_royca(texto)
+    # v3.13 - IBARRAKO PIPARRAK
+    elif 'IBARRAKO' in proveedor_upper or 'F20532297' in texto:
+        lineas_raw = extraer_lineas_ibarrako_piparrak(texto)
+    # v3.13 - ANA CABALLO VERMOUTH
+    elif 'ANA CABALLO' in proveedor_upper or 'B87925970' in texto:
+        lineas_raw = extraer_lineas_ana_caballo(texto)
+    # v3.13 - MARTIN ABENZA / El Modesto
+    elif 'MARTIN' in proveedor_upper and ('ABENZA' in proveedor_upper or 'ARBENZA' in proveedor_upper) or 'MODESTO' in proveedor_upper or '74305431K' in texto:
+        lineas_raw = extraer_lineas_martin_abenza(texto)
     
     # Si no hay líneas específicas, intentar genérico
     if not lineas_raw:
