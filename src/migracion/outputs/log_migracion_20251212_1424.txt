@@ -1,0 +1,28 @@
+MIGRACIÓN HISTÓRICO 2025 - v3.43
+============================================================
+Fecha: 2025-12-12 14:24:30
+
+RESUMEN:
+  Facturas procesadas: 0
+  Con CIF extraído:    0
+  Con IBAN extraído:   0
+  Con líneas extraídas: 0
+  Total líneas:        0
+
+  VALIDACIÓN CUADRE (v3.21):
+    OK:          0
+    DESCUADRE:   0
+    SIN_TOTAL:   0
+    SIN_LINEAS:  0
+
+============================================================
+IBANs ENCONTRADOS:
+
+============================================================
+CIFs ENCONTRADOS:
+
+============================================================
+FACTURAS CON ALERTAS:
+
+============================================================
+ARTÍCULOS PENDIENTES DE CATEGORIZAR:
