@@ -20,6 +20,9 @@ v3.51 - ALQUILERES: soporte retención 19% IRPF
       - BENJAMIN ORTEGA y JAIME FERNANDEZ: cuadre correcto con retención
       - Nueva clave 'retencion' en líneas para facturas con IRPF
       - validar_cuadre() ahora resta retenciones del total calculado
+      - BERZAL: fix extracción total (forzar patrón específico)
+      - ECOFICUS: fix total + repartir portes proporcionalmente
+      - Nueva función repartir_portes() para futuros proveedores
 
 v3.49 - BERZAL y LAVAPIES: fix cuadre
       - BERZAL: nuevo patrón que busca U/K + IVA + IMPORTE al final de línea
@@ -1702,6 +1705,57 @@ def extraer_total(texto: str) -> Optional[float]:
                 continue
     
     return None
+
+
+def repartir_portes(lineas: List[Dict], total_factura: float, base_portes: float, iva_portes: int) -> List[Dict]:
+    """
+    Reparte los portes proporcionalmente entre los artículos.
+    
+    v3.51 - Los portes/transporte se reparten entre artículos, no van como línea aparte.
+    
+    Algoritmo:
+    1. Calcular portes_con_iva = base_portes × (1 + iva_portes/100)
+    2. Calcular total_articulos = suma de (base × (1 + iva/100)) de cada artículo
+    3. Para cada artículo:
+       - proporcion = (base × (1 + iva/100)) / total_articulos
+       - nuevo_total = (base × (1 + iva/100)) + (portes_con_iva × proporcion)
+       - nueva_base = nuevo_total / (1 + iva/100)
+    
+    Args:
+        lineas: Lista de líneas extraídas (cada una con 'base', 'iva')
+        total_factura: Total de la factura (para verificación)
+        base_portes: Base imponible de los portes
+        iva_portes: Tipo de IVA de los portes (ej: 21)
+    
+    Returns:
+        Lista de líneas con las bases recalculadas (portes repartidos)
+    """
+    if not lineas or base_portes <= 0:
+        return lineas
+    
+    # Calcular portes con IVA
+    portes_con_iva = base_portes * (1 + iva_portes / 100)
+    
+    # Calcular total de artículos (base + IVA de cada uno)
+    total_articulos = sum(l['base'] * (1 + l['iva'] / 100) for l in lineas)
+    
+    if total_articulos <= 0:
+        return lineas
+    
+    # Repartir portes proporcionalmente
+    nuevas_lineas = []
+    for linea in lineas:
+        total_linea = linea['base'] * (1 + linea['iva'] / 100)
+        proporcion = total_linea / total_articulos
+        nuevo_total = total_linea + (portes_con_iva * proporcion)
+        nueva_base = nuevo_total / (1 + linea['iva'] / 100)
+        
+        # Copiar línea con nueva base
+        nueva_linea = linea.copy()
+        nueva_linea['base'] = round(nueva_base, 2)
+        nuevas_lineas.append(nueva_linea)
+    
+    return nuevas_lineas
 
 
 def validar_cuadre(lineas: List, total_factura: Optional[float], tolerancia: float = 0.05) -> str:
@@ -5725,18 +5779,17 @@ def procesar_factura(ruta: Path, indice: Dict, carpeta_yaml: Path = None) -> Fac
     
     if 'BERZAL' in proveedor_upper:
         lineas_raw = extraer_lineas_berzal(texto)
-        # v3.49 - Extraer total específico para BERZAL
+        # v3.51 - Extraer total específico para BERZAL (SIEMPRE, ignorar genérico)
         # pypdf: el total aparece antes de la fecha (80,84\n01/01/25) o después de "Transferencia Bancaria"
-        if factura.total is None or factura.total == 0:
-            # Patrón 1: Total antes de fecha DD/MM/YY
-            total_match = re.search(r'(\d{2,3}[,\.]\d{2})\s*\n?\s*\d{2}/\d{2}/\d{2}', texto)
+        # Patrón 1: Total antes de fecha DD/MM/YY
+        total_match = re.search(r'(\d{2,3}[,\.]\d{2})\s*\n?\s*\d{2}/\d{2}/\d{2}', texto)
+        if total_match:
+            factura.total = float(total_match.group(1).replace(',', '.'))
+        else:
+            # Patrón 2: Total después de "Transferencia Bancaria"
+            total_match = re.search(r'Transferencia Bancaria\s*\n?\s*(\d{2,3}[,\.]\d{2})', texto)
             if total_match:
                 factura.total = float(total_match.group(1).replace(',', '.'))
-            else:
-                # Patrón 2: Total después de "Transferencia Bancaria"
-                total_match = re.search(r'Transferencia Bancaria\s*\n?\s*(\d{2,3}[,\.]\d{2})', texto)
-                if total_match:
-                    factura.total = float(total_match.group(1).replace(',', '.'))
     # v3.27 - LA MOLIENDA VERDE (antes del genérico)
     elif 'MOLIENDA' in proveedor_upper or 'B06936140' in texto:
         lineas_raw = extraer_lineas_molienda_verde(texto)
@@ -5876,6 +5929,17 @@ def procesar_factura(ruta: Path, indice: Dict, carpeta_yaml: Path = None) -> Fac
     # v3.13 - ECOFICUS
     elif 'ECOFICUS' in proveedor_upper or 'B10214021' in texto:
         lineas_raw = extraer_lineas_ecoficus(texto)
+        # v3.51 - Extraer total específico para ECOFICUS
+        # pypdf: "232,55 €\n Forma de Pago\nTOTAL FACTURA\n200,52" - el total real está ANTES de "Forma de Pago"
+        total_match = re.search(r'(\d{2,3}[,.]\d{2})\s*€?\s*\n?\s*Forma de Pago', texto)
+        if total_match:
+            factura.total = float(total_match.group(1).replace(',', '.'))
+        # v3.51 - Repartir portes proporcionalmente entre artículos (no como línea aparte)
+        portes_match = re.search(r'Portes\s*\n?\s*(\d+[,.]\d+)', texto)
+        if portes_match and lineas_raw and factura.total:
+            base_portes = float(portes_match.group(1).replace(',', '.'))
+            if base_portes > 0:
+                lineas_raw = repartir_portes(lineas_raw, factura.total, base_portes, iva_portes=21)
     # v3.13 - QUESOS ROYCA
     elif 'ROYCA' in proveedor_upper or 'E06388631' in texto:
         lineas_raw = extraer_lineas_quesos_royca(texto)
