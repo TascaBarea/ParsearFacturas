@@ -11,7 +11,7 @@ Ver CHANGELOG completo en docs/ESTADO_PROYECTO.md
 # ==============================================================================
 # VERSIÓN - ÚNICA FUENTE DE VERDAD
 # ==============================================================================
-VERSION = "3.49"
+VERSION = "3.50"
 
 """
 CHANGELOG RECIENTE:
