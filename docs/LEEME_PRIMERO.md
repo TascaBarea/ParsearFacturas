@@ -8,50 +8,96 @@
 
 | Dato | Valor |
 |------|-------|
-| **Versión** | v3.50 |
-| **Fecha** | 13/12/2025 |
-| **Script** | `src/migracion/migracion_historico_2025_v3_50.py` |
-| **Facturas OK** | 188/252 (74.6%) |
-| **Pendiente** | 13 CUADRE_PENDIENTE, 24 PDF_SIN_TEXTO |
+| **Versión** | v3.56 |
+| **Fecha** | 17/12/2025 |
+| **Script** | `migracion_historico_2025_v3_56.py` |
+| **Extractor PDF** | pypdf → pdfplumber → OCR (Tesseract) |
+| **OCR** | ✅ Funcionando (IBARRAKO, ROSQUILLERIA, ABELLAN, ECOMS) |
+
+### Métricas actuales (v3.56)
+
+| Trimestre | Facturas | Con líneas | % |
+|-----------|----------|------------|---|
+| 1T25 | 252 | ~215 | **~85%** |
+| 2T25 | 307 | ~220 | ~72% |
+| **Total** | **559** | **~435** | **~78%** |
 
 ---
 
-## ▶️ AL EMPEZAR SESIÓN CON CLAUDE
+## ✅ SESIÓN 17/12/2025 - RESUMEN
+
+### Proveedores arreglados hoy
+
+| Proveedor | Facturas | Problema resuelto |
+|-----------|----------|-------------------|
+| **ECOMS/DIA** | 5/7 ✅ | Nuevo extractor dual (OCR + digital) |
+| **BODEGAS BORBOTON** | 10/10 ✅ | Fix orden patrones extraer_total() |
+| **MARITA COSTA** | 4/4 ✅ | Añadido patrón TOTAL: antes de IBARRAKO |
+| **LA ROSQUILLERIA** | 2/2 ✅ | Confirmado funcionando con OCR |
+
+### Cambios técnicos v3.56
+
+1. **Nuevo extractor ECOMS/DIA:**
+   - `extraer_lineas_ecoms()` - Soporte dual OCR + PDF digital
+   - Formato OCR: tabla "4,00% BASE CUOTA"
+   - Formato DIA digital: "A 4% BASE €"
+   - CIF: B72738602 (pago tarjeta, sin IBAN)
+
+2. **Fix extraer_total() - Reorden patrones:**
+   - BORBOTON movido ANTES de IBARRAKO
+   - MARITA COSTA (TOTAL:) añadido ANTES de IBARRAKO
+   - Problema: IBARRAKO capturaba importes de línea en vez de total
+
+3. **Proveedores añadidos a DATOS_PROVEEDORES:**
+   - ECOMS, ECOMS SUPERMARKET, DIA → B72738602
+
+---
+
+## 🎯 PRÓXIMOS PASOS (18/12/2025)
+
+### Prioridad ALTA
+
+| Proveedor | Facturas | Problema |
+|-----------|----------|----------|
+| **JIMELUZ** | ~18 | OCR tickets escaneados - PENDIENTE |
+| SOM ENERGIA | 5 | CUADRE_PENDIENTE |
+
+### Prioridad MEDIA
+
+| Proveedor | Problema |
+|-----------|----------|
+| ECOMS (2 facturas) | OCR muy malo → manual |
+
+### Resueltos ✅
+- ~~BODEGAS BORBOTON~~ → 10/10 OK
+- ~~MARITA COSTA~~ → 4/4 OK
+- ~~LA ROSQUILLERIA~~ → Funciona con OCR
+
+---
+
+## ▶️ AL EMPEZAR PRÓXIMA SESIÓN
 
 ```
-1. Abre Claude.ai
-2. Sube este archivo: docs/LEEME_PRIMERO.md
+1. Sube: LEEME_PRIMERO.md + ESTADO_PROYECTO.md + PROVEEDORES.md
+2. Sube: migracion_historico_2025_v3_56.py
 3. Escribe: "Continúo proyecto ParsearFacturas"
-4. Si necesitas contexto específico, sube también:
-   - docs/ESTADO_ACTUAL.md (detalles técnicos)
-   - El script v3.XX que estés usando
+4. Para JIMELUZ: Sube 2-3 facturas de muestra
 ```
 
 ---
 
-## ⏹️ AL TERMINAR SESIÓN
+## 🖥️ COMANDOS PARA EJECUTAR
 
-```
-1. Pide a Claude: "Actualiza ESTADO_ACTUAL.md con los cambios de hoy"
-2. Descarga los archivos nuevos (script, docs)
-3. Copia a tu carpeta del proyecto
-4. En terminal:
-   git add .
-   git commit -m "sesión YYYY-MM-DD: descripción breve"
-   git push
+**1T25:**
+```cmd
+cd C:\_ARCHIVOS\TRABAJO\Facturas\ParsearFacturas-main\src\migracion
+
+python migracion_historico_2025_v3_56.py -i "C:\Users\jaime\Dropbox\File inviati\TASCA BAREA S.L.L\CONTABILIDAD\FACTURAS 2025\FACTURAS RECIBIDAS\1 TRI 2025" -d "C:\_ARCHIVOS\TRABAJO\Facturas\ParsearFacturas-main\DiccionarioProveedoresCategoria.xlsx"
 ```
 
----
-
-## 🖥️ COMANDO PARA EJECUTAR
-
-```bash
-python "C:\...\src\migracion\migracion_historico_2025_v3_50.py" -i "RUTA_FACTURAS" -d "RUTA_DICCIONARIO.xlsx"
-```
-
-**Ejemplo completo:**
-```bash
-python "C:\_ARCHIVOS\TRABAJO\Facturas\ParsearFacturas-main\src\migracion\migracion_historico_2025_v3_50.py" -i "C:\Users\jaime\Dropbox\File inviati\TASCA BAREA S.L.L\CONTABILIDAD\FACTURAS 2025\FACTURAS RECIBIDAS\1 TRI 2025" -d "C:\_ARCHIVOS\TRABAJO\Facturas\ParsearFacturas-main\DiccionarioProveedoresCategoria.xlsx"
+**2T25:**
+```cmd
+python migracion_historico_2025_v3_56.py -i "C:\Users\jaime\Dropbox\File inviati\TASCA BAREA S.L.L\CONTABILIDAD\FACTURAS 2025\FACTURAS RECIBIDAS\2 TRI 2025" -d "C:\_ARCHIVOS\TRABAJO\Facturas\ParsearFacturas-main\DiccionarioProveedoresCategoria.xlsx"
 ```
 
 ---
@@ -60,37 +106,22 @@ python "C:\_ARCHIVOS\TRABAJO\Facturas\ParsearFacturas-main\src\migracion\migraci
 
 | Qué | Dónde |
 |-----|-------|
-| Script principal | `src/migracion/migracion_historico_2025_v3_50.py` |
-| Estado del proyecto | `docs/ESTADO_ACTUAL.md` |
-| Lista de proveedores | `docs/PROVEEDORES.md` |
-| Diccionario categorías | `DiccionarioProveedoresCategoria.xlsx` |
-| Maestro proveedores | `MAESTRO_PROVEEDORES.xlsx` |
+| Script actual | `migracion_historico_2025_v3_56.py` |
+| Estado proyecto | `docs/ESTADO_PROYECTO.md` |
+| Este archivo | `docs/LEEME_PRIMERO.md` |
+| Lista proveedores | `docs/PROVEEDORES.md` |
 
 ---
 
-## ❌ NO HACER
+## 🔑 DECISIONES TÉCNICAS CLAVE
 
-- ❌ Crear archivos `.bak`, `.bak2`, `.backup`
-- ❌ Modificar versiones antiguas (v3.41, v3.42...)
-- ❌ Terminar sesión sin hacer git commit + push
-- ❌ Trabajar sin saber qué versión es la actual
-
----
-
-## 🆘 SI ALGO FALLA
-
-1. **El script no encuentra el archivo:**
-   - Verifica las rutas entre comillas
-   - Usa rutas absolutas completas
-
-2. **Error de Python:**
-   - Copia el error completo
-   - Pégalo a Claude
-
-3. **No sé qué versión usar:**
-   - La versión actual está arriba de este documento
-   - Siempre usa la más alta (v3.50 > v3.49 > v3.48...)
+1. **PDF**: pypdf principal → pdfplumber fallback → OCR (Tesseract)
+2. **OCR**: Resolución 300dpi, escala grises, contraste x2
+3. **Parche Windows**: Importes sin coma (7740 → 77.40)
+4. **Portes**: Siempre repartidos proporcionalmente
+5. **Tolerancia cuadre**: 0.05€
+6. **Orden patrones total**: Específicos (BORBOTON, MARITA) ANTES de genéricos (IBARRAKO)
 
 ---
 
-*Última actualización: 13/12/2025*
+*Última actualización: 17/12/2025 - Sesión ECOMS + BORBOTON + MARITA*
