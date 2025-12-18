@@ -8,120 +8,167 @@
 
 | Dato | Valor |
 |------|-------|
-| **Versión** | v3.56 |
-| **Fecha** | 17/12/2025 |
-| **Script** | `migracion_historico_2025_v3_56.py` |
-| **Extractor PDF** | pypdf → pdfplumber → OCR (Tesseract) |
-| **OCR** | ✅ Funcionando (IBARRAKO, ROSQUILLERIA, ABELLAN, ECOMS) |
+| **Versión** | v3.57 → **REFACTORIZANDO A v4.0** |
+| **Fecha** | 18/12/2025 |
+| **Script actual** | `migracion_historico_2025_v3_57.py` (7,618 líneas) |
+| **Estado** | 🔄 EN REFACTORIZACIÓN |
 
-### Métricas actuales (v3.56)
+### Métricas v3.57 (18/12/2025)
 
 | Trimestre | Facturas | Con líneas | % |
 |-----------|----------|------------|---|
-| 1T25 | 252 | ~215 | **~85%** |
-| 2T25 | 307 | ~220 | ~72% |
+| 1T25 | 252 | ~210 | **~83%** |
+| 2T25 | 307 | ~225 | ~73% |
 | **Total** | **559** | **~435** | **~78%** |
 
 ---
 
-## ✅ SESIÓN 17/12/2025 - RESUMEN
+## 🔄 REFACTORIZACIÓN EN CURSO
 
-### Proveedores arreglados hoy
+### Objetivo
+Dividir el monolito de 7,618 líneas en módulos manejables.
 
-| Proveedor | Facturas | Problema resuelto |
-|-----------|----------|-------------------|
-| **ECOMS/DIA** | 5/7 ✅ | Nuevo extractor dual (OCR + digital) |
-| **BODEGAS BORBOTON** | 10/10 ✅ | Fix orden patrones extraer_total() |
-| **MARITA COSTA** | 4/4 ✅ | Añadido patrón TOTAL: antes de IBARRAKO |
-| **LA ROSQUILLERIA** | 2/2 ✅ | Confirmado funcionando con OCR |
+### Beneficios
+- ✅ Fácil encontrar y arreglar errores
+- ✅ 1 archivo por extractor (70 archivos)
+- ✅ Probar extractores individualmente
+- ✅ Anti-duplicados automático
+- ✅ Preparado para futura app web
 
-### Cambios técnicos v3.56
+### Progreso
 
-1. **Nuevo extractor ECOMS/DIA:**
-   - `extraer_lineas_ecoms()` - Soporte dual OCR + PDF digital
-   - Formato OCR: tabla "4,00% BASE CUOTA"
-   - Formato DIA digital: "A 4% BASE €"
-   - CIF: B72738602 (pago tarjeta, sin IBAN)
+| Fase | Estado | Descripción |
+|------|--------|-------------|
+| 1. Estructura | ⏳ | Crear carpetas y configuración |
+| 2. Núcleo | ⏳ | PDF, parser, validación |
+| 3. Extractores | ⏳ | Sistema registro automático |
+| 4. Migración | ⏳ | 70 extractores a archivos |
+| 5. Salidas | ⏳ | Excel, logs, main.py |
+| 6. Robustez | ⏳ | Anti-duplicados, testing |
 
-2. **Fix extraer_total() - Reorden patrones:**
-   - BORBOTON movido ANTES de IBARRAKO
-   - MARITA COSTA (TOTAL:) añadido ANTES de IBARRAKO
-   - Problema: IBARRAKO capturaba importes de línea en vez de total
-
-3. **Proveedores añadidos a DATOS_PROVEEDORES:**
-   - ECOMS, ECOMS SUPERMARKET, DIA → B72738602
+**Documento detallado:** `docs/PLAN_REFACTORIZACION.md`
 
 ---
 
-## 🎯 PRÓXIMOS PASOS (18/12/2025)
+## ✅ SESIÓN 18/12/2025 - RESUMEN
 
-### Prioridad ALTA
+### Trabajado hoy
 
-| Proveedor | Facturas | Problema |
-|-----------|----------|----------|
-| **JIMELUZ** | ~18 | OCR tickets escaneados - PENDIENTE |
-| SOM ENERGIA | 5 | CUADRE_PENDIENTE |
+| Tarea | Estado |
+|-------|--------|
+| Análisis completo del código | ✅ |
+| Plan de refactorización | ✅ |
+| Documentación inicial | ✅ |
+| Fix LICORES MADRUEÑO total | ✅ |
+| Inicio Fase 1 | 🔄 |
 
-### Prioridad MEDIA
+### Cambios v3.57
 
-| Proveedor | Problema |
-|-----------|----------|
-| ECOMS (2 facturas) | OCR muy malo → manual |
-
-### Resueltos ✅
-- ~~BODEGAS BORBOTON~~ → 10/10 OK
-- ~~MARITA COSTA~~ → 4/4 OK
-- ~~LA ROSQUILLERIA~~ → Funciona con OCR
+- Fix JIMELUZ: nuevo extractor OCR con tabla IVA
+- Fix MADRUEÑO: patrón "TOTAL €:" + fallback robusto
+- Función duplicada detectada: `extraer_lineas_mrm` (líneas 3774 y 5539)
 
 ---
 
-## ▶️ AL EMPEZAR PRÓXIMA SESIÓN
+## 🎯 PRÓXIMOS PASOS
 
-```
-1. Sube: LEEME_PRIMERO.md + ESTADO_PROYECTO.md + PROVEEDORES.md
-2. Sube: migracion_historico_2025_v3_56.py
-3. Escribe: "Continúo proyecto ParsearFacturas"
-4. Para JIMELUZ: Sube 2-3 facturas de muestra
-```
+### Inmediato (esta sesión)
+1. ⏳ Crear estructura de carpetas
+2. ⏳ Extraer configuración
+3. ⏳ Crear clase base extractores
+
+### Siguiente sesión
+- Migrar 5 extractores piloto
+- Test con facturas reales
 
 ---
 
-## 🖥️ COMANDOS PARA EJECUTAR
+## 🖥️ COMANDOS
 
-**1T25:**
+### Versión actual (monolito)
 ```cmd
 cd C:\_ARCHIVOS\TRABAJO\Facturas\ParsearFacturas-main\src\migracion
 
-python migracion_historico_2025_v3_56.py -i "C:\Users\jaime\Dropbox\File inviati\TASCA BAREA S.L.L\CONTABILIDAD\FACTURAS 2025\FACTURAS RECIBIDAS\1 TRI 2025" -d "C:\_ARCHIVOS\TRABAJO\Facturas\ParsearFacturas-main\DiccionarioProveedoresCategoria.xlsx"
+python migracion_historico_2025_v3_57.py -i "RUTA_FACTURAS" -d "RUTA_DICCIONARIO"
 ```
 
-**2T25:**
+### Nueva versión (cuando esté lista)
 ```cmd
-python migracion_historico_2025_v3_56.py -i "C:\Users\jaime\Dropbox\File inviati\TASCA BAREA S.L.L\CONTABILIDAD\FACTURAS 2025\FACTURAS RECIBIDAS\2 TRI 2025" -d "C:\_ARCHIVOS\TRABAJO\Facturas\ParsearFacturas-main\DiccionarioProveedoresCategoria.xlsx"
+cd C:\_ARCHIVOS\TRABAJO\Facturas\ParsearFacturas-main
+
+python main.py -i "RUTA_FACTURAS" -d "datos/diccionario.xlsx"
+```
+
+### Probar extractor individual (cuando esté listo)
+```cmd
+python tests/probar_extractor.py "CERES" "factura_ejemplo.pdf"
+```
+
+### Git
+```cmd
+git add .
+git commit -m "Descripción del cambio"
+git push
 ```
 
 ---
 
-## 📁 ARCHIVOS IMPORTANTES
+## 📁 ESTRUCTURA PROYECTO
 
-| Qué | Dónde |
-|-----|-------|
-| Script actual | `migracion_historico_2025_v3_56.py` |
-| Estado proyecto | `docs/ESTADO_PROYECTO.md` |
-| Este archivo | `docs/LEEME_PRIMERO.md` |
-| Lista proveedores | `docs/PROVEEDORES.md` |
+### Actual (monolito)
+```
+ParsearFacturas-main/
+├── src/migracion/
+│   └── migracion_historico_2025_v3_57.py  ← 7,618 líneas
+├── docs/
+└── DiccionarioProveedoresCategoria.xlsx
+```
+
+### Destino (modular v4.0)
+```
+ParsearFacturas-main/
+├── main.py
+├── config/
+├── extractores/     ← 70 archivos (1 por proveedor)
+├── nucleo/
+├── salidas/
+├── datos/
+├── tests/
+├── docs/
+└── legacy/          ← Backup v3.57
+```
 
 ---
 
-## 🔑 DECISIONES TÉCNICAS CLAVE
+## 📚 DOCUMENTACIÓN
 
-1. **PDF**: pypdf principal → pdfplumber fallback → OCR (Tesseract)
-2. **OCR**: Resolución 300dpi, escala grises, contraste x2
-3. **Parche Windows**: Importes sin coma (7740 → 77.40)
-4. **Portes**: Siempre repartidos proporcionalmente
-5. **Tolerancia cuadre**: 0.05€
-6. **Orden patrones total**: Específicos (BORBOTON, MARITA) ANTES de genéricos (IBARRAKO)
+| Documento | Propósito |
+|-----------|-----------|
+| `LEEME_PRIMERO.md` | **Este archivo** - Punto de entrada |
+| `ESTADO_PROYECTO.md` | Métricas y changelog |
+| `PROVEEDORES.md` | Lista de extractores |
+| `PLAN_REFACTORIZACION.md` | **NUEVO** - Plan detallado v4.0 |
+| `COMO_AÑADIR_EXTRACTOR.md` | **NUEVO** - Guía para nuevos extractores |
 
 ---
 
-*Última actualización: 17/12/2025 - Sesión ECOMS + BORBOTON + MARITA*
+## ▶️ AL EMPEZAR SESIÓN
+
+```
+1. Sube los 3 docs: LEEME_PRIMERO.md, ESTADO_PROYECTO.md, PLAN_REFACTORIZACION.md
+2. Sube el script actual si hay cambios
+3. Escribe: "Continúo refactorización ParsearFacturas - Fase X"
+```
+
+---
+
+## 🔑 DECISIONES TÉCNICAS
+
+1. **Registro automático**: Decorador `@registrar('PROVEEDOR')`
+2. **Anti-duplicados**: PROVEEDOR + FECHA + TOTAL en Excel
+3. **Backup**: Versión anterior en `legacy/`
+4. **Testing**: Script `probar_extractor.py` individual
+
+---
+
+*Última actualización: 18/12/2025 - Inicio refactorización v4.0*
