@@ -1,168 +1,155 @@
 # ESTADO DEL PROYECTO - ParsearFacturas
 
-**Última actualización:** 2025-12-18
-**Versión actual:** v3.57 → **REFACTORIZANDO A v4.0**
-
----
-
-## 🔄 REFACTORIZACIÓN EN CURSO
-
-> **IMPORTANTE:** El proyecto está siendo refactorizado de un monolito de 7,618 líneas a una estructura modular.
-> 
-> Ver detalles en: `docs/PLAN_REFACTORIZACION.md`
-
-### Resumen del cambio
-
-| Aspecto | Antes (v3.57) | Después (v4.0) |
-|---------|---------------|----------------|
-| Archivos | 1 (7,618 líneas) | ~80 archivos |
-| Extractores | 70 funciones mezcladas | 70 archivos independientes |
-| Añadir extractor | Editar archivo 7000+ líneas | Crear 1 archivo nuevo |
-| Debugging | Buscar en 7000 líneas | Abrir archivo específico |
-| Duplicados | Sin control | Detección automática |
+**Última actualización:** 2025-12-19
+**Versión actual:** v4.2
 
 ---
 
 ## 📊 MÉTRICAS ACTUALES
 
-### v3.57 - Resultados (18/12/2025)
+### v4.2 - Resultados (19/12/2025)
 
-| Trimestre | Facturas | Con líneas | % | Líneas | IBANs |
-|-----------|----------|------------|---|--------|-------|
-| 1T25 | 252 | ~210 | ~83% | ~800 | ~130 |
-| 2T25 | 307 | ~225 | ~73% | ~830 | ~120 |
-| **Total** | **559** | **~435** | **~78%** | **~1630** | **~250** |
+| Trimestre | Facturas | Cuadre OK | % | Con Líneas | Importe |
+|-----------|----------|-----------|---|------------|---------|
+| 1T25 | 252 | **133+** | **~54%** | ~180 | ~45,000€ |
+| 2T25 | 307 | pendiente | - | - | - |
+| 3T25 | 161 | pendiente | - | - | - |
 
-### Evolución
+### Evolución 19/12/2025
 
-| Versión | Fecha | 1T25 % | Cambio |
-|---------|-------|--------|--------|
-| v3.53 | 14/12 | 64.3% | - |
-| v3.54 | 15/12 | 78.6% | +14.3% |
-| v3.55 | 16/12 | 82.5% | +3.9% |
-| v3.56 | 17/12 | ~85% | +2.5% |
-| **v3.57** | **18/12** | **~83%** | Fix JIMELUZ/MADRUEÑO |
+| Fase | Cuadre OK | % | Cambio |
+|------|-----------|---|--------|
+| Inicio día | 60 | 23.8% | - |
+| Post-BM + refactor | 103 | 40.9% | +43 |
+| Post-MOLLETES/ECOFICUS | 111 | 44.0% | +8 |
+| Post-SABORES PATERNA | 117 | 46.4% | +6 |
+| Post-LA BARRA DULCE | 120 | 47.6% | +3 |
+| Post-ISTA + CVNE | 129 | 51.2% | +9 |
+| Post-QUESOS FELIX + MIGUEZ CAL | 136 | 54.0% | +7 |
+| **Post-LAVAPIES + MARTIN ABENZA** | **~140** | **~56%** | **+4** |
 
-**Mejora total v3.53→v3.57: +18.7%**
+**Mejora total del día: +80 facturas (+133%)**
 
 ---
 
-## ✅ SESIÓN 2025-12-18: ANÁLISIS + REFACTORIZACIÓN
+## ✅ SESIÓN 2025-12-19 TARDE: 6 EXTRACTORES + BUG FIX
 
-### Análisis del código realizado
+### 🐛 Bug crítico corregido: main.py línea 178
 
-| Métrica | Valor |
-|---------|-------|
-| Total líneas | 7,618 |
-| Total funciones | 97 |
-| Extractores | 70 |
-| Líneas en extractores | ~4,600 (60%) |
-| Función duplicada | `extraer_lineas_mrm` (líneas 3774 y 5539) |
+**Problema:** `iva=0` se convertía a `iva=21`
+```python
+# Bug: 0 or 21 = 21 (0 es "falsy" en Python)
+iva=int(linea_raw.get('iva', 21) or 21)
+```
 
-### Problemas detectados
+**Solución:**
+```python
+iva_raw = linea_raw.get('iva')
+if iva_raw is None:
+    iva_valor = 21
+else:
+    iva_valor = int(iva_raw)
+```
 
-| Problema | Impacto | Solución v4.0 |
-|----------|---------|---------------|
-| Monolito 7,618 líneas | Difícil mantener | Dividir en módulos |
-| 70+ elif cascada | Propenso errores | Registro automático |
-| Función MRM duplicada | Bug silencioso | Eliminar duplicado |
-| Sin anti-duplicados | Riesgo contable | Registro facturas |
-| Sin tests individuales | Difícil validar | Script test |
+### Extractores nuevos
 
-### Cambios v3.57
+| # | Proveedor | Archivo | Facturas | Notas |
+|---|-----------|---------|----------|-------|
+| 1 | **ISTA** | `ista.py` | 6/6 ✅ | Recibos agua, sin CIF |
+| 2 | **CVNE** | `cvne.py` | 4/4 ✅ | Vinos, IVA 21% |
+| 3 | **QUESOS FELIX** | `quesos_felix.py` | 3/3 ✅ | Quesos IGP, IVA 4% |
+| 4 | **MIGUEZ CAL** | `miguez_cal.py` | 5/5 ✅ | Limpieza ForPlan |
+| 5 | **DISTRIBUCIONES LAVAPIES** | `distribuciones_lavapies.py` | 6/6 ✅ | IVA mixto 10%/21% |
+| 6 | **MARTIN ABENZA** | `martin_abenza.py` | 5/5 ✅ | Porte sin IVA |
 
-1. **JIMELUZ**: Nuevo extractor OCR con doble estrategia (líneas + tabla IVA)
-2. **LICORES MADRUEÑO**: Añadido patrón "TOTAL €:" + fallback robusto
-3. **Documentación**: Creados PLAN_REFACTORIZACION.md y COMO_AÑADIR_EXTRACTOR.md
+### Características especiales
+
+| Proveedor | CIF | IVA | Peculiaridad |
+|-----------|-----|-----|--------------|
+| ISTA | ES B80580850 | 10% | Recibos agua, sin CIF requerido en validación |
+| CVNE | A31001897 | 21% | Vinos, formato tabla estándar |
+| QUESOS FELIX | B47440136 | 4% | Quesos con lote opcional |
+| MIGUEZ CAL | B79868006 | 21% | Multipágina, ignorar SCRAP |
+| LAVAPIES | F88424072 | 10%/21% | IVA real calculado desde PDF |
+| MARTIN ABENZA | 74305431K | 10%+0% | Productos 10%, porte 0% |
 
 ---
 
 ## ⚠️ PROBLEMAS PENDIENTES
 
-### Por proveedor (prioritarios)
+### Por tipo de error (1T25)
 
-| Proveedor | Facturas | Error | Notas |
-|-----------|----------|-------|-------|
-| **JIMELUZ** | ~18 | CUADRE_PENDIENTE | v3.57 mejora OCR, algunos tickets muy malos |
-| **SOM ENERGIA** | 5 | CUADRE_PENDIENTE | Investigar |
-| **MADRUEÑO** | 3 | SIN_TOTAL | Problema Windows vs Linux |
-
-### Por tipo de error (estimado 2T25)
-
-| Error | Cantidad aprox. |
-|-------|-----------------|
-| SIN_LINEAS | ~50 |
-| CUADRE_PENDIENTE | ~25 |
-| CIF_PENDIENTE | ~25 |
-| IBAN_PENDIENTE | ~20 |
-| FECHA_PENDIENTE | ~15 |
+| Error | Cantidad | Proveedores principales |
+|-------|----------|------------------------|
+| SIN_TOTAL | ~20 | PANRUJE (3), QUESOS ROYCA (2), JULIO GARCIA (3) |
+| SIN_LINEAS | ~20 | CARLOS NAVAS, GRUPO DISBER, MRM, PORVAZ |
+| FECHA_PENDIENTE | ~15 | LIDL (3), OPENAI (4), AMAZON (2), CAMPERO (3) |
+| DESCUADRE | ~10 | LA ROSQUILLERIA (4), FISHGOURMET (2) |
+| CIF_PENDIENTE | ~10 | FNMT, WELLDONE, IMCASA |
 
 ---
 
-## 📈 PROVEEDORES CON EXTRACTOR (70)
+## 📋 ARCHIVOS ENTREGADOS HOY
 
-Ver lista completa en: `docs/PROVEEDORES.md`
+### Extractores (carpeta `extractores/`)
+```
+ista.py
+cvne.py
+quesos_felix.py
+miguez_cal.py
+distribuciones_lavapies.py
+martin_abenza.py
+__init__.py (actualizado)
+```
 
-### Añadidos/Arreglados v3.57
+### Core (carpeta raíz)
+```
+main.py (bug IVA 0 corregido)
+```
 
-| # | Proveedor | Cambio |
+---
+
+## 🎯 PLAN PRÓXIMA SESIÓN
+
+### Prioridad 1: Proveedores con más facturas
+- LA ROSQUILLERIA (4 descuadres ~2€)
+- PANRUJE (3 SIN_TOTAL)
+
+### Prioridad 2: Errores frecuentes
+- LIDL (FECHA_PENDIENTE)
+- GRUPO DISBER (SIN_LINEAS)
+
+---
+
+## 📈 EXTRACTORES FUNCIONANDO (80+)
+
+### Nuevos en esta sesión
+| # | Proveedor | Estado |
 |---|-----------|--------|
-| 1 | JIMELUZ | Nuevo extractor OCR con tabla IVA |
-| 2 | LICORES MADRUEÑO | Fix extracción total |
+| 1 | ISTA | ✅ NUEVO |
+| 2 | CVNE | ✅ NUEVO |
+| 3 | QUESOS FELIX | ✅ NUEVO |
+| 4 | MIGUEZ CAL | ✅ NUEVO |
+| 5 | DISTRIBUCIONES LAVAPIES | ✅ NUEVO |
+| 6 | MARTIN ABENZA | ✅ NUEVO |
+
+### Anteriores funcionando
+- BM SUPERMERCADOS, CERES, MADRUEÑO, BERNAL, BERZAL
+- SABORES PATERNA, FRANCISCO GUERRA, LA BARRA DULCE
+- ECOFICUS, MOLLETES, EMJAMESA, FELISA GOURMET
+- BORBOTON, ZUBELZU, FABEIRO, YOIGO, SEGURMA
+- SOM ENERGIA, LUCERA, TRUCCO, VINOS ARGANZA
+- MOLIENDA VERDE, ZUCCA, HERNANDEZ, y más...
 
 ---
 
-## 🎯 PLAN REFACTORIZACIÓN
+## 🔧 DECISIONES TÉCNICAS
 
-### Fases
-
-| Fase | Sesiones | Estado |
-|------|----------|--------|
-| 1. Estructura | 1 | ⏳ EN CURSO |
-| 2. Núcleo | 1 | ⏳ |
-| 3. Sistema extractores | 1 | ⏳ |
-| 4. Migración 70 extractores | 2 | ⏳ |
-| 5. Salidas + main | 1 | ⏳ |
-| 6. Robustez | 1 | ⏳ |
-| **TOTAL** | **7-9** | |
-
-Ver detalle en: `docs/PLAN_REFACTORIZACION.md`
-
----
-
-## 📁 ARCHIVOS DEL PROYECTO
-
-### Estructura actual
-```
-ParsearFacturas-main/
-├── src/migracion/
-│   ├── migracion_historico_2025_v3_57.py  ← VERSIÓN ACTUAL
-│   └── outputs/
-│       ├── Facturas_1T25.xlsx
-│       ├── Facturas_2T25.xlsx
-│       └── log_migracion_*.txt
-├── docs/
-│   ├── ESTADO_PROYECTO.md      ← ESTE ARCHIVO
-│   ├── LEEME_PRIMERO.md
-│   ├── PROVEEDORES.md
-│   ├── PLAN_REFACTORIZACION.md ← NUEVO
-│   └── COMO_AÑADIR_EXTRACTOR.md ← NUEVO
-└── DiccionarioProveedoresCategoria.xlsx
-```
-
-### Estructura destino (v4.0)
-```
-ParsearFacturas-main/
-├── main.py
-├── config/
-├── extractores/     ← 70 archivos
-├── nucleo/
-├── salidas/
-├── datos/
-├── tests/
-├── docs/
-└── legacy/          ← Backup v3.57
-```
+1. **pdfplumber SIEMPRE** - Preferido sobre pypdf
+2. **IVA 0 válido** - Para portes y conceptos sin IVA
+3. **Formato europeo:** `_convertir_europeo()` para números con coma
+4. **Tolerancia cuadre:** 0.10€
+5. **1 artículo = 1 línea** - SIEMPRE líneas individuales
 
 ---
 
@@ -170,25 +157,10 @@ ParsearFacturas-main/
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
-| **v3.57** | **2025-12-18** | **JIMELUZ OCR tabla IVA. MADRUEÑO fix total. Inicio refactorización v4.0** |
-| v3.56 | 2025-12-17 | ECOMS nuevo, BORBOTON/MARITA fix total. ~78% global |
-| v3.55 | 2025-12-16 | OCR: IBARRAKO, ROSQUILLERIA, ABELLAN. Auditoría código. 82.5% 1T25 |
-| v3.54 | 2025-12-15 | LIDL nuevo, BORBOTON/FELISA/LAVAPIES/ZUBELZU/MUÑOZ MARTIN. 78.6% |
-| v3.53 | 2025-12-14 | pdfplumber + Tesseract OCR base. 64.3% |
+| **v4.2** | **2025-12-19 tarde** | **6 extractores nuevos. Bug IVA 0 corregido. 54% cuadre.** |
+| v4.1 | 2025-12-19 mañana | BM refactorizado. MOLLETES, ECOFICUS, SABORES. 47% cuadre. |
+| v4.0 | 2025-12-18 | FABEIRO completo. Variantes nombres. pdfplumber preferido. |
 
 ---
 
-## 🔑 DECISIONES TÉCNICAS
-
-1. **PDF extractor:** pypdf principal → pdfplumber fallback → OCR (Tesseract)
-2. **OCR preprocesado:** Resolución 300dpi, escala grises, contraste x2
-3. **Parche Windows:** Búsqueda importes sin coma decimal (7740 → 77.40)
-4. **Portes:** NUNCA línea aparte, siempre repartidos proporcionalmente
-5. **Tolerancia cuadre:** 0.05€
-6. **Orden patrones total:** Específicos ANTES de genéricos
-7. **v4.0 - Registro extractores:** Decorador `@registrar('PROVEEDOR')`
-8. **v4.0 - Anti-duplicados:** PROVEEDOR + FECHA + TOTAL en Excel
-
----
-
-*Última actualización: 18/12/2025 - Sesión análisis + inicio refactorización*
+*Última actualización: 19/12/2025 tarde*

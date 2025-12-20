@@ -1,7 +1,7 @@
 # 📖 CÓMO AÑADIR UN EXTRACTOR NUEVO
 
-**Versión:** 4.0
-**Última actualización:** 18/12/2025
+**Versión:** 4.1
+**Última actualización:** 19/12/2025
 
 ---
 
@@ -9,216 +9,180 @@
 
 ```
 1. Copia la plantilla: extractores/_plantilla.py → extractores/nuevo_proveedor.py
-2. Cambia el nombre y CIF
-3. Implementa extraer_lineas()
-4. Prueba: python tests/probar_extractor.py NUEVO_PROVEEDOR factura.pdf
+2. Cambia el nombre, CIF y variantes
+3. Implementa extraer_lineas() → SIEMPRE líneas individuales
+4. Prueba: python tests/probar_extractor.py "PROVEEDOR" factura.pdf
 5. ¡Listo! El extractor se registra automáticamente
 ```
 
 ---
 
-## 📝 PASO A PASO DETALLADO
+## 🔑 REGLAS CRÍTICAS
 
-### Paso 1: Copiar plantilla
-
-```cmd
-cd C:\_ARCHIVOS\TRABAJO\Facturas\ParsearFacturas-main
-copy extractores\_plantilla.py extractores\nuevo_proveedor.py
-```
-
-### Paso 2: Editar el archivo
-
-Abre `extractores/nuevo_proveedor.py` en VS Code:
-
+### 1. SIEMPRE pdfplumber
 ```python
-"""
-Extractor para NUEVO PROVEEDOR
-Creado: DD/MM/YYYY
-"""
-from extractores.base import ExtractorBase, registrar
-from typing import List, Dict
-import re
-
-@registrar('NUEVO PROVEEDOR')  # ← Cambiar nombre (como aparece en facturas)
-class ExtractorNuevoProveedor(ExtractorBase):
-    """Extractor para facturas de NUEVO PROVEEDOR."""
-    
-    nombre = 'NUEVO PROVEEDOR'
-    cif = 'B12345678'           # ← Cambiar CIF real
-    iban = 'ES00 0000 0000 00'  # ← Cambiar IBAN real (vacío si pago tarjeta)
-    metodo_pdf = 'pypdf'        # ← 'pypdf', 'pdfplumber' u 'ocr'
-    
-    def extraer_lineas(self, texto: str) -> List[Dict]:
-        """
-        Extrae las líneas de la factura.
-        
-        Debe devolver lista de diccionarios:
-        [
-            {'articulo': 'Producto 1', 'base': 10.00, 'iva': 21},
-            {'articulo': 'Producto 2', 'base': 5.50, 'iva': 10},
-        ]
-        """
-        lineas = []
-        
-        # TODO: Implementar lógica de extracción
-        # Ejemplo básico:
-        patron = r'(\d+)\s+(.+?)\s+(\d+[.,]\d{2})\s*€'
-        for match in re.finditer(patron, texto):
-            cantidad = int(match.group(1))
-            descripcion = match.group(2).strip()
-            importe = float(match.group(3).replace(',', '.'))
-            
-            lineas.append({
-                'articulo': descripcion,
-                'base': round(importe / 1.21, 2),  # Asumir IVA 21%
-                'iva': 21
-            })
-        
-        return lineas
+metodo_pdf = 'pdfplumber'  # SIEMPRE, pypdf solo como fallback
 ```
 
-### Paso 3: Probar el extractor
+### 2. SIEMPRE líneas individuales
+**1 artículo = 1 línea en el Excel**
 
-```cmd
-python tests/probar_extractor.py "NUEVO PROVEEDOR" "ruta/a/factura.pdf"
+❌ MAL (desglose fiscal agrupado):
+```python
+lineas.append({
+    'articulo': 'PRODUCTOS VARIOS IVA 21%',
+    'base': 646.55,
+    'iva': 21
+})
 ```
 
-Salida esperada:
-```
-=== TEST EXTRACTOR: NUEVO PROVEEDOR ===
-Archivo: factura.pdf
-Método PDF: pypdf
-
-Texto extraído: 1523 caracteres
-
-Líneas encontradas: 3
-  1. Producto A - Base: 10.00€ - IVA: 21%
-  2. Producto B - Base: 5.50€ - IVA: 10%
-  3. Producto C - Base: 3.25€ - IVA: 4%
-
-Total calculado: 22.75€ (sin IVA)
-Total con IVA: 26.47€
-
-✅ Extractor funcionando correctamente
+✅ BIEN (líneas individuales):
+```python
+lineas.append({
+    'codigo': '1594',
+    'articulo': 'FEVER-TREE',
+    'cantidad': 24,
+    'precio_ud': 0.80,
+    'iva': 21,
+    'base': 19.20
+})
 ```
 
-### Paso 4: ¡Listo!
-
-El extractor se registra automáticamente. La próxima vez que ejecutes:
-```cmd
-python main.py -i "carpeta_facturas" -d "diccionario.xlsx"
+### 3. Columnas obligatorias
+```python
+{
+    'codigo': str,       # Código del producto ('' si no hay)
+    'articulo': str,     # Nombre del artículo (max 50 chars)
+    'cantidad': int/float,  # Unidades
+    'precio_ud': float,  # Precio unitario
+    'iva': int,          # 4, 10 o 21
+    'base': float        # Importe SIN IVA
+}
 ```
 
-Las facturas de NUEVO PROVEEDOR se procesarán automáticamente.
+### 4. Incluir TODAS las variantes del nombre
+```python
+@registrar('PROVEEDOR', 'VARIANTE1', 'VARIANTE2', 'VARIANTE3')
+```
 
 ---
 
-## 📋 PLANTILLA COMPLETA
+## 📝 PLANTILLA COMPLETA
 
 ```python
 """
 Extractor para [NOMBRE PROVEEDOR]
-Creado: [FECHA]
-Autor: [TU NOMBRE]
 
-Formato factura:
-- [Describir formato: tabla, líneas, etc.]
-- [IVA aplicable: 21%, 10%, 4%]
-- [Notas especiales]
+[Descripción del proveedor]
+CIF: [CIF]
+
+Formato factura (pdfplumber):
+[Describir formato]
+
+IVA: [Tipos aplicables]
+
+Creado: [FECHA]
 """
-from extractores.base import ExtractorBase, registrar
+from extractores.base import ExtractorBase
+from extractores import registrar
 from typing import List, Dict, Optional
 import re
 
 
-@registrar('[NOMBRE PROVEEDOR]')
-class Extractor[NombreProveedor](ExtractorBase):
-    """Extractor para facturas de [NOMBRE PROVEEDOR]."""
+@registrar('PROVEEDOR', 'VARIANTE1', 'VARIANTE2')
+class ExtractorProveedor(ExtractorBase):
+    """Extractor para facturas de PROVEEDOR."""
     
-    # === CONFIGURACIÓN ===
-    nombre = '[NOMBRE PROVEEDOR]'
-    cif = '[CIF]'
-    iban = '[IBAN]'  # Vacío '' si pago con tarjeta
-    metodo_pdf = 'pypdf'  # 'pypdf', 'pdfplumber', 'ocr'
+    nombre = 'PROVEEDOR'
+    cif = 'B12345678'
+    iban = 'ES00 0000 0000 0000 0000 0000'
+    metodo_pdf = 'pdfplumber'
     
-    # === EXTRACCIÓN DE LÍNEAS ===
     def extraer_lineas(self, texto: str) -> List[Dict]:
         """
-        Extrae líneas de producto de la factura.
+        Extrae líneas INDIVIDUALES de productos.
         
-        Returns:
-            Lista de diccionarios con claves:
-            - articulo: str (nombre del producto)
-            - base: float (importe SIN IVA)
-            - iva: int (porcentaje: 4, 10 o 21)
-            - codigo: str (opcional, código producto)
-            - cantidad: float (opcional)
-            - precio_ud: float (opcional, precio unitario)
+        IMPORTANTE: 1 artículo = 1 línea
         """
         lineas = []
         
-        # === TU CÓDIGO AQUÍ ===
-        # Ejemplo: buscar patrón en el texto
-        patron = r'...'
-        for match in re.finditer(patron, texto, re.MULTILINE):
+        # Patrón para líneas de producto
+        patron_linea = re.compile(
+            r'^(\d{4,6})\s+'              # Código
+            r'(.+?)\s+'                    # Descripción
+            r'(\d+)\s+'                    # Cantidad
+            r'(\d+,\d{2})\s+'              # Precio
+            r'(\d+,\d{2})$'                # Importe
+        , re.MULTILINE)
+        
+        for match in patron_linea.finditer(texto):
+            codigo = match.group(1)
+            descripcion = match.group(2).strip()
+            cantidad = int(match.group(3))
+            precio = self._convertir_europeo(match.group(4))
+            importe = self._convertir_europeo(match.group(5))
+            
+            # Filtrar cabeceras
+            if any(x in descripcion.upper() for x in ['DESCRIPCION', 'TOTAL']):
+                continue
+            
+            if importe < 1.0:
+                continue
+            
             lineas.append({
-                'articulo': '...',
-                'base': 0.00,
-                'iva': 21
+                'codigo': codigo,
+                'articulo': descripcion[:50],
+                'cantidad': cantidad,
+                'precio_ud': round(precio, 2),
+                'iva': 21,  # O el IVA que corresponda
+                'base': round(importe, 2)
             })
         
         return lineas
     
-    # === OPCIONAL: Sobrescribir extracción de total ===
+    def _convertir_europeo(self, texto: str) -> float:
+        """Convierte formato europeo (1.234,56) a float."""
+        if not texto:
+            return 0.0
+        texto = texto.strip()
+        if '.' in texto and ',' in texto:
+            texto = texto.replace('.', '').replace(',', '.')
+        elif ',' in texto:
+            texto = texto.replace(',', '.')
+        try:
+            return float(texto)
+        except:
+            return 0.0
+    
     def extraer_total(self, texto: str) -> Optional[float]:
-        """
-        Sobrescribe si el formato de total es especial.
-        Por defecto usa la función genérica.
-        """
-        # Ejemplo: buscar "TOTAL: 123,45€"
-        match = re.search(r'TOTAL[:\s]+(\d+[.,]\d{2})\s*€', texto)
-        if match:
-            return float(match.group(1).replace(',', '.'))
-        return None  # Usar método por defecto
+        """Extrae total de la factura."""
+        patron = re.search(r'TOTAL[:\s]+(\d+,\d{2})\s*€', texto, re.IGNORECASE)
+        if patron:
+            return self._convertir_europeo(patron.group(1))
+        return None
 ```
 
 ---
 
-## 🔍 EJEMPLOS DE PATRONES COMUNES
+## 📋 PATRONES COMUNES
 
-### Formato tabla: CÓDIGO | DESCRIPCIÓN | CANTIDAD | PRECIO | IMPORTE
-
+### Tabla estándar
 ```python
-patron = r'^(\d{4,6})\s+(.+?)\s+(\d+)\s+(\d+[.,]\d{2})\s+(\d+[.,]\d{2})$'
-for match in re.finditer(patron, texto, re.MULTILINE):
-    codigo = match.group(1)
-    descripcion = match.group(2).strip()
-    cantidad = int(match.group(3))
-    precio_ud = float(match.group(4).replace(',', '.'))
-    importe = float(match.group(5).replace(',', '.'))
+# CODIGO DESCRIPCION CANTIDAD PRECIO IMPORTE
+r'^(\d{4,6})\s+(.+?)\s+(\d+)\s+(\d+,\d{2})\s+(\d+,\d{2})$'
 ```
 
-### Formato simple: DESCRIPCIÓN ... IMPORTE€
-
+### Con precio 3 decimales
 ```python
-patron = r'^(.+?)\s+(\d+[.,]\d{2})\s*€?\s*$'
+# 01071 MZ LATAS 5 KG 3 19,900 59,70
+r'^(\d{4,6})\s+(.+?)\s+(\d+)\s+(\d+,\d{2,3})\s+(\d+,\d{2})$'
 ```
 
-### Formato con IVA explícito: PRODUCTO | BASE | IVA% | TOTAL
-
+### Formato europeo (punto miles, coma decimal)
 ```python
-patron = r'(.+?)\s+(\d+[.,]\d{2})\s+(\d+)%\s+(\d+[.,]\d{2})'
-for match in re.finditer(patron, texto):
-    base = float(match.group(2).replace(',', '.'))
-    iva = int(match.group(3))
-```
-
-### Formato OCR (tickets escaneados)
-
-```python
-# OCR puede introducir errores: | → 1, O → 0, etc.
-texto_limpio = texto.replace('|', '1').replace('O', '0')
-patron = r'(\d+[.,]\d{2})'  # Patrón más flexible
+def _convertir_europeo(self, texto):
+    texto = texto.replace('.', '').replace(',', '.')
+    return float(texto)
 ```
 
 ---
@@ -226,52 +190,33 @@ patron = r'(\d+[.,]\d{2})'  # Patrón más flexible
 ## ⚠️ ERRORES COMUNES
 
 ### 1. "Extractor no encontrado"
-**Causa:** El nombre en `@registrar('...')` no coincide con el proveedor
-**Solución:** Usar exactamente el nombre que aparece en las facturas (mayúsculas)
+**Causa:** El nombre en `@registrar()` no coincide
+**Solución:** Añadir más variantes
 
-### 2. "No se encontraron líneas"
-**Causa:** El patrón regex no coincide con el formato
-**Solución:** 
-1. Imprimir el texto: `print(texto)`
-2. Probar patrón en https://regex101.com
-3. Ajustar patrón
+### 2. "No se encontraron líneas"  
+**Causa:** Patrón regex incorrecto
+**Solución:** Probar con `--debug` y ajustar patrón
 
-### 3. "Total no cuadra"
-**Causa:** Base mal calculada (con IVA incluido o sin incluir)
-**Solución:** Verificar si el importe en factura es con o sin IVA
+### 3. "Solo 1 línea con desglose"
+**Causa:** Extractor usa desglose fiscal en vez de líneas
+**Solución:** REHACER para extraer líneas individuales
 
-### 4. "Error de encoding"
-**Causa:** PDF con caracteres especiales (ñ, €, etc.)
-**Solución:** Usar `metodo_pdf = 'pdfplumber'` o `'ocr'`
+### 4. "Total no cuadra"
+**Causa:** Base mal calculada
+**Solución:** Verificar si los importes ya incluyen IVA o no
 
 ---
 
 ## 🧪 TESTING
 
-### Test rápido (1 factura)
 ```cmd
+# Test rápido
 python tests/probar_extractor.py "PROVEEDOR" "factura.pdf"
-```
 
-### Test completo (todas las facturas de un proveedor)
-```cmd
-python tests/probar_extractor.py "PROVEEDOR" "carpeta_facturas/"
-```
-
-### Test con debug (ver texto extraído)
-```cmd
+# Con debug (ver texto extraído)
 python tests/probar_extractor.py "PROVEEDOR" "factura.pdf" --debug
 ```
 
 ---
 
-## 📞 AYUDA
-
-Si tienes problemas:
-1. Revisa esta guía
-2. Consulta extractores similares en `extractores/`
-3. Sube la factura de ejemplo a Claude y pide ayuda
-
----
-
-*Documento creado: 18/12/2025*
+*Última actualización: 19/12/2025 - Énfasis en líneas individuales*
