@@ -1,7 +1,7 @@
 # 📖 CÓMO AÑADIR UN EXTRACTOR NUEVO
 
-**Versión:** 4.1
-**Última actualización:** 19/12/2025
+**Versión:** 4.3
+**Última actualización:** 20/12/2025
 
 ---
 
@@ -19,9 +19,10 @@
 
 ## 🔑 REGLAS CRÍTICAS
 
-### 1. SIEMPRE pdfplumber
+### 1. SIEMPRE pdfplumber (OCR solo para escaneados)
 ```python
-metodo_pdf = 'pdfplumber'  # SIEMPRE, pypdf solo como fallback
+metodo_pdf = 'pdfplumber'  # SIEMPRE
+metodo_pdf = 'ocr'         # SOLO si es imagen/escaneado
 ```
 
 ### 2. SIEMPRE líneas individuales
@@ -65,6 +66,16 @@ lineas.append({
 @registrar('PROVEEDOR', 'VARIANTE1', 'VARIANTE2', 'VARIANTE3')
 ```
 
+### 5. Portes: distribuir proporcionalmente
+```python
+# Si hay portes, distribuir entre productos
+if portes > 0:
+    base_productos = sum(l['base'] for l in lineas)
+    for linea in lineas:
+        proporcion = linea['base'] / base_productos
+        linea['base'] += portes * proporcion
+```
+
 ---
 
 ## 📝 PLANTILLA COMPLETA
@@ -87,6 +98,7 @@ from extractores.base import ExtractorBase
 from extractores import registrar
 from typing import List, Dict, Optional
 import re
+import pdfplumber
 
 
 @registrar('PROVEEDOR', 'VARIANTE1', 'VARIANTE2')
@@ -97,6 +109,19 @@ class ExtractorProveedor(ExtractorBase):
     cif = 'B12345678'
     iban = 'ES00 0000 0000 0000 0000 0000'
     metodo_pdf = 'pdfplumber'
+    
+    def extraer_texto_pdfplumber(self, pdf_path: str) -> str:
+        """Extrae texto del PDF."""
+        texto_completo = []
+        try:
+            with pdfplumber.open(pdf_path) as pdf:
+                for page in pdf.pages:
+                    texto = page.extract_text()
+                    if texto:
+                        texto_completo.append(texto)
+        except Exception as e:
+            pass
+        return '\n'.join(texto_completo)
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         """
@@ -160,6 +185,13 @@ class ExtractorProveedor(ExtractorBase):
         if patron:
             return self._convertir_europeo(patron.group(1))
         return None
+    
+    def extraer_fecha(self, texto: str) -> Optional[str]:
+        """Extrae fecha de la factura."""
+        patron = re.search(r'(\d{2}/\d{2}/\d{4})', texto)
+        if patron:
+            return patron.group(1)
+        return None
 ```
 
 ---
@@ -176,6 +208,12 @@ r'^(\d{4,6})\s+(.+?)\s+(\d+)\s+(\d+,\d{2})\s+(\d+,\d{2})$'
 ```python
 # 01071 MZ LATAS 5 KG 3 19,900 59,70
 r'^(\d{4,6})\s+(.+?)\s+(\d+)\s+(\d+,\d{2,3})\s+(\d+,\d{2})$'
+```
+
+### Con cantidad decimal (kg)
+```python
+# CA0005 ANCHOA 10,00% 12,0000 24,0000 288,00
+r'^([A-Z]{2}\d{4})\s+(.+?)\s+(\d+,\d{4})\s+(\d+,\d{4})\s+(\d+,\d{2})$'
 ```
 
 ### Formato europeo (punto miles, coma decimal)
@@ -202,8 +240,12 @@ def _convertir_europeo(self, texto):
 **Solución:** REHACER para extraer líneas individuales
 
 ### 4. "Total no cuadra"
-**Causa:** Base mal calculada
-**Solución:** Verificar si los importes ya incluyen IVA o no
+**Causa:** Base mal calculada o portes no distribuidos
+**Solución:** Verificar si hay portes y distribuirlos
+
+### 5. "IVA incorrecto"
+**Causa:** IVA hardcodeado cuando es variable
+**Solución:** Detectar IVA real del PDF
 
 ---
 
@@ -219,4 +261,23 @@ python tests/probar_extractor.py "PROVEEDOR" "factura.pdf" --debug
 
 ---
 
-*Última actualización: 19/12/2025 - Énfasis en líneas individuales*
+## 📚 EJEMPLOS REALES
+
+### OCR (facturas escaneadas)
+- `manipulados_abellan.py` - Conservas vegetales
+- `la_rosquilleria.py` - Rosquillas
+- `jimeluz.py` - Tickets
+
+### IVA mixto
+- `fabeiro.py` - 10% ibéricos, 4% quesos
+- `distribuciones_lavapies.py` - 10%/21% bebidas
+
+### Con portes
+- `silva_cordero.py` - Portes 21% distribuidos
+
+### Categoría fija
+- `kinema.py` - Siempre categoría GESTORIA
+
+---
+
+*Última actualización: 20/12/2025 - Añadidos ejemplos OCR y portes*

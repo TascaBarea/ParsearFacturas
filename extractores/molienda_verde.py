@@ -2,6 +2,8 @@
 Extractor para LA MOLIENDA VERDE S.L.U.
 Mermeladas y conservas artesanales.
 CIF: B06936140 | IBAN: ES41 3023 0407 1669 9576 7701
+
+Actualizado: 18/12/2025 - limpieza encoding
 """
 from extractores.base import ExtractorBase
 from extractores import registrar

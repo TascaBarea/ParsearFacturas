@@ -1,6 +1,8 @@
 """
 Extractores para facturas de suministros y servicios.
-YOIGO, SOM ENERGIA, LUCERA, SEGURMA, KINEMA
+YOIGO, SOM ENERGIA, LUCERA, SEGURMA, KINEMA, ISTA
+
+Actualizado: 18/12/2025 - pdfplumber
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -13,7 +15,7 @@ class ExtractorYoigo(ExtractorBase):
     nombre = 'YOIGO'
     cif = 'A82528548'
     iban = ''
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -35,7 +37,7 @@ class ExtractorSomEnergia(ExtractorBase):
     nombre = 'SOM ENERGIA'
     cif = 'F55091367'
     iban = ''
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -67,7 +69,7 @@ class ExtractorLucera(ExtractorBase):
     nombre = 'LUCERA'
     cif = 'B98670003'
     iban = ''
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -83,7 +85,7 @@ class ExtractorSegurma(ExtractorBase):
     nombre = 'SEGURMA'
     cif = 'A48198626'
     iban = ''
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -99,7 +101,7 @@ class ExtractorKinema(ExtractorBase):
     nombre = 'KINEMA'
     cif = 'F84600022'
     iban = ''
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -115,7 +117,7 @@ class ExtractorIsta(ExtractorBase):
     nombre = 'ISTA'
     cif = 'A50090133'
     iban = ''
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []

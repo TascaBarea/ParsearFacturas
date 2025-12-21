@@ -1,133 +1,142 @@
+# -*- coding: utf-8 -*-
 """
-Extractor para FABEIRO S.L. (ibéricos y quesos)
+Extractor para FABEIRO S.L.
 
-Formato de factura:
-- Tabla con: Artículo | Concepto | I.V.A. | Cantidad | P. Unidad | De. | Importe
-- Desglose fiscal al final con BASE IMPONIBLE y TOTAL
-- Total en formato europeo: 1.119,70 € (punto miles, coma decimal)
-- CIF: B-79/992079 (formato especial con /)
+Proveedor de productos ibericos y conservas de Getafe (Madrid)
+CIF: B79992079
 
-Actualizado: 18/12/2025 - pdfplumber + formato europeo
+Formato factura (PDF digital multipagina):
+- Lineas producto: CODIGO CONCEPTO IVA% CANTIDAD P.UNIDAD DE. IMPORTE
+- Ejemplo: CA0005 ANCHOA OLIVA GRAN SELECCION 60 10,00% 12,0000 24,0000 288,00
+- Segunda linea descripcion: LOMOS - SIN28
+
+IVA mixto:
+- 10%: Embutidos, conservas, anchoas, cecina
+- 4%: Quesos (cabra, oveja)
+
+Creado: 20/12/2025
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
-from typing import List, Dict
+from typing import List, Dict, Optional
 import re
+import pdfplumber
 
 
-@registrar('FABEIRO', 'FABEIRO S.L', 'FABEIRO SL', 'FABEIRO IBERICO', 'FABEIROIBERICO')
+@registrar('FABEIRO', 'FABEIRO S.L.', 'FABEIRO SL', 'FABEIROIBERICO')
 class ExtractorFabeiro(ExtractorBase):
+    """Extractor para facturas de FABEIRO S.L."""
+    
     nombre = 'FABEIRO'
     cif = 'B79992079'
-    iban = 'ES21 0182 5906 8702 0151 7643'
     metodo_pdf = 'pdfplumber'
     
-    def _convertir_importe_fabeiro(self, texto: str) -> float:
+    def extraer_texto_pdfplumber(self, pdf_path: str) -> str:
+        """Extrae texto de todas las paginas del PDF."""
+        texto_completo = []
+        try:
+            with pdfplumber.open(pdf_path) as pdf:
+                for page in pdf.pages:
+                    texto = page.extract_text()
+                    if texto:
+                        texto_completo.append(texto)
+        except Exception as e:
+            pass
+        return '\n'.join(texto_completo)
+    
+    def extraer_lineas(self, texto: str) -> List[Dict]:
         """
-        Convierte importes en formato FABEIRO (europeo).
-        Ejemplos: '1.119,70' -> 1119.70, '288,00' -> 288.00
+        Extrae lineas INDIVIDUALES de productos.
+        
+        Formato:
+        CODIGO CONCEPTO IVA% CANTIDAD P.UNIDAD DE. IMPORTE
+        CA0005 ANCHOA OLIVA GRAN SELECCION 60 10,00% 12,0000 24,0000 288,00
+        LOMOS - SIN28  (segunda linea descripcion - ignorar)
+        
+        Nota: La cantidad puede tener 4 decimales (ej: 5,7850 kg)
         """
+        lineas = []
+        
+        # Patron principal para lineas de producto
+        # CODIGO + DESCRIPCION + IVA% + CANTIDAD + PRECIO + [DESC] + IMPORTE
+        patron_linea = re.compile(
+            r'^([A-Z]{2}\d{4})\s+'           # Codigo (CA0005, LE0003, SA0011, ZA0010, AL0007)
+            r'(.+?)\s+'                       # Descripcion
+            r'(\d+,\d{2})%\s+'                # IVA (10,00% o 4,00%)
+            r'(\d+,\d{4})\s+'                 # Cantidad (con 4 decimales)
+            r'(\d+,\d{4})\s+'                 # Precio unitario (con 4 decimales)
+            r'(\d+,\d{2})\s*$'                # Importe final
+        , re.MULTILINE)
+        
+        for match in patron_linea.finditer(texto):
+            codigo = match.group(1)
+            descripcion = match.group(2).strip()
+            iva = self._convertir_europeo(match.group(3))
+            cantidad = self._convertir_europeo(match.group(4))
+            precio = self._convertir_europeo(match.group(5))
+            importe = self._convertir_europeo(match.group(6))
+            
+            # Limpiar descripcion (quitar guiones finales, lotes, etc.)
+            descripcion = re.sub(r'\s*-\s*$', '', descripcion)
+            descripcion = descripcion.strip()
+            
+            lineas.append({
+                'codigo': codigo,
+                'articulo': descripcion[:50],
+                'cantidad': round(cantidad, 4),
+                'precio_ud': round(precio, 4),
+                'iva': int(iva),
+                'base': round(importe, 2)
+            })
+        
+        return lineas
+    
+    def _convertir_europeo(self, texto: str) -> float:
+        """Convierte formato europeo (1.234,56) a float."""
         if not texto:
             return 0.0
-        
-        texto = texto.strip().replace('€', '').replace(' ', '')
-        
-        # Si tiene punto Y coma, el punto es separador de miles
+        texto = texto.strip()
+        # Quitar puntos de miles y cambiar coma por punto
         if '.' in texto and ',' in texto:
             texto = texto.replace('.', '').replace(',', '.')
         elif ',' in texto:
             texto = texto.replace(',', '.')
-        
         try:
             return float(texto)
         except:
             return 0.0
     
-    def extraer_total(self, texto: str) -> float:
-        """Extrae el total de la factura FABEIRO."""
-        patron = re.search(r'TOTAL\s+([\d.,]+)\s*€', texto, re.IGNORECASE)
+    def extraer_total(self, texto: str) -> Optional[float]:
+        """Extrae total de la factura."""
+        # Buscar TOTAL seguido de importe
+        # TOTAL 1.588,35 o TOTAL 1.588,35 €
+        patron = re.search(r'TOTAL\s+(\d+\.?\d*,\d{2})\s*', texto)
         if patron:
-            return self._convertir_importe_fabeiro(patron.group(1))
-        
-        patron2 = re.search(r'TOTAL\s+([\d.,]+)', texto, re.IGNORECASE)
-        if patron2:
-            return self._convertir_importe_fabeiro(patron2.group(1))
-        
+            return self._convertir_europeo(patron.group(1))
         return None
     
-    def extraer_lineas(self, texto: str) -> List[Dict]:
-        """
-        Extrae líneas de factura FABEIRO.
-        
-        Formato tabla:
-        CODIGO  DESCRIPCION  IVA%  CANTIDAD  P.UNIDAD  DESC  IMPORTE
-        CA0005  ANCHOA OLIVA...  10,00%  12,0000  24,0000      288,00
-        """
-        lineas = []
-        
-        # Patrón para líneas de producto
-        patron = re.compile(
-            r'^([A-Z]{2}\d{4})\s+'           # Código: CA0005, SA0011, AL0007, ZA0010, LE0003
-            r'(.+?)\s+'                       # Descripción
-            r'(\d{1,2}),00%\s+'               # IVA: 10,00% o 4,00%
-            r'([\d,]+)\s+'                    # Cantidad: 12,0000 o 3,1600
-            r'([\d,]+)\s+'                    # Precio unitario: 24,0000
-            r'([\d,]+)$',                     # Importe: 288,00
-            re.MULTILINE
-        )
-        
-        for match in patron.finditer(texto):
-            codigo = match.group(1)
-            desc = match.group(2).strip()
-            iva = int(match.group(3))
-            cantidad = self._convertir_importe(match.group(4))
-            precio = self._convertir_importe(match.group(5))
-            importe = self._convertir_importe(match.group(6))
-            
-            # Limpiar descripción (quitar códigos de lote al final)
-            desc_limpia = re.sub(r'\s*-\s*\d+[A-Z]*\s*$', '', desc)
-            desc_limpia = re.sub(r'\s*-\s*[A-Z0-9]+\s*$', '', desc_limpia)
-            
-            if importe > 0:
-                lineas.append({
-                    'codigo': codigo,
-                    'articulo': desc_limpia,
-                    'cantidad': cantidad,
-                    'precio_ud': precio,
-                    'iva': iva,
-                    'base': round(importe, 2)
-                })
-        
-        # Si no encontramos líneas, usar desglose fiscal
-        if not lineas:
-            lineas = self._extraer_desde_desglose(texto)
-        
-        return lineas
+    def extraer_fecha(self, texto: str) -> Optional[str]:
+        """Extrae fecha de la factura."""
+        # Formato: Fecha Factura seguido de DD-MM-YYYY
+        patron = re.search(r'Fecha\s+Factura\s*\n.*?(\d{2}-\d{2}-\d{4})', texto, re.DOTALL)
+        if patron:
+            # Convertir de DD-MM-YYYY a DD/MM/YYYY
+            fecha = patron.group(1).replace('-', '/')
+            return fecha
+        # Alternativa directa
+        patron2 = re.search(r'(\d{2}-\d{2}-\d{4})', texto)
+        if patron2:
+            return patron2.group(1).replace('-', '/')
+        return None
     
-    def _extraer_desde_desglose(self, texto: str) -> List[Dict]:
-        """
-        Extrae líneas desde el desglose fiscal.
-        Formato: BASE IVA% CUOTA
-        Ejemplo: 1.291,12 10% 129,11
-                 161,65 4% 6,47
-        """
-        lineas = []
-        
-        patron = re.compile(r'([\d.,]+)\s+(\d{1,2})%\s+([\d.,]+)')
-        
-        for match in patron.finditer(texto):
-            base = self._convertir_importe_fabeiro(match.group(1))
-            iva = int(match.group(2))
-            cuota = self._convertir_importe_fabeiro(match.group(3))
-            
-            # Validar: cuota ≈ base × iva / 100 (tolerancia 0.15€)
-            cuota_esperada = base * iva / 100
-            if base > 0 and iva in [4, 10, 21] and abs(cuota - cuota_esperada) < 0.15:
-                lineas.append({
-                    'codigo': '',
-                    'articulo': f'PRODUCTOS IVA {iva}%',
-                    'iva': iva,
-                    'base': round(base, 2)
-                })
-        
-        return lineas
+    def extraer_numero_factura(self, texto: str) -> Optional[str]:
+        """Extrae numero de factura."""
+        # Formato: 25 - 11.474
+        patron = re.search(r'N[º°]\s*Factura\s*Fecha.*?\n.*?(\d+\s*-\s*\d+\.?\d+)', texto, re.DOTALL)
+        if patron:
+            return patron.group(1).replace(' ', '')
+        # Alternativa
+        patron2 = re.search(r'(\d{2}\s*-\s*\d+\.\d+)', texto)
+        if patron2:
+            return patron2.group(1).replace(' ', '')
+        return None

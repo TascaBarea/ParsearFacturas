@@ -302,36 +302,6 @@ try:
 except ImportError:
     pass
 
-try:
-    from extractores import de_luis            # DE LUIS SABORES UNICOS (quesos Cañarejal)
-except ImportError:
-    pass
-
-try:
-    from extractores import manipulados_abellan  # MANIPULADOS ABELLAN (OCR, conservas El Labrador)
-except ImportError:
-    pass
-
-try:
-    from extractores import ecoms                # ECOMS SUPERMARKET / DIA (híbrido)
-except ImportError:
-    pass
-
-try:
-    from extractores import marita_costa         # MARITA COSTA (distribuidora gourmet)
-except ImportError:
-    pass
-
-try:
-    from extractores import serrin_no_chan       # SERRIN NO CHAN (ultramarinos gallegos)
-except ImportError:
-    pass
-
-try:
-    from extractores import fishgourmet          # FISHGOURMET (ahumados pescado, OCR)
-except ImportError:
-    pass
-
 
 __all__ = [
     'ExtractorBase',

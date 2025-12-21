@@ -2,6 +2,8 @@
 Extractor para QUESOS NAVAS.
 Quesos artesanales.
 CIF: B37416419 | IBAN: ES62 2100 6153 0402 0001 6597
+
+Actualizado: 18/12/2025 - pdfplumber
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -14,7 +16,7 @@ class ExtractorQuesosNavas(ExtractorBase):
     nombre = 'QUESOS NAVAS'
     cif = 'B37416419'
     iban = 'ES62 2100 6153 0402 0001 6597'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []

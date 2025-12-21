@@ -1,6 +1,8 @@
 """
 Extractores para facturas de vinos.
 ARGANZA, PURISIMA, CVNE, MUÑOZ MARTIN
+
+Actualizado: 18/12/2025 - pdfplumber
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -13,7 +15,7 @@ class ExtractorArganza(ExtractorBase):
     nombre = 'VINOS DE ARGANZA'
     cif = 'B24416869'
     iban = 'ES92 0081 5385 6500 0121 7327'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -37,11 +39,11 @@ class ExtractorPurisima(ExtractorBase):
     nombre = 'LA PURISIMA'
     cif = 'F30005193'
     iban = 'ES78 0081 0259 1000 0184 4495'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
-        patron = re.compile(r'^(\d{9})([A-ZÁÉÍÓÚÑ][A-Za-záéíóúñ\s\d.]+?)\s+(\d+)\s+([\d,]+)\s+([\d,]+)$', re.MULTILINE)
+        patron = re.compile(r'^(\d{9})([A-ZÁÉÍÓÚÜ][A-Za-záéíóúñ\s\d.]+?)\s+(\d+)\s+([\d,]+)\s+([\d,]+)$', re.MULTILINE)
         
         for match in patron.finditer(texto):
             codigo, desc, uds, precio, importe = match.groups()
@@ -51,12 +53,12 @@ class ExtractorPurisima(ExtractorBase):
         return lineas
 
 
-@registrar('CVNE', 'COMPAÑIA VINICOLA')
+@registrar('CVNE', 'COMPAÑIA VINICOLA', 'COMPANIA VINICOLA')
 class ExtractorCvne(ExtractorBase):
     nombre = 'CVNE'
     cif = 'A48002893'
     iban = 'ES09 2100 9144 3102 0002 5176'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -70,7 +72,7 @@ class ExtractorCvne(ExtractorBase):
         return lineas
 
 
-@registrar('BODEGAS MUÑOZ MARTIN', 'MUÑOZ MARTIN')
+@registrar('BODEGAS MUÑOZ MARTIN', 'MUÑOZ MARTIN', 'MUNOZ MARTIN')
 class ExtractorMunozMartin(ExtractorBase):
     nombre = 'BODEGAS MUÑOZ MARTIN'
     cif = 'E83182683'
@@ -79,7 +81,7 @@ class ExtractorMunozMartin(ExtractorBase):
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
-        patron = re.compile(r'(\d+)\s+([A-ZÁÉÍÓÚÑ][A-Za-záéíóúñ\s]+?)\s+(\d+)\s+([\d,]+)\s+([\d,]+)', re.MULTILINE)
+        patron = re.compile(r'(\d+)\s+([A-ZÁÉÍÓÚÜ][A-Za-záéíóúñ\s]+?)\s+(\d+)\s+([\d,]+)\s+([\d,]+)', re.MULTILINE)
         
         for match in patron.finditer(texto):
             codigo, desc, uds, precio, importe = match.groups()

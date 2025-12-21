@@ -1,6 +1,8 @@
 """
 Extractores para facturas de quesos.
 QUESOS FELIX, QUESOS ROYCA, QUESOS CATI, SILVA CORDERO
+
+Actualizado: 18/12/2025 - pdfplumber
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -9,11 +11,11 @@ import re
 
 
 @registrar('QUESOS FELIX', 'ARMANDO SANZ', 'FELIX')
-class ExtractorQuesesFelix(ExtractorBase):
+class ExtractorQuesosFelix(ExtractorBase):
     nombre = 'QUESOS FELIX'
     cif = 'B47440136'
     iban = 'ES40 2103 4346 3300 3306 5431'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -34,7 +36,7 @@ class ExtractorQuesosRoyca(ExtractorBase):
     nombre = 'QUESOS ROYCA'
     cif = 'E06388631'
     iban = ''
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -53,7 +55,7 @@ class ExtractorQuesosCati(ExtractorBase):
     nombre = 'QUESOS DEL CATI'
     cif = 'F12499455'
     iban = 'ES89 2100 7363 72 1100030799'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -72,7 +74,7 @@ class ExtractorSilvaCordero(ExtractorBase):
     nombre = 'SILVA CORDERO'
     cif = 'B09861535'
     iban = 'ES48 3001 0050 78 5010003340'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []

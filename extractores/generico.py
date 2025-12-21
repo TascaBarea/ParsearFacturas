@@ -2,6 +2,8 @@
 Extractor genérico - Fallback para proveedores sin extractor específico.
 
 Intenta extraer líneas usando patrones comunes.
+
+Actualizado: 18/12/2025 - pdfplumber + limpieza encoding
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -18,7 +20,7 @@ class ExtractorGenerico(ExtractorBase):
     nombre = 'GENERICO'
     cif = ''
     iban = ''
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []

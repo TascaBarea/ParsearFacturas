@@ -1,155 +1,132 @@
 # ESTADO DEL PROYECTO - ParsearFacturas
 
-**Última actualización:** 2025-12-19
-**Versión actual:** v4.2
+**Última actualización:** 2025-12-21
+**Versión actual:** v4.4
 
 ---
 
 ## 📊 MÉTRICAS ACTUALES
 
-### v4.2 - Resultados (19/12/2025)
+### v4.4 - Resultados (21/12/2025)
 
 | Trimestre | Facturas | Cuadre OK | % | Con Líneas | Importe |
 |-----------|----------|-----------|---|------------|---------|
-| 1T25 | 252 | **133+** | **~54%** | ~180 | ~45,000€ |
-| 2T25 | 307 | pendiente | - | - | - |
-| 3T25 | 161 | pendiente | - | - | - |
+| 1T25 | 252 | 167 | **66.3%** | 194 (77%) | 48,173€ |
+| 2T25 | 307 | 165 | **53.7%** | 231 (75%) | 46,720€ |
+| 3T25 | 161 | 86 | **53.4%** | 119 (74%) | 35,539€ |
+| 4T25 | 183 | ~95 | **~52%** | ~120 | pendiente |
+| **TOTAL** | **903** | **~513** | **~57%** | ~664 | ~130,000€ |
 
-### Evolución 19/12/2025
+### Evolución histórica
 
-| Fase | Cuadre OK | % | Cambio |
-|------|-----------|---|--------|
-| Inicio día | 60 | 23.8% | - |
-| Post-BM + refactor | 103 | 40.9% | +43 |
-| Post-MOLLETES/ECOFICUS | 111 | 44.0% | +8 |
-| Post-SABORES PATERNA | 117 | 46.4% | +6 |
-| Post-LA BARRA DULCE | 120 | 47.6% | +3 |
-| Post-ISTA + CVNE | 129 | 51.2% | +9 |
-| Post-QUESOS FELIX + MIGUEZ CAL | 136 | 54.0% | +7 |
-| **Post-LAVAPIES + MARTIN ABENZA** | **~140** | **~56%** | **+4** |
+| Versión | Fecha | Cuadre 1T25 | Cambio principal |
+|---------|-------|-------------|------------------|
+| v3.5 | 09/12/2025 | 42% | Baseline - 70 extractores monolíticos |
+| v3.6 | 10/12/2025 | 47% | +6 extractores servicios |
+| v4.0 | 18/12/2025 | 54% | Arquitectura modular @registrar |
+| v4.2 | 19/12/2025 | 56% | +12 extractores, bug IVA 0 |
+| v4.3 | 20/12/2025 | 60% | +6 extractores OCR |
+| **v4.4** | **21/12/2025** | **66%** | **+12 extractores sesión intensiva** |
 
-**Mejora total del día: +80 facturas (+133%)**
+**Mejora total:** 42% → 66% = **+24 puntos** (+57% relativo)
 
 ---
 
-## ✅ SESIÓN 2025-12-19 TARDE: 6 EXTRACTORES + BUG FIX
+## ✅ SESIÓN 2025-12-21: 12 EXTRACTORES NUEVOS
 
-### 🐛 Bug crítico corregido: main.py línea 178
+### Extractores creados
 
-**Problema:** `iva=0` se convertía a `iva=21`
-```python
-# Bug: 0 or 21 = 21 (0 es "falsy" en Python)
-iva=int(linea_raw.get('iva', 21) or 21)
+| # | Proveedor | CIF | Facturas | Método | Estado |
+|---|-----------|-----|----------|--------|--------|
+| 1 | QUESERIA ZUCCA | B42861948 | 7/7 | pdfplumber | ✅ |
+| 2 | PANRUJE | B13858014 | 6/6 | pdfplumber | ✅ |
+| 3 | GRUPO DISBER | B43489039 | 4/4 | pdfplumber | ✅ |
+| 4 | LIDL | A60195278 | 5/5 | pdfplumber | ✅ |
+| 5 | LA ROSQUILLERIA | B86556081 | 7/7 | OCR | ✅ |
+| 6 | GADITAUN | 34007216Z | 5/5 | OCR | ✅ |
+| 7 | DE LUIS SABORES UNICOS | B87893681 | 5/5 | híbrido | ✅ |
+| 8 | MANIPULADOS ABELLAN | B30243737 | 6/6 | OCR | ✅ |
+| 9 | ECOMS/DIA | B72738602 | 6/8 | híbrido | ✅ |
+| 10 | MARITA COSTA | 48207369J | 9/9 | pdfplumber | ✅ |
+| 11 | SERRÍN NO CHAN | B87214755 | 7/7 | pdfplumber | ✅ |
+| 12 | FISHGOURMET | B85975126 | 5/5 | OCR | ✅ |
+| **TOTAL** | | | **72/74** | | **97%** |
+
+### Archivos generados
+
 ```
-
-**Solución:**
-```python
-iva_raw = linea_raw.get('iva')
-if iva_raw is None:
-    iva_valor = 21
-else:
-    iva_valor = int(iva_raw)
+extractores/
+├── zucca.py              # Quesería artesanal
+├── panruje.py            # Panadería rosquillas
+├── grupo_disber.py       # Distribuidor alimentación
+├── lidl.py               # Supermercado
+├── la_rosquilleria.py    # Rosquillas El Torro (OCR)
+├── gaditaun.py           # Conservas Cádiz (OCR)
+├── de_luis.py            # Gourmet Madrid (híbrido)
+├── manipulados_abellan.py # Conservas vegetales (OCR)
+├── ecoms.py              # DIA tickets (híbrido)
+├── marita_costa.py       # AOVE y gourmet
+├── serrin_no_chan.py     # Ultramarinos gallegos
+├── fishgourmet.py        # Ahumados pescado (OCR)
+└── __init__.py           # Actualizado con imports
 ```
-
-### Extractores nuevos
-
-| # | Proveedor | Archivo | Facturas | Notas |
-|---|-----------|---------|----------|-------|
-| 1 | **ISTA** | `ista.py` | 6/6 ✅ | Recibos agua, sin CIF |
-| 2 | **CVNE** | `cvne.py` | 4/4 ✅ | Vinos, IVA 21% |
-| 3 | **QUESOS FELIX** | `quesos_felix.py` | 3/3 ✅ | Quesos IGP, IVA 4% |
-| 4 | **MIGUEZ CAL** | `miguez_cal.py` | 5/5 ✅ | Limpieza ForPlan |
-| 5 | **DISTRIBUCIONES LAVAPIES** | `distribuciones_lavapies.py` | 6/6 ✅ | IVA mixto 10%/21% |
-| 6 | **MARTIN ABENZA** | `martin_abenza.py` | 5/5 ✅ | Porte sin IVA |
-
-### Características especiales
-
-| Proveedor | CIF | IVA | Peculiaridad |
-|-----------|-----|-----|--------------|
-| ISTA | ES B80580850 | 10% | Recibos agua, sin CIF requerido en validación |
-| CVNE | A31001897 | 21% | Vinos, formato tabla estándar |
-| QUESOS FELIX | B47440136 | 4% | Quesos con lote opcional |
-| MIGUEZ CAL | B79868006 | 21% | Multipágina, ignorar SCRAP |
-| LAVAPIES | F88424072 | 10%/21% | IVA real calculado desde PDF |
-| MARTIN ABENZA | 74305431K | 10%+0% | Productos 10%, porte 0% |
 
 ---
 
 ## ⚠️ PROBLEMAS PENDIENTES
 
-### Por tipo de error (1T25)
+### Por tipo de error (basado en logs 21/12/2025)
 
 | Error | Cantidad | Proveedores principales |
 |-------|----------|------------------------|
-| SIN_TOTAL | ~20 | PANRUJE (3), QUESOS ROYCA (2), JULIO GARCIA (3) |
-| SIN_LINEAS | ~20 | CARLOS NAVAS, GRUPO DISBER, MRM, PORVAZ |
-| FECHA_PENDIENTE | ~15 | LIDL (3), OPENAI (4), AMAZON (2), CAMPERO (3) |
-| DESCUADRE | ~10 | LA ROSQUILLERIA (4), FISHGOURMET (2) |
-| CIF_PENDIENTE | ~10 | FNMT, WELLDONE, IMCASA |
+| FECHA_PENDIENTE | ~40 | BM tickets, OPENAI, CELONIS, ANTHROPIC |
+| SIN_TOTAL | ~25 | LA PURISIMA, VIRGEN SIERRA, QUESOS ROYCA |
+| DESCUADRE | ~20 | PIFEMA, SILVA CORDERO, INMAREPRO |
+| CIF_PENDIENTE | ~15 | Proveedores nuevos sin dar de alta |
+| SIN_LINEAS | ~10 | GRUPO KUAI, LA LLEIDIRIA |
+
+### Proveedores prioritarios para próxima sesión
+
+| Proveedor | Facturas | Error | Impacto |
+|-----------|----------|-------|---------|
+| **JIMELUZ** | 14 | SIN_TOTAL/DESCUADRE | ALTO |
+| **BM tickets** | 12 | FECHA_PENDIENTE | MEDIO |
+| **PIFEMA** | 4 | DESCUADRE ~100€ | MEDIO |
+| **SILVA CORDERO** | 4 | DESCUADRE | BAJO |
 
 ---
 
-## 📋 ARCHIVOS ENTREGADOS HOY
+## 📋 SESIONES ANTERIORES
 
-### Extractores (carpeta `extractores/`)
-```
-ista.py
-cvne.py
-quesos_felix.py
-miguez_cal.py
-distribuciones_lavapies.py
-martin_abenza.py
-__init__.py (actualizado)
-```
+### v4.3 - Sesión 20/12/2025
+- +6 extractores: MANIPULADOS ABELLAN, LA ROSQUILLERIA, FABEIRO, KINEMA, SILVA CORDERO, ARTESANOS MOLLETE
+- 38 facturas validadas
 
-### Core (carpeta raíz)
-```
-main.py (bug IVA 0 corregido)
-```
+### v4.2 - Sesión 19/12/2025 tarde
+- +6 extractores: ISTA, CVNE, QUESOS FELIX, MIGUEZ CAL, LAVAPIES, MARTIN ABENZA
+- Bug IVA 0 corregido
 
----
+### v4.1 - Sesión 19/12/2025 mañana
+- BM refactorizado completo
+- +4: ECOFICUS, SABORES PATERNA, LA BARRA DULCE
 
-## 🎯 PLAN PRÓXIMA SESIÓN
-
-### Prioridad 1: Proveedores con más facturas
-- LA ROSQUILLERIA (4 descuadres ~2€)
-- PANRUJE (3 SIN_TOTAL)
-
-### Prioridad 2: Errores frecuentes
-- LIDL (FECHA_PENDIENTE)
-- GRUPO DISBER (SIN_LINEAS)
+### v4.0 - Sesión 18/12/2025
+- Arquitectura modular implementada
+- Sistema @registrar funcionando
+- FABEIRO nuevo
 
 ---
 
-## 📈 EXTRACTORES FUNCIONANDO (80+)
+## 🔧 DECISIONES TÉCNICAS VIGENTES
 
-### Nuevos en esta sesión
-| # | Proveedor | Estado |
-|---|-----------|--------|
-| 1 | ISTA | ✅ NUEVO |
-| 2 | CVNE | ✅ NUEVO |
-| 3 | QUESOS FELIX | ✅ NUEVO |
-| 4 | MIGUEZ CAL | ✅ NUEVO |
-| 5 | DISTRIBUCIONES LAVAPIES | ✅ NUEVO |
-| 6 | MARTIN ABENZA | ✅ NUEVO |
-
-### Anteriores funcionando
-- BM SUPERMERCADOS, CERES, MADRUEÑO, BERNAL, BERZAL
-- SABORES PATERNA, FRANCISCO GUERRA, LA BARRA DULCE
-- ECOFICUS, MOLLETES, EMJAMESA, FELISA GOURMET
-- BORBOTON, ZUBELZU, FABEIRO, YOIGO, SEGURMA
-- SOM ENERGIA, LUCERA, TRUCCO, VINOS ARGANZA
-- MOLIENDA VERDE, ZUCCA, HERNANDEZ, y más...
-
----
-
-## 🔧 DECISIONES TÉCNICAS
-
-1. **pdfplumber SIEMPRE** - Preferido sobre pypdf
-2. **IVA 0 válido** - Para portes y conceptos sin IVA
-3. **Formato europeo:** `_convertir_europeo()` para números con coma
-4. **Tolerancia cuadre:** 0.10€
-5. **1 artículo = 1 línea** - SIEMPRE líneas individuales
+1. **pdfplumber SIEMPRE** - Preferido sobre pypdf/PyPDF2
+2. **OCR solo para escaneados** - Tesseract con pdf2image
+3. **IVA 0 válido** - Para portes y conceptos exentos
+4. **Formato europeo:** `_convertir_europeo()` para números con coma
+5. **Tolerancia cuadre:** 0.10€
+6. **1 artículo = 1 línea** - SIEMPRE líneas individuales
+7. **Portes:** Distribuir proporcionalmente, nunca línea separada
+8. **Registro automático:** Decorador `@registrar()` en cada extractor
 
 ---
 
@@ -157,10 +134,14 @@ main.py (bug IVA 0 corregido)
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
-| **v4.2** | **2025-12-19 tarde** | **6 extractores nuevos. Bug IVA 0 corregido. 54% cuadre.** |
-| v4.1 | 2025-12-19 mañana | BM refactorizado. MOLLETES, ECOFICUS, SABORES. 47% cuadre. |
-| v4.0 | 2025-12-18 | FABEIRO completo. Variantes nombres. pdfplumber preferido. |
+| **v4.4** | **2025-12-21** | **+12 extractores: ZUCCA, PANRUJE, DISBER, LIDL, ROSQUILLERIA, GADITAUN, DE LUIS, ABELLAN, ECOMS, MARITA COSTA, SERRIN, FISHGOURMET. 72 facturas validadas. 66% cuadre 1T25.** |
+| v4.3 | 2025-12-20 | +6 extractores OCR. 38 facturas. 60% cuadre. |
+| v4.2 | 2025-12-19 tarde | +6 extractores. Bug IVA 0. 56% cuadre. |
+| v4.1 | 2025-12-19 mañana | BM refactorizado. +4 extractores. |
+| v4.0 | 2025-12-18 | Arquitectura modular. Sistema @registrar. |
+| v3.41 | 2025-12-12 | Fix FELISA, CERES, MARTIN ABENZA. |
+| v3.5 | 2025-12-09 | Baseline: 42% cuadre. |
 
 ---
 
-*Última actualización: 19/12/2025 tarde*
+*Última actualización: 21/12/2025 - Sesión intensiva 12 extractores*

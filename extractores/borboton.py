@@ -2,6 +2,8 @@
 Extractor para BODEGAS BORBOTÓN.
 Vinos de Toledo.
 CIF: B45851755 | IBAN: ES37 2100 1913 1902 0013 5677
+
+Actualizado: 18/12/2025 - pdfplumber + limpieza encoding
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -9,7 +11,7 @@ from typing import List, Dict
 import re
 
 
-@registrar('BODEGAS BORBOTON', 'BORBOTON')
+@registrar('BODEGAS BORBOTON', 'BORBOTON', 'BORBOTÓN')
 class ExtractorBorboton(ExtractorBase):
     nombre = 'BODEGAS BORBOTON'
     cif = 'B45851755'
@@ -19,6 +21,7 @@ class ExtractorBorboton(ExtractorBase):
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
         
+        # Patrón principal: CODIGO DESC UDS PRECIO € % € TOTAL €
         patron = re.compile(
             r'^([A-Z]{3}\d{4})\s+(.+?)\s+(\d+)\s+([\d,]+)\s*€\s+[\d,]+\s*%\s+[\d,]+\s*€\s+([\d,]+)\s*€',
             re.MULTILINE

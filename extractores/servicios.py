@@ -1,6 +1,8 @@
 """
 Extractores para alquileres y servicios.
 ALQUILERES, CONTROLPLAGA, TRUCCO, PANRUJE, ANGEL Y LOLI
+
+Actualizado: 18/12/2025 - pdfplumber
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -13,7 +15,7 @@ class ExtractorAlquilerOrtega(ExtractorBase):
     nombre = 'BENJAMIN ORTEGA'
     cif = '09342596L'
     iban = 'ES31 0049 5977 5521 1606 6585'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -29,7 +31,7 @@ class ExtractorAlquilerFernandez(ExtractorBase):
     nombre = 'JAIME FERNANDEZ'
     cif = '07219971H'
     iban = 'ES31 0049 5977 5521 1606 6585'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -45,7 +47,7 @@ class ExtractorControlplaga(ExtractorBase):
     nombre = 'CONTROLPLAGA'
     cif = '11812266H'
     iban = 'ES86 0081 7122 58 0001218325'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -61,7 +63,7 @@ class ExtractorTrucco(ExtractorBase):
     nombre = 'TRUCCO'
     cif = '05247386M'
     iban = ''
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -77,7 +79,7 @@ class ExtractorPanruje(ExtractorBase):
     nombre = 'PANRUJE'
     cif = 'B13858014'
     iban = 'ES19 0081 5344 2800 0261 4066'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -96,7 +98,7 @@ class ExtractorAngelYLoli(ExtractorBase):
     nombre = 'ANGEL Y LOLI'
     cif = '75727068M'
     iban = ''
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []

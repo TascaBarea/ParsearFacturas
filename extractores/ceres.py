@@ -11,8 +11,7 @@ Formato factura:
 - Envases retornables (CE99xxxx)
 - IVA 21% o 10%
 
-Creado: 18/12/2025
-Migrado de: migracion_historico_2025_v3_57.py (líneas 2604-2810)
+Actualizado: 18/12/2025 - pdfplumber + limpieza encoding
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -27,7 +26,7 @@ class ExtractorCeres(ExtractorBase):
     nombre = 'CERES'
     cif = 'B83478669'
     iban = ''  # Adeudo
-    metodo_pdf = 'pdfplumber'  # Mejor para tablas
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         """
@@ -38,7 +37,7 @@ class ExtractorCeres(ExtractorBase):
         lineas = []
         codigos_procesados = set()
         
-        # Patrón con descuento
+        # Patrón con descuento: CODIGO DESC UDS PRECIO DTO IVA IMPORTE
         patron_con_dto = re.compile(
             r'^([A-Z0-9]{6})\s+'           # Código (6 chars)
             r'(.+?)\s+'                     # Descripción
@@ -50,7 +49,7 @@ class ExtractorCeres(ExtractorBase):
             re.MULTILINE
         )
         
-        # Patrón sin descuento
+        # Patrón sin descuento: CODIGO DESC UDS PRECIO IVA IMPORTE
         patron_sin_dto = re.compile(
             r'^([A-Z0-9]{6})\s+'           # Código
             r'(.+?)\s+'                     # Descripción
@@ -61,7 +60,7 @@ class ExtractorCeres(ExtractorBase):
             re.MULTILINE
         )
         
-        # Patrón envases litros
+        # Patrón envases: CE99xxxx ENVASE X lit. UDS PRECIO IVA IMPORTE
         patron_envase = re.compile(
             r'^(CE99\d{4})\s+'              # Código CE99xxxx
             r'(ENVASE\s+\d+\s*lit\.?)\s+'   # Descripción
@@ -72,7 +71,7 @@ class ExtractorCeres(ExtractorBase):
             re.MULTILINE
         )
         
-        # Patrón envases ALH
+        # Patrón envases ALH: CE99xxxx ENVASE 1/5 ALH
         patron_envase_alh = re.compile(
             r'^(CE99\d{4})\s+'              # Código CE99xxxx
             r'(ENVASE\s+\d/\d\s+ALH)\s+'    # ENVASE 1/5 ALH
@@ -94,12 +93,15 @@ class ExtractorCeres(ExtractorBase):
             re.MULTILINE
         )
         
+        # Palabras a ignorar en descripciones
+        ignorar = ['Albarán', 'Albaran', 'Descripcion', 'Descripción']
+        
         # Extraer con descuento
         for m in patron_con_dto.finditer(texto):
             codigo, desc, uds, precio, dto, iva, importe = m.groups()
             desc_limpia = desc.strip()
             
-            if 'Albarán' in desc_limpia or 'Descripcion' in desc_limpia:
+            if any(x in desc_limpia for x in ignorar):
                 continue
             
             importe_val = self._convertir_importe(importe)
@@ -122,7 +124,7 @@ class ExtractorCeres(ExtractorBase):
             codigo, desc, uds, precio, iva, importe = m.groups()
             desc_limpia = desc.strip()
             
-            if 'Albarán' in desc_limpia or 'Descripcion' in desc_limpia:
+            if any(x in desc_limpia for x in ignorar):
                 continue
             if 'ENVASE' in desc_limpia.upper():
                 continue
@@ -147,7 +149,7 @@ class ExtractorCeres(ExtractorBase):
                 'base': importe_val
             })
         
-        # Extraer envases
+        # Extraer envases litros
         for m in patron_envase.finditer(texto):
             codigo, desc, uds, precio, iva, importe = m.groups()
             importe_val = self._convertir_importe(importe)

@@ -1,6 +1,8 @@
 """
 Extractor para EMJAMESA S.L. (Ibéricos).
 CIF: B37352077 | IBAN: ES08 3016 0206 5221 8503 2527
+
+Actualizado: 18/12/2025 - limpieza encoding
 """
 from extractores.base import ExtractorBase
 from extractores import registrar

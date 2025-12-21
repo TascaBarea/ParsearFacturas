@@ -1,6 +1,8 @@
 """
 Extractores para productos varios.
 MOLLETES, ZUBELZU, IBARRAKO, PRODUCTOS ADELL, ECOFICUS, ANA CABALLO, GRUPO CAMPERO
+
+Actualizado: 18/12/2025 - pdfplumber
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -13,7 +15,7 @@ class ExtractorMolletes(ExtractorBase):
     nombre = 'MOLLETES ARTESANOS'
     cif = 'B93662708'
     iban = 'ES34 0049 4629 5323 1715 7896'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -21,7 +23,7 @@ class ExtractorMolletes(ExtractorBase):
         
         for match in patron.finditer(texto):
             codigo, desc, cajas, uds, precio, importe = match.groups()
-            if 'DESCRIPCIÓN' in desc:
+            if 'DESCRIPCIÓN' in desc or 'DESCRIPCION' in desc:
                 continue
             lineas.append({'codigo': codigo, 'articulo': desc.strip(), 'iva': 4, 'base': self._convertir_importe(importe)})
         return lineas
@@ -70,7 +72,7 @@ class ExtractorProductosAdell(ExtractorBase):
     nombre = 'PRODUCTOS ADELL'
     cif = 'B12711636'
     iban = 'ES62 3058 7413 2127 2000 8367'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -89,7 +91,7 @@ class ExtractorEcoficus(ExtractorBase):
     nombre = 'ECOFICUS'
     cif = 'B10214021'
     iban = 'ES23 2103 7136 4700 3002 4378'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -108,7 +110,7 @@ class ExtractorAnaCaballo(ExtractorBase):
     nombre = 'ANA CABALLO'
     cif = 'B87925970'
     iban = 'ES75 2100 1360 2202 0006 0355'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -127,7 +129,7 @@ class ExtractorGrupoCampero(ExtractorBase):
     nombre = 'GRUPO CAMPERO'
     cif = 'B16690141'
     iban = 'ES71 0049 3739 4027 1401 6466'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []

@@ -1,6 +1,8 @@
 """
 Extractor para FELISA GOURMET (PESCADOS DON FELIX).
 CIF: B72113897 | IBAN: ES68 0182 1076 9502 0169 3908
+
+Actualizado: 18/12/2025 - limpieza encoding
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -8,7 +10,7 @@ from typing import List, Dict
 import re
 
 
-@registrar('FELISA GOURMET', 'FELISA')
+@registrar('FELISA GOURMET', 'FELISA', 'PESCADOS DON FELIX')
 class ExtractorFelisa(ExtractorBase):
     nombre = 'FELISA GOURMET'
     cif = 'B72113897'

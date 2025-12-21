@@ -1,16 +1,16 @@
 """
-Extractor para BERZAL HERMANOS S.A.
+Extractor para DE LUIS SABORES ÚNICOS S.L.
 
-Quesos y productos lácteos.
-CIF: A78490182
+Quesos Cañarejal.
+CIF: B86249711
 
 Formato factura (pdfplumber):
-CODIGO CONCEPTO CAJASUNID KILOS PRECIO DTO PR.NETO UN/KGIVAIMPORTE
-206015 Mantequilla "Los Doce Linajes de Soria" natural 250 grs 0,67 4 1,000 3,150 3,150 U 10 12,60
+Línea Artículo Cantidad Kilos Precio % Dto. Total
+1 O760 CREMA DE QUESO "CAÑAREJAL" 200 GR. 6 6 7,19 43,14 4%
 
-TOTAL FACTURA 51,08
+T O T A L Fra. 347,51
 
-IVA: 10% (lácteos)
+IVA: 4% (quesos)
 
 Creado: 19/12/2025
 """
@@ -20,56 +20,55 @@ from typing import List, Dict, Optional
 import re
 
 
-@registrar('BERZAL', 'BERZAL HERMANOS', 'QUESOS BERZAL')
-class ExtractorBerzal(ExtractorBase):
-    """Extractor para facturas de BERZAL HERMANOS."""
+@registrar('DE LUIS SABORES', 'DE LUIS', 'SABORES UNICOS', 'CAÑAREJAL', 'JAMONES LIEBANA')
+class ExtractorDeLuisSabores(ExtractorBase):
+    """Extractor para facturas de DE LUIS SABORES ÚNICOS."""
     
-    nombre = 'BERZAL HERMANOS'
-    cif = 'A78490182'
-    iban = 'ES20 0128 0025 9105 0000 1422'
+    nombre = 'DE LUIS SABORES ÚNICOS'
+    cif = 'B86249711'
+    iban = 'ES53 0049 1920 1021 1019 2545'
     metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         """
         Extrae líneas individuales de productos.
         
-        Formato complejo con muchas columnas.
+        Formato:
+        1 O760 CREMA DE QUESO "CAÑAREJAL" 200 GR. 6 6 7,19 43,14 4%
         """
         lineas = []
         
-        # Patrón simplificado: CODIGO DESCRIPCION ... PRECIO ... IVA IMPORTE
+        # Patrón: LINEA CODIGO DESCRIPCION CANTIDAD KILOS PRECIO TOTAL IVA%
         patron_linea = re.compile(
-            r'^(\d{6})\s+'                             # Código (6 dígitos)
+            r'^(\d+)\s+'                               # Línea
+            r'([A-Z]\d{3})\s+'                         # Código (ej: O760)
             r'(.+?)\s+'                                # Descripción
-            r'(\d+,\d{3})\s+'                          # Precio
-            r'(\d+,\d{3})\s+'                          # Precio neto
-            r'[UK]\s+'                                 # Unidad (U o K)
-            r'(\d{1,2})\s+'                            # IVA
-            r'(\d+,\d{2})'                             # Importe
+            r'(\d+)\s+'                                # Cantidad
+            r'(\d+(?:,\d+)?)\s+'                       # Kilos
+            r'(\d+,\d{2})\s+'                          # Precio
+            r'(\d+,\d{2})\s+'                          # Total
+            r'(\d+)%'                                  # IVA%
         , re.MULTILINE)
         
         for match in patron_linea.finditer(texto):
-            codigo = match.group(1)
-            descripcion = match.group(2).strip()
-            precio = self._convertir_europeo(match.group(4))
-            iva = int(match.group(5))
-            importe = self._convertir_europeo(match.group(6))
+            codigo = match.group(2)
+            descripcion = match.group(3).strip()
+            cantidad = int(match.group(4))
+            precio = self._convertir_europeo(match.group(6))
+            importe = self._convertir_europeo(match.group(7))
+            iva = int(match.group(8))
             
-            # Limpiar descripción (quitar lotes, fechas)
-            descripcion = re.sub(r'\s*LOTE\s+\d+.*$', '', descripcion, flags=re.IGNORECASE)
-            descripcion = re.sub(r'\s*\d+,\d+\s+\d+\s+\d+,\d+.*$', '', descripcion)
+            # Limpiar descripción
+            descripcion = re.sub(r'\s*Lotes\s+\d+.*$', '', descripcion, flags=re.IGNORECASE)
             descripcion = re.sub(r'\s+', ' ', descripcion).strip()
             
             if importe < 1.0:
                 continue
             
-            # Calcular cantidad aproximada
-            cantidad = round(importe / precio, 0) if precio > 0 else 1
-            
             lineas.append({
                 'codigo': codigo,
                 'articulo': descripcion[:50],
-                'cantidad': int(cantidad),
+                'cantidad': cantidad,
                 'precio_ud': round(precio, 2),
                 'iva': iva,
                 'base': round(importe, 2)
@@ -86,7 +85,7 @@ class ExtractorBerzal(ExtractorBase):
         lineas = []
         
         # Buscar: BASE IVA% CUOTA
-        patron = re.compile(r'(\d+,\d{2})\s+(\d{1,2})\s+(\d+,\d{2})')
+        patron = re.compile(r'(\d+,\d{2})\s+(\d{1,2})%\s+(\d+,\d{2})')
         
         for match in patron.finditer(texto):
             base = self._convertir_europeo(match.group(1))
@@ -95,10 +94,10 @@ class ExtractorBerzal(ExtractorBase):
             
             # Validar cuota
             cuota_esperada = round(base * iva / 100, 2)
-            if base > 5 and iva in [4, 10] and abs(cuota - cuota_esperada) < 1.0:
+            if base > 5 and iva in [4, 10, 21] and abs(cuota - cuota_esperada) < 1.0:
                 lineas.append({
                     'codigo': '',
-                    'articulo': f'LACTEOS BERZAL IVA {iva}%',
+                    'articulo': f'QUESOS CAÑAREJAL IVA {iva}%',
                     'cantidad': 1,
                     'precio_ud': round(base, 2),
                     'iva': iva,
@@ -121,7 +120,13 @@ class ExtractorBerzal(ExtractorBase):
             return 0.0
     
     def extraer_total(self, texto: str) -> Optional[float]:
-        patron = re.search(r'TOTAL\s+(?:FACTURA|IMPORTE)\s+(\d+,\d{2})', texto, re.IGNORECASE)
-        if patron:
-            return self._convertir_europeo(patron.group(1))
+        # Buscar T O T A L Fra. o TOTAL Fra.
+        patrones = [
+            r'T\s*O\s*T\s*A\s*L\s+Fra\.?\s*(\d+,\d{2})',
+            r'TOTAL\s+Fra\.?\s*(\d+,\d{2})',
+        ]
+        for patron in patrones:
+            match = re.search(patron, texto, re.IGNORECASE)
+            if match:
+                return self._convertir_europeo(match.group(1))
         return None

@@ -3,6 +3,8 @@ Extractores varios restantes.
 MARITA COSTA, PILAR RODRIGUEZ, PANIFIESTO, JULIO GARCIA VIVAS, LA BARRA DULCE, 
 PORVAZ, MARTIN ABENZA, CARRASCAL, BIELLEBI, FERRIOL, ABBATI, MIGUEZ CAL, 
 ROSQUILLERIA, MANIPULADOS ABELLAN, PC COMPONENTES, OPENAI, AMAZON
+
+Actualizado: 18/12/2025 - pdfplumber (excepto OCR donde indicado)
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -15,7 +17,7 @@ class ExtractorMaritaCosta(ExtractorBase):
     nombre = 'MARITA COSTA'
     cif = '48207369J'
     iban = 'ES08 0182 7036 0902 0151 9833'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -33,7 +35,7 @@ class ExtractorPilarRodriguez(ExtractorBase):
     nombre = 'PILAR RODRIGUEZ'
     cif = '06582655D'
     iban = 'ES30 5853 0199 2810 0235 62'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -51,7 +53,7 @@ class ExtractorPanifiesto(ExtractorBase):
     nombre = 'PANIFIESTO'
     cif = 'B87874327'
     iban = ''
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -69,7 +71,7 @@ class ExtractorJulioGarciaVivas(ExtractorBase):
     nombre = 'JULIO GARCIA VIVAS'
     cif = '02869898G'
     iban = ''
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -85,7 +87,7 @@ class ExtractorBarraDulce(ExtractorBase):
     nombre = 'LA BARRA DULCE'
     cif = 'B19981141'
     iban = 'ES76 2100 5606 4802 0017 4138'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -103,7 +105,7 @@ class ExtractorPorvaz(ExtractorBase):
     nombre = 'PORVAZ'
     cif = 'B36281087'
     iban = 'ES63 0049 5368 0625 1628 3321'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -121,7 +123,7 @@ class ExtractorMartinAbenza(ExtractorBase):
     nombre = 'MARTIN ABENZA'
     cif = '74305431K'
     iban = 'ES37 0049 6193 4128 9534 3887'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -137,7 +139,7 @@ class ExtractorCarrascal(ExtractorBase):
     nombre = 'EL CARRASCAL'
     cif = '07951036M'
     iban = 'ES59 0049 0344 98 2510368354'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -153,7 +155,7 @@ class ExtractorBiellebi(ExtractorBase):
     nombre = 'BIELLEBI'
     cif = '06089700725'
     iban = 'IT68B0306941603100000001003'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -171,7 +173,7 @@ class ExtractorFerriol(ExtractorBase):
     nombre = 'FERRIOL'
     cif = 'B57955098'
     iban = 'ES22 2100 0088 0502 0014 6500'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -189,7 +191,7 @@ class ExtractorAbbati(ExtractorBase):
     nombre = 'ABBATI'
     cif = 'B82567876'
     iban = ''
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -205,7 +207,7 @@ class ExtractorMiguezCal(ExtractorBase):
     nombre = 'MIGUEZ CAL'
     cif = 'B79868006'
     iban = 'ES96 2085 9748 9203 0003 9285'
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -221,7 +223,7 @@ class ExtractorRosquilleria(ExtractorBase):
     nombre = 'LA ROSQUILLERIA'
     cif = 'B73814949'
     iban = 'ES16 0487 0061 1320 0700 2940'
-    metodo_pdf = 'ocr'
+    metodo_pdf = 'ocr'  # Mantiene OCR
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -237,7 +239,7 @@ class ExtractorManipuladosAbellan(ExtractorBase):
     nombre = 'MANIPULADOS ABELLAN'
     cif = 'B30473326'
     iban = 'ES06 2100 8321 0413 0018 3503'
-    metodo_pdf = 'ocr'
+    metodo_pdf = 'ocr'  # Mantiene OCR
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -255,7 +257,7 @@ class ExtractorPCComponentes(ExtractorBase):
     nombre = 'PC COMPONENTES'
     cif = 'B73347494'
     iban = ''
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -271,7 +273,7 @@ class ExtractorOpenAI(ExtractorBase):
     nombre = 'OPENAI'
     cif = ''
     iban = ''
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
@@ -287,7 +289,7 @@ class ExtractorAmazon(ExtractorBase):
     nombre = 'AMAZON'
     cif = 'W0184081H'
     iban = ''
-    metodo_pdf = 'pypdf'
+    metodo_pdf = 'pdfplumber'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         lineas = []
