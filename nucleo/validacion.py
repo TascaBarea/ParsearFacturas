@@ -1,345 +1,184 @@
 """
-Módulo de validación de facturas.
-
-Contiene funciones para:
-- Validar cuadre de facturas
-- Detectar facturas duplicadas
-- Generar claves únicas de factura
-
-Uso:
-    from nucleo.validacion import validar_cuadre, detectar_duplicado
-    
-    cuadre = validar_cuadre(lineas, total_factura)
-    es_duplicada = detectar_duplicado(factura, registro)
+Funciones de validación de facturas.
 """
-from typing import List, Dict, Optional, Tuple
-from pathlib import Path
-import pandas as pd
-from datetime import datetime
+from typing import List, Optional, Dict, Any, TYPE_CHECKING
+from config.settings import TOLERANCIA_CUADRE
 
-# Configuración
-TOLERANCIA_CUADRE = 0.05  # Tolerancia de 5 céntimos
+if TYPE_CHECKING:
+    from nucleo.factura import Factura, LineaFactura
 
 
-# =============================================================================
-# VALIDACIÓN DE CUADRE
-# =============================================================================
-
-def validar_cuadre(
-    lineas: List[Dict],
-    total_factura: Optional[float],
-    tolerancia: float = TOLERANCIA_CUADRE
-) -> str:
+def validar_cuadre(lineas: List['LineaFactura'], total: Optional[float], tolerancia: float = None) -> str:
     """
-    Valida que la suma de líneas cuadre con el total de la factura.
+    Valida que la suma de líneas cuadre con el total.
     
     Args:
-        lineas: Lista de diccionarios con las líneas (debe tener 'base' e 'iva')
-        total_factura: Total declarado en la factura
-        tolerancia: Tolerancia permitida (por defecto 0.05€)
+        lineas: Lista de líneas de factura
+        total: Total declarado en la factura
+        tolerancia: Tolerancia en euros (default: TOLERANCIA_CUADRE)
         
     Returns:
-        Estado del cuadre:
-        - 'OK': Cuadra correctamente
-        - 'SIN_TOTAL': No se encontró total en la factura
-        - 'SIN_LINEAS': No se encontraron líneas
-        - 'DESCUADRE_X.XX': Diferencia de X.XX euros
+        'OK', 'SIN_TOTAL', 'SIN_LINEAS', o 'DESCUADRE_X.XX'
     """
-    # Sin líneas
+    if tolerancia is None:
+        tolerancia = TOLERANCIA_CUADRE
+    
+    if total is None or total == 0:
+        return 'SIN_TOTAL'
+    
     if not lineas:
         return 'SIN_LINEAS'
     
-    # Sin total
-    if total_factura is None:
-        return 'SIN_TOTAL'
+    # Calcular suma de bases
+    suma_bases = sum(linea.base for linea in lineas)
     
-    # Calcular suma de líneas
-    total_calculado = 0.0
-    for linea in lineas:
-        base = float(linea.get('base', 0))
-        iva = int(linea.get('iva', 21))
-        total_linea = base * (1 + iva / 100)
-        total_calculado += total_linea
+    # Calcular suma con IVA
+    suma_con_iva = sum(linea.base * (1 + linea.iva / 100) for linea in lineas)
     
-    total_calculado = round(total_calculado, 2)
-    
-    # Comparar
-    diferencia = abs(total_factura - total_calculado)
-    
-    if diferencia <= tolerancia:
+    # Intentar cuadrar con suma de bases (facturas que muestran base)
+    diff_base = abs(suma_bases - total)
+    if diff_base <= tolerancia:
         return 'OK'
-    else:
-        return f'DESCUADRE_{diferencia:.2f}'
+    
+    # Intentar cuadrar con suma con IVA (facturas que muestran total)
+    diff_total = abs(suma_con_iva - total)
+    if diff_total <= tolerancia:
+        return 'OK'
+    
+    # No cuadra
+    diff = min(diff_base, diff_total)
+    return f'DESCUADRE_{diff:.2f}'
 
 
-def calcular_total_lineas(lineas: List[Dict]) -> float:
+def calcular_total_lineas(lineas: List['LineaFactura']) -> float:
+    """Calcula la suma de bases de las líneas."""
+    return sum(linea.base for linea in lineas)
+
+
+def calcular_base_total(lineas: List['LineaFactura']) -> float:
+    """Alias de calcular_total_lineas."""
+    return calcular_total_lineas(lineas)
+
+
+def validar_factura(factura: 'Factura') -> List[str]:
     """
-    Calcula el total sumando todas las líneas.
+    Valida una factura y devuelve lista de errores.
     
     Args:
-        lineas: Lista de diccionarios con 'base' e 'iva'
+        factura: Objeto Factura a validar
         
     Returns:
-        Total calculado
-    """
-    total = 0.0
-    for linea in lineas:
-        base = float(linea.get('base', 0))
-        iva = int(linea.get('iva', 21))
-        total += base * (1 + iva / 100)
-    return round(total, 2)
-
-
-def calcular_base_total(lineas: List[Dict]) -> float:
-    """
-    Calcula la base imponible total.
-    
-    Args:
-        lineas: Lista de diccionarios con 'base'
-        
-    Returns:
-        Base total
-    """
-    return round(sum(float(l.get('base', 0)) for l in lineas), 2)
-
-
-# =============================================================================
-# DETECCIÓN DE DUPLICADOS
-# =============================================================================
-
-def generar_clave_factura(
-    proveedor: str,
-    fecha: str,
-    total: Optional[float]
-) -> str:
-    """
-    Genera una clave única para identificar una factura.
-    
-    La clave se basa en: PROVEEDOR + FECHA + TOTAL (redondeado)
-    
-    Args:
-        proveedor: Nombre del proveedor
-        fecha: Fecha de la factura (DD/MM/YYYY)
-        total: Total de la factura
-        
-    Returns:
-        Clave única de la factura
-    """
-    proveedor_norm = proveedor.upper().strip()
-    fecha_norm = fecha.strip() if fecha else ''
-    total_norm = f"{total:.2f}" if total else '0.00'
-    
-    return f"{proveedor_norm}|{fecha_norm}|{total_norm}"
-
-
-def detectar_duplicado(
-    proveedor: str,
-    fecha: str,
-    total: Optional[float],
-    registro: pd.DataFrame
-) -> Tuple[bool, Optional[str]]:
-    """
-    Detecta si una factura ya existe en el registro.
-    
-    Args:
-        proveedor: Nombre del proveedor
-        fecha: Fecha de la factura
-        total: Total de la factura
-        registro: DataFrame con el registro de facturas procesadas
-        
-    Returns:
-        Tupla (es_duplicada, archivo_original)
-        - es_duplicada: True si la factura ya existe
-        - archivo_original: Nombre del archivo original si es duplicada
-    """
-    if registro is None or registro.empty:
-        return False, None
-    
-    clave = generar_clave_factura(proveedor, fecha, total)
-    
-    # Buscar en el registro
-    if 'CLAVE' in registro.columns:
-        duplicados = registro[registro['CLAVE'] == clave]
-        if not duplicados.empty:
-            archivo = duplicados.iloc[0].get('ARCHIVO', 'desconocido')
-            return True, archivo
-    
-    # Búsqueda alternativa por campos
-    proveedor_upper = proveedor.upper().strip()
-    
-    mascara = (
-        (registro['PROVEEDOR'].str.upper().str.strip() == proveedor_upper) &
-        (registro['FECHA'] == fecha)
-    )
-    
-    if total is not None:
-        # Tolerancia de 1 céntimo para el total
-        mascara = mascara & (
-            (registro['TOTAL FAC'] >= total - 0.01) &
-            (registro['TOTAL FAC'] <= total + 0.01)
-        )
-    
-    duplicados = registro[mascara]
-    if not duplicados.empty:
-        archivo = duplicados.iloc[0].get('ARCHIVO', 'desconocido')
-        return True, archivo
-    
-    return False, None
-
-
-# =============================================================================
-# REGISTRO DE FACTURAS
-# =============================================================================
-
-def cargar_registro(ruta: Path) -> pd.DataFrame:
-    """
-    Carga el registro de facturas procesadas.
-    
-    Args:
-        ruta: Ruta al archivo Excel de registro
-        
-    Returns:
-        DataFrame con el registro o DataFrame vacío si no existe
-    """
-    ruta = Path(ruta)
-    
-    if not ruta.exists():
-        # Crear registro vacío con las columnas necesarias
-        return pd.DataFrame(columns=[
-            'CLAVE', 'PROVEEDOR', 'FECHA', 'TOTAL FAC', 
-            'ARCHIVO', 'PROCESADO_AT'
-        ])
-    
-    try:
-        return pd.read_excel(ruta)
-    except Exception as e:
-        print(f"⚠️ Error cargando registro: {e}")
-        return pd.DataFrame()
-
-
-def guardar_registro(registro: pd.DataFrame, ruta: Path):
-    """
-    Guarda el registro de facturas procesadas.
-    
-    Args:
-        registro: DataFrame con el registro
-        ruta: Ruta donde guardar el archivo Excel
-    """
-    ruta = Path(ruta)
-    ruta.parent.mkdir(parents=True, exist_ok=True)
-    
-    try:
-        registro.to_excel(ruta, index=False)
-    except Exception as e:
-        print(f"⚠️ Error guardando registro: {e}")
-
-
-def agregar_al_registro(
-    registro: pd.DataFrame,
-    proveedor: str,
-    fecha: str,
-    total: Optional[float],
-    archivo: str
-) -> pd.DataFrame:
-    """
-    Agrega una factura al registro.
-    
-    Args:
-        registro: DataFrame del registro actual
-        proveedor: Nombre del proveedor
-        fecha: Fecha de la factura
-        total: Total de la factura
-        archivo: Nombre del archivo
-        
-    Returns:
-        DataFrame actualizado
-    """
-    clave = generar_clave_factura(proveedor, fecha, total)
-    
-    nueva_fila = pd.DataFrame([{
-        'CLAVE': clave,
-        'PROVEEDOR': proveedor,
-        'FECHA': fecha,
-        'TOTAL FAC': total,
-        'ARCHIVO': archivo,
-        'PROCESADO_AT': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    }])
-    
-    return pd.concat([registro, nueva_fila], ignore_index=True)
-
-
-# =============================================================================
-# VALIDACIONES ADICIONALES
-# =============================================================================
-
-def validar_factura(
-    proveedor: str,
-    fecha: str,
-    cif: str,
-    total: Optional[float],
-    lineas: List[Dict]
-) -> List[str]:
-    """
-    Valida una factura y devuelve lista de errores/warnings.
-    
-    Args:
-        proveedor: Nombre del proveedor
-        fecha: Fecha de la factura
-        cif: CIF del proveedor
-        total: Total de la factura
-        lineas: Lista de líneas
-        
-    Returns:
-        Lista de errores encontrados
+        Lista de códigos de error
     """
     errores = []
     
     # Validar proveedor
-    if not proveedor or proveedor.strip() == '':
+    if not factura.proveedor or factura.proveedor in ['DESCONOCIDO', 'PENDIENTE', '']:
         errores.append('PROVEEDOR_PENDIENTE')
     
     # Validar fecha
-    if not fecha or fecha.strip() == '':
+    if not factura.fecha:
         errores.append('FECHA_PENDIENTE')
     
     # Validar CIF
-    if not cif or cif.strip() == '':
+    if not factura.cif:
         errores.append('CIF_PENDIENTE')
     
     # Validar total
-    if total is None:
+    if factura.total is None or factura.total == 0:
         errores.append('SIN_TOTAL')
     
     # Validar líneas
-    if not lineas:
+    if not factura.lineas:
         errores.append('SIN_LINEAS')
     
     # Validar cuadre
-    if lineas and total is not None:
-        cuadre = validar_cuadre(lineas, total)
-        if cuadre != 'OK':
-            errores.append(cuadre)
+    if factura.cuadre and factura.cuadre.startswith('DESCUADRE'):
+        errores.append(factura.cuadre)
     
     return errores
 
 
-def es_factura_valida(errores: List[str]) -> bool:
+def es_factura_valida(factura: 'Factura') -> bool:
     """
-    Determina si una factura es válida basándose en sus errores.
-    
-    Una factura es válida si solo tiene errores menores (CIF, IBAN pendiente)
-    pero tiene líneas y cuadra.
+    Determina si una factura es válida (sin errores críticos).
     
     Args:
-        errores: Lista de errores de la factura
+        factura: Objeto Factura
         
     Returns:
         True si la factura es válida
     """
-    errores_criticos = ['SIN_LINEAS', 'SIN_TOTAL']
+    errores = validar_factura(factura)
+    
+    # Errores críticos
+    criticos = ['SIN_TOTAL', 'SIN_LINEAS']
     
     for error in errores:
-        if error in errores_criticos or error.startswith('DESCUADRE'):
+        if error in criticos or error.startswith('DESCUADRE'):
             return False
     
     return True
+
+
+def generar_clave_factura(factura: 'Factura') -> str:
+    """
+    Genera una clave única para detectar duplicados.
+    
+    Formato: PROVEEDOR|FECHA|TOTAL
+    """
+    proveedor = (factura.proveedor or '').upper().strip()
+    fecha = factura.fecha or ''
+    total = f"{factura.total:.2f}" if factura.total else '0.00'
+    
+    return f"{proveedor}|{fecha}|{total}"
+
+
+def detectar_duplicado(factura: 'Factura', registro: Dict[str, Any]) -> bool:
+    """
+    Detecta si una factura ya está en el registro.
+    
+    Args:
+        factura: Factura a verificar
+        registro: Diccionario con facturas procesadas
+        
+    Returns:
+        True si es duplicado
+    """
+    clave = generar_clave_factura(factura)
+    return clave in registro
+
+
+def cargar_registro(ruta) -> Dict[str, Any]:
+    """Carga registro de facturas procesadas."""
+    import json
+    from pathlib import Path
+    
+    ruta = Path(ruta)
+    if ruta.exists():
+        with open(ruta, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {}
+
+
+def guardar_registro(registro: Dict[str, Any], ruta) -> None:
+    """Guarda registro de facturas procesadas."""
+    import json
+    from pathlib import Path
+    
+    ruta = Path(ruta)
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    with open(ruta, 'w', encoding='utf-8') as f:
+        json.dump(registro, f, ensure_ascii=False, indent=2)
+
+
+def agregar_al_registro(factura: 'Factura', registro: Dict[str, Any]) -> None:
+    """Agrega una factura al registro."""
+    clave = generar_clave_factura(factura)
+    registro[clave] = {
+        'archivo': factura.archivo,
+        'proveedor': factura.proveedor,
+        'fecha': factura.fecha,
+        'total': factura.total,
+        'procesado': factura.procesado_at
+    }

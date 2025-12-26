@@ -1,0 +1,196 @@
+PARSEAR FACTURAS v4.0
+============================================================
+Fecha: 2025-12-18 17:04:17
+
+RESUMEN:
+  Facturas procesadas: 161
+  Con CIF extraído:    0 (0.0%)
+  Con IBAN extraído:   0 (0.0%)
+  Con líneas extraídas: 0 (0.0%)
+  Total líneas:        0
+
+  VALIDACIÓN CUADRE:
+    OK:          0 (0.0%)
+    DESCUADRE:   0
+    SIN_TOTAL:   0
+    SIN_LINEAS:  0
+
+============================================================
+IBANs ENCONTRADOS:
+
+============================================================
+CIFs ENCONTRADOS:
+
+============================================================
+FACTURAS CON ERRORES:
+  3001 2025 0731 FABEIRO TF.pdf: EXCEPCION: could not convert string to float: '879.100.00'
+  3002 3T25 0701 CERES RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3003 3T25 0701 SEGURMA RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3004 3T25 0703 ALFARERIA ANGEL Y LOLI TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3005 3T25 0704 CERES TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3006 3T25 0704 ECOMS EF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3008 3T25 0704 PANRUJE TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3009 3T25 0704 YOIGO RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3010 3T25 0705 JIMELUZ EF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3011 3T25 0707 TRUCCO COPIAS ISAAC RODRIGUEZ TJ.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3012 3T25 0708 CERES TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3013 3T25 0708 DANIEL GUTIERREZ TR.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3014 3T25 0708 LA MOLIENDA VERDE. TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3015 3T25 0709 CORREOS TJ.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3016 3T25 0709 FRISUN TJ.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3017 3T25 0709 LOS GREDALES TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3018 3T25 0711 ALIGARMA TJ.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3019 3T25 0711 CERES TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3020 3T25 0815 ASOCIACION COMERCIANTES RC.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3021 3T25 0711 FRINUS TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3022 3T25 0714 FERRETERÍA HOYOS SL TJ.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3023 3T25 0715 CERES RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3024 3T25 0715 LA ROSQUILLERIA TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3025 3T25 0716 FISHGOURMET TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3026 3T25 0716 PORTATILES PLOP TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3027 3T25 0717 FELISA GOURMET TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3028 3T25 0718 CERES RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3029 3T25 0721 CERES RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3030 3T25 0721 JUGUENOVA TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3031 3T25 0721 SABORES DE PATERNA TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3032 3T25 0724 LIDL TJ.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3033 3T25 0724 SERRIN NO CHAN TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3034 3T25 0725 KINEMA RC.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3035 3T25 0725 CERES RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3036 3T25 0725 SOM ENERGIA 2 RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3037 3T25 0725 SOM ENERGIA RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3038 3T25 0729 LA ROSQUILLERIA TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3039 3T25 0729 SABORES DE PATERNA TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3040 3T25 0729 UNIVERSO FIESTA EF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3041 3T25 0730 LETOY MERLÍN TJ.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3042 3T25 0730 PABLO RUIZ TF-.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3043 3T25 0731 CVNE TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3044 3T25 0731 FRANCISCO GUERRA TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3045 3T25 0731 GARCIA VIVAS.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3046 3T25 0731 GRUPO TERRITORIO CAMPERO TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3047 3T25 0731 LICORES MADRUEÑO TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3048 3T25 0731 MIGUEL MERINO TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3049 3T25 0731 PANRUJE TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3050 3T25 0731 ZUCCA FORMAGGIARTE TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3053 3T25 0732 PANIFIESTO.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3054 3T25 0801 CERES TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3055 3T25 0801 SEGURMA RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3056 3T25 0801 YOIGO RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3057 3T25 0805 ALCAMPO TJ.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3058 3T25 0805 CERES RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3059 3T25 0805 JOINT BEER TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3060 3T25 0805 SABORES DE PATERNA TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3061 3T25 0807 CERES RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3062 3T25 0808 CERES RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3063 3T25 0808 FRIENDS ESTIVAL SHOWTF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3064 3T25 0808 HIELOS DACAR TJ.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3065 3T25 0808 MOLLETES ARTESANOS TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3066 3T25 0808 RENTAL PRO AUDIVISUALES SL TR.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3067 3T25 0809 MAITE GALLARDO TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3068 3T25 0811 HOME IDEAL TJ.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3069 3T25 0812 BEDORAH GARCIA TOLEDANO TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3070 3T25 0815 CELONIS.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3071 3T25 0826 SOM ENERGIA 2 RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3072 3T25 0826 SOM ENERGIA RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3073 3T25 0830 FABEIRO TF.pdf: EXCEPCION: could not convert string to float: '642.830.00'
+  3074 3T25 0831 JULIO GARCIA VIVAS.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3075 3T25 0831 LICORES MADRUEÑO TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3076 3T25 0831 PANIFIESTO.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3077 3T25 0901 SEGURMA RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3078 3T25 0901 YOIGO RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3079 3T25 0903 CARLOS NAVAS TJ.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3080 3T25 0903 JAMONES BERNAL TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3081 3T25 0905 CERES RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3082 3T25 0905 FELISA GOURMET TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3083 3T25 0910 CURRIMAR TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3084 3T25 0909 CERES RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3085 3T25 0909 PORVAZ TITO TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3086 3T25 0910 BRAVO WINE BAR TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3087 3T25 0907 WEBEMPRESA EUROPA TJ.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3088 3T25 0911 HERNANDEZ SUMINISTROS TJ.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3089 3T25 0911 MOLLETES ARTESANOS TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3090 3T25 0915 BODEGAS VIRGEN DE LA SIERRA RC.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3091 3T25 0718 ISTA RC.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3092 3T25 0731 DE LUIS TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3093 3T25 0808 Hernández Suministros TJ.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3094 3T25 0813 LIDIA DE NOVA TF OJO RETENCION.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3095 3T25 0814 Decoraciones Imcasa SL EF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3096 3T25 0814 Papel hogar SL EG.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3097 3T25 0826 KINEMA RC.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3098 3T25 0909 CAFES DROMEDARIO TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3099 3T25 0909 SABORES DE PATERNA TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3100 3T25 0915 CELONIS TJ.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3101 3T25 0915 VIRGEN DE LA SIERRA RC.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3102 3T25 0916 CERES RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3103 3T25 0916 QUESOS DEL CATI TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3104 3T25 0917 CARDENAS TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3105 3T25 0917 EMBUTIDOS ALPENDEREZ TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3106 3T25 0918 ANA CABALLO TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3107 3T25 0918 MRM TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3108 3T25 0919 PEDRO OSCAR RUBIO TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3109 3T25 0922 GADITAUN MARILILNA TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3110 3T25 0922 LA ROSQUILLERIA TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3111 3T25 0925 LA CONSERVERA DEL PREPIRINEO TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3112 3T25 0925 LA DOLOROSA TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3113 3T25 0701 BENJAMIN ORTEGA TF RETENCION.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3114 3T25 0701 JAIME FERNANDEZ TF RETENCION.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3115 3T25 0717 MIGUEZ CAL TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3116 3T25 0725 QUESOS SILVA CORDERO TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3117 3T25 0801 BENJAMIN ORTEGA TF RETENCION.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3118 3T25 0801 JAIME FERNANDEZ TF RETENCION.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3119 3T25 0801 MIGUEZ CAL TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3120 3T25 0901 BENJAMIN ORTEGA TF RETENCION.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3121 3T25 0901 JAIME FERNANDEZ TF RETENCION.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3122 3T25 0905 DISTRIBUCIONES LAVAPIES TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3123 3T25 0906 BM TJ.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3124 3T25 0910 DISTRIBUCIONES LAVAPIES TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3125 3T25 0911 QUESOS SILVA CORDERO TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3126 3T25 0912 MIGUEZ CAL TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3127 3T25 0916 CAFES POZO.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3128 3T25 0917 SABORES DE PATERNA TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3129 3T25 0918 BODEGAS BORBOTON TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3130 3T25 0919 CERES RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3131 3T25 0919 DISTRIBUCIONES LAVAPIES TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3132 3T25 0919 PRAIZAL PILAR BLANO TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3133 3T25 0923 CERES RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3134 3T25 0923 FELISA GOURMET TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3135 3T25 0923 MANIPULADOS ABELLAN TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3136 3T25 0923 MARTIN ARBENZA TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3137 3T25 0923 SABORES DE PATERNA TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3138 3T25 0924 ZUBELZU TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3139 3T25 0925 LA LLEIDIRIA TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3140 3T25 0926 CERES RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3141 3T25 0713 JIMELUZ SL EF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3142 3T25 0804 TIRSO PAPEL Y BOLSAS SL TJ.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3143 3T25 0805 FERRETERIA HOYOS SL TJ.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3144 3T25 0916 JIMELUZ SL EF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3146 3T25 0926 KINEMA RC.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3147 3T25 0930 CAFFE ABBATI RC.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3148 3T25 0930 CERES RC.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3149 3T25 0930 CVNE TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3150 3T25 0930 DE LUIS SABORES UNICOS TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3151 3T25 0930 DISTRIBUCIONES LAVAPIES TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3152 3T25 0930 EL MAJADAL PILAR RODRIGUEZ TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3153 3T25 0930 FABEIRO RC.pdf: EXCEPCION: could not convert string to float: '1315.640.00'
+  3154 3T25 0930 FRANCISCO GUERRA TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3155 3T25 0930 JULIO GARCIA VIVAS.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3156 3T25 0930 LA BARRA DULCE EF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3157 3T25 0930 LA PURISIMA RC.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3158 3T25 0930 LICORES MADRUEÑO RC.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3159 3T25 0930 MARITA COSTA TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3160 3T25 0930 PANIFIESTO.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3161 3T25 0930 PIFEMA TF.pdf: EXCEPCION: 'LineaFactura' object has no attribute 'get'
+  3162 3T25 0930 QUESERIA ZUCCA TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3163 3T25 0930 SABORES DE PATERNA TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  3164 3T25 0930 SERRIN NO CHAN TF.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+  Z 3020 DUPLICADO 3018 3T25 0711 ELVIRA GARCIA TJ.pdf: EXCEPCION: validar_factura() missing 4 required positional ar
+
+============================================================
+FACTURAS CON DESCUADRE:
+
+============================================================
+ARTÍCULOS PENDIENTES DE CATEGORIZAR:
+
+============================================================
+ESTADÍSTICAS POR PROVEEDOR:
+  ERROR: 0/161 OK (0%), 0 líneas, 0.00€

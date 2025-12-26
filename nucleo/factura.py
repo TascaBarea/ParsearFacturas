@@ -1,53 +1,27 @@
 """
-Clase Factura - Modelo de datos principal.
-
-Esta clase representa una factura procesada con todas sus líneas
-y metadatos extraídos del PDF.
-
-Uso:
-    from nucleo.factura import Factura, LineaFactura
-    
-    factura = Factura(
-        archivo='2001_CERES_TF.pdf',
-        proveedor='CERES',
-        fecha='15/12/2025',
-        ...
-    )
+Clases de datos para facturas y líneas.
 """
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+from pathlib import Path
 from datetime import datetime
 
 
 @dataclass
 class LineaFactura:
-    """
-    Representa una línea de producto en una factura.
-    
-    Atributos obligatorios:
-        articulo: Nombre/descripción del producto
-        base: Importe SIN IVA
-        iva: Porcentaje de IVA (4, 10, 21)
-    
-    Atributos opcionales:
-        codigo: Código del producto
-        cantidad: Cantidad de unidades
-        precio_ud: Precio unitario
-        categoria: Categoría asignada
-        id_categoria: ID de categoría del diccionario
-    """
-    articulo: str
-    base: float
-    iva: int
+    """Representa una línea de factura."""
+    articulo: str = ''
+    base: float = 0.0
+    iva: int = 21
     codigo: str = ''
-    cantidad: float = 1.0
-    precio_ud: float = 0.0
-    categoria: str = ''
-    id_categoria: int = 0
+    cantidad: Optional[float] = None
+    precio_ud: Optional[float] = None
+    categoria: str = 'PENDIENTE'
+    id_categoria: str = ''
     
     @property
     def total(self) -> float:
-        """Calcula el total de la línea (base + IVA)."""
+        """Calcula el total con IVA."""
         return round(self.base * (1 + self.iva / 100), 2)
     
     @property
@@ -55,138 +29,97 @@ class LineaFactura:
         """Calcula la cuota de IVA."""
         return round(self.base * self.iva / 100, 2)
     
-    def to_dict(self) -> dict:
-        """Convierte la línea a diccionario."""
+    def to_dict(self) -> Dict[str, Any]:
+        """Convierte a diccionario."""
         return {
-            'articulo': self.articulo,
             'codigo': self.codigo,
-            'categoria': self.categoria,
-            'id_categoria': self.id_categoria,
+            'articulo': self.articulo,
             'cantidad': self.cantidad,
             'precio_ud': self.precio_ud,
-            'base': self.base,
             'iva': self.iva,
+            'base': self.base,
+            'cuota_iva': self.cuota_iva,
             'total': self.total,
+            'categoria': self.categoria,
+            'id_categoria': self.id_categoria
         }
 
 
 @dataclass
 class Factura:
-    """
-    Representa una factura completa procesada.
-    
-    Atributos del archivo:
-        archivo: Nombre del archivo PDF
-        numero: Número extraído del nombre (ej: 2001)
-        ruta: Ruta completa al archivo
-    
-    Atributos del proveedor:
-        proveedor: Nombre del proveedor
-        cif: CIF del proveedor
-        iban: IBAN del proveedor
-    
-    Atributos de la factura:
-        fecha: Fecha de la factura (DD/MM/YYYY)
-        referencia: Número de referencia/factura
-        total: Total de la factura
-    
-    Líneas y estado:
-        lineas: Lista de LineaFactura
-        cuadre: Estado del cuadre ('OK', 'DESCUADRE_X.XX', 'SIN_TOTAL', etc.)
-        errores: Lista de errores encontrados
-    """
-    # Archivo
+    """Representa una factura completa."""
     archivo: str
-    numero: int = 0
-    ruta: str = ''
-    
-    # Proveedor
+    numero: str
+    ruta: Optional[Path] = None
     proveedor: str = ''
     cif: str = ''
     iban: str = ''
-    
-    # Datos factura
     fecha: str = ''
     referencia: str = ''
     total: Optional[float] = None
-    
-    # Líneas
     lineas: List[LineaFactura] = field(default_factory=list)
-    
-    # Estado
     cuadre: str = ''
     errores: List[str] = field(default_factory=list)
-    
-    # Metadatos
-    metodo_pdf: str = 'pypdf'
+    metodo_pdf: str = ''
     texto_raw: str = ''
-    procesado_at: str = field(default_factory=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    procesado_at: str = field(default_factory=lambda: datetime.now().isoformat())
     
     @property
     def num_lineas(self) -> int:
-        """Número de líneas de la factura."""
         return len(self.lineas)
     
     @property
     def tiene_lineas(self) -> bool:
-        """Indica si la factura tiene líneas extraídas."""
         return len(self.lineas) > 0
     
     @property
     def total_calculado(self) -> float:
-        """Suma de los totales de todas las líneas."""
-        return round(sum(linea.total for linea in self.lineas), 2)
+        """Suma de bases de todas las líneas."""
+        return sum(linea.base for linea in self.lineas)
     
     @property
     def base_total(self) -> float:
-        """Suma de las bases de todas las líneas."""
-        return round(sum(linea.base for linea in self.lineas), 2)
+        """Alias de total_calculado."""
+        return self.total_calculado
     
     @property
     def iva_total(self) -> float:
-        """Suma de las cuotas de IVA de todas las líneas."""
-        return round(sum(linea.cuota_iva for linea in self.lineas), 2)
+        """Suma de cuotas IVA."""
+        return sum(linea.cuota_iva for linea in self.lineas)
     
     @property
     def es_ok(self) -> bool:
-        """Indica si la factura se procesó correctamente."""
         return self.cuadre == 'OK'
     
     @property
     def tiene_errores(self) -> bool:
-        """Indica si la factura tiene errores."""
         return len(self.errores) > 0
     
-    def agregar_linea(self, linea: LineaFactura):
+    def agregar_linea(self, linea: LineaFactura) -> None:
         """Agrega una línea a la factura."""
         self.lineas.append(linea)
     
-    def agregar_linea_dict(self, datos: dict):
-        """
-        Agrega una línea desde un diccionario.
-        
-        Args:
-            datos: Diccionario con al menos 'articulo', 'base', 'iva'
-        """
+    def agregar_linea_dict(self, datos: Dict[str, Any]) -> None:
+        """Agrega una línea desde diccionario."""
         linea = LineaFactura(
             articulo=datos.get('articulo', ''),
-            base=float(datos.get('base', 0)),
-            iva=int(datos.get('iva', 21)),
+            base=datos.get('base', 0.0),
+            iva=datos.get('iva', 21),
             codigo=datos.get('codigo', ''),
-            cantidad=float(datos.get('cantidad', 1)),
-            precio_ud=float(datos.get('precio_ud', 0)),
-            categoria=datos.get('categoria', ''),
-            id_categoria=int(datos.get('id_categoria', 0)),
+            cantidad=datos.get('cantidad'),
+            precio_ud=datos.get('precio_ud'),
+            categoria=datos.get('categoria', 'PENDIENTE'),
+            id_categoria=datos.get('id_categoria', '')
         )
         self.lineas.append(linea)
     
-    def agregar_error(self, error: str):
-        """Agrega un error a la lista."""
+    def agregar_error(self, error: str) -> None:
+        """Agrega un error a la factura."""
         if error not in self.errores:
             self.errores.append(error)
     
-    def to_dict(self) -> dict:
-        """Convierte la factura a diccionario."""
+    def to_dict(self) -> Dict[str, Any]:
+        """Convierte a diccionario."""
         return {
             'archivo': self.archivo,
             'numero': self.numero,
@@ -197,68 +130,50 @@ class Factura:
             'referencia': self.referencia,
             'total': self.total,
             'total_calculado': self.total_calculado,
-            'num_lineas': self.num_lineas,
             'cuadre': self.cuadre,
             'errores': self.errores,
+            'num_lineas': self.num_lineas,
+            'lineas': [l.to_dict() for l in self.lineas]
         }
     
-    def to_filas_excel(self) -> List[dict]:
-        """
-        Convierte la factura a filas para Excel.
-        
-        Returns:
-            Lista de diccionarios, uno por cada línea de la factura.
-            Si no hay líneas, devuelve una fila con los datos básicos.
-        """
-        if not self.lineas:
-            # Factura sin líneas: una fila con datos básicos
-            return [{
-                '#': self.numero,
-                'FECHA': self.fecha,
-                'PROVEEDOR': self.proveedor,
-                'REF': self.referencia,
-                'CIF': self.cif,
-                'ARTICULO': '',
-                'CODIGO': '',
-                'CATEGORIA': '',
-                'ID_CAT': '',
-                'BASE': '',
-                'IVA': '',
-                'TOTAL': '',
-                'TOTAL FAC': self.total,
-                'CUADRE': self.cuadre,
-                'IBAN': self.iban,
-                'ARCHIVO': self.archivo,
-            }]
-        
-        # Factura con líneas: una fila por línea
+    def to_filas_excel(self) -> List[Dict[str, Any]]:
+        """Genera filas para Excel."""
         filas = []
-        for linea in self.lineas:
+        if self.lineas:
+            for linea in self.lineas:
+                filas.append({
+                    '#': self.numero,
+                    'FECHA': self.fecha,
+                    'REF': self.referencia,
+                    'PROVEEDOR': self.proveedor,
+                    'ARTICULO': linea.articulo,
+                    'CATEGORIA': linea.categoria,
+                    'CANTIDAD': linea.cantidad,
+                    'PRECIO_UD': linea.precio_ud,
+                    'IVA': linea.iva,
+                    'BASE': linea.base,
+                    'TOTAL_FAC': self.total,
+                    'CUADRE': self.cuadre
+                })
+        else:
             filas.append({
                 '#': self.numero,
                 'FECHA': self.fecha,
-                'PROVEEDOR': self.proveedor,
                 'REF': self.referencia,
-                'CIF': self.cif,
-                'ARTICULO': linea.articulo,
-                'CODIGO': linea.codigo,
-                'CATEGORIA': linea.categoria,
-                'ID_CAT': linea.id_categoria,
-                'BASE': linea.base,
-                'IVA': linea.iva,
-                'TOTAL': linea.total,
-                'TOTAL FAC': self.total,
-                'CUADRE': self.cuadre,
-                'IBAN': self.iban,
-                'ARCHIVO': self.archivo,
+                'PROVEEDOR': self.proveedor,
+                'ARTICULO': 'VER FACTURA',
+                'CATEGORIA': 'PENDIENTE',
+                'CANTIDAD': '',
+                'PRECIO_UD': '',
+                'IVA': '',
+                'BASE': self.total or '',
+                'TOTAL_FAC': self.total,
+                'CUADRE': self.cuadre
             })
-        
         return filas
     
     def __str__(self) -> str:
-        """Representación en texto de la factura."""
-        estado = '✅' if self.es_ok else '⚠️'
-        return f"{estado} {self.archivo}: {self.proveedor} | {self.fecha} | {self.num_lineas} líneas | {self.cuadre}"
+        return f"Factura({self.numero}, {self.proveedor}, {self.total}€, {self.num_lineas} líneas)"
     
     def __repr__(self) -> str:
-        return f"Factura(archivo='{self.archivo}', proveedor='{self.proveedor}', lineas={self.num_lineas})"
+        return self.__str__()

@@ -1,17 +1,20 @@
 """
-Extractor para PORVAZ VILAGARCÍA S.L.
+Extractor para PORVAZ VILAGARCIA S.L.
 
-Conservas gallegas de Vilagarcía de Arousa (Pontevedra)
+Conservas gallegas de Vilagarcia de Arousa (Pontevedra)
 CIF: B36281087
 IBAN: ES63 0049 5368 0625 1628 3321
 
 Formato factura (pdfplumber):
-- Líneas producto: DESCRIPCION CANTIDAD PRECIO IVA IMPORTE
+- Lineas producto: DESCRIPCION CANTIDAD PRECIO IVA IMPORTE
 - IVA: 10% (conservas alimenticias)
+
+CATEGORIA FIJA: CONSERVAS PESCADO
 
 Variantes nombre: PORVAZ, PORVAZ TITO, PORVAZ VILLAGARCIA, CONSERVAS TITO
 
 Creado: 19/12/2025
+Actualizado: 21/12/2025 - Categoria fija CONSERVAS PESCADO
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -20,18 +23,19 @@ import re
 
 
 @registrar('PORVAZ', 'PORVAZ TITO', 'PORVAZ VILLAGARCIA', 'PORVAZ VILAGARCIA', 
-           'CONSERVAS TITO', 'TITO CONSERVAS', 'LA RIVIERE')
+           'PORVAZ VILLAG', 'CONSERVAS TITO', 'TITO CONSERVAS', 'LA RIVIERE')
 class ExtractorPorvaz(ExtractorBase):
-    """Extractor para facturas de PORVAZ VILAGARCÍA S.L."""
+    """Extractor para facturas de PORVAZ VILAGARCIA S.L."""
     
     nombre = 'PORVAZ'
     cif = 'B36281087'
     iban = 'ES63 0049 5368 0625 1628 3321'
     metodo_pdf = 'pdfplumber'
+    categoria = 'CONSERVAS PESCADO'  # CATEGORIA FIJA
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         """
-        Extrae líneas INDIVIDUALES de productos.
+        Extrae lineas INDIVIDUALES de productos.
         
         Formato:
         DESCRIPCION CANTIDAD PRECIO IVA IMPORTE
@@ -39,17 +43,17 @@ class ExtractorPorvaz(ExtractorBase):
         """
         lineas = []
         
-        # Patrón para líneas de producto
-        # La descripción puede contener números (40/60, 8/12, etc.)
+        # Patron para lineas de producto
+        # La descripcion puede contener numeros (40/60, 8/12, etc.)
         # Formato: DESCRIPCION CANTIDAD PRECIO IVA IMPORTE
         # Ejemplo: MEJILLON ESCABECHE 8/12 RR120 AL 20 3,800 10,0 76,00
         
         patron_linea = re.compile(
-            r'^([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ0-9/\s]+?)\s+'  # Descripción (empieza con mayúscula)
-            r'(\d+)\s+'                               # Cantidad (entero)
-            r'(\d+,\d{3})\s+'                         # Precio (X,XXX)
-            r'(\d+,\d)\s+'                            # IVA (10,0)
-            r'(\d+,\d{2})\s*$'                        # Importe
+            r'^([A-ZAEIOUN0-9/\s]+?)\s+'       # Descripcion (empieza con mayuscula)
+            r'(\d+)\s+'                         # Cantidad (entero)
+            r'(\d+,\d{3})\s+'                   # Precio (X,XXX)
+            r'(\d+,\d)\s+'                      # IVA (10,0)
+            r'(\d+,\d{2})\s*$'                  # Importe
         , re.MULTILINE)
         
         for match in patron_linea.finditer(texto):
@@ -59,7 +63,7 @@ class ExtractorPorvaz(ExtractorBase):
             iva = int(float(self._convertir_europeo(match.group(4))))
             importe = self._convertir_europeo(match.group(5))
             
-            # Filtrar cabeceras y líneas no válidas
+            # Filtrar cabeceras y lineas no validas
             if any(x in descripcion.upper() for x in ['DESCRIPCION', 'CANTIDAD', 'PRECIO', 
                                                        'IMPORTE', 'CLIENTE', 'FACTURA']):
                 continue
@@ -69,12 +73,13 @@ class ExtractorPorvaz(ExtractorBase):
                 continue
             
             lineas.append({
-                'codigo': '',  # PORVAZ no usa códigos
+                'codigo': '',  # PORVAZ no usa codigos
                 'articulo': descripcion[:50],
                 'cantidad': cantidad,
                 'precio_ud': round(precio, 3),
                 'iva': iva,
-                'base': round(importe, 2)
+                'base': round(importe, 2),
+                'categoria': self.categoria  # Asignar categoria fija
             })
         
         return lineas
@@ -115,9 +120,9 @@ class ExtractorPorvaz(ExtractorBase):
         return None
     
     def extraer_numero_factura(self, texto: str) -> Optional[str]:
-        """Extrae número de factura."""
-        # Formato: Número: 0132/25
-        patron = re.search(r'Número:\s*(\d+/\d+)', texto)
+        """Extrae numero de factura."""
+        # Formato: Numero: 0132/25
+        patron = re.search(r'Numero:\s*(\d+/\d+)', texto)
         if patron:
             return patron.group(1)
         return None

@@ -14,7 +14,14 @@ IVA mixto:
 - 10%: Embutidos, conservas, anchoas, cecina
 - 4%: Quesos (cabra, oveja)
 
+Categorias por codigo:
+- CA0005, CA0024 (anchoas) -> ANCHOAS
+- ZA0010, AL0007 (quesos) -> QUESO APERITIVO
+- LE0003 (cecina) -> CHACINAS
+- SA0011 (salchichon) -> EMBUTIDOS APERITIVO
+
 Creado: 20/12/2025
+Actualizado: 21/12/2025 - Mapeo de categorias por codigo
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -30,6 +37,16 @@ class ExtractorFabeiro(ExtractorBase):
     nombre = 'FABEIRO'
     cif = 'B79992079'
     metodo_pdf = 'pdfplumber'
+    
+    # Mapeo de categorias por codigo de articulo
+    CATEGORIAS = {
+        'CA0005': 'ANCHOAS',           # ANCHOA OLIVA GRAN SELECCION 60
+        'CA0024': 'ANCHOAS',           # ANCHOA CANT. OLIVA R.FAMILIA
+        'ZA0010': 'QUESO APERITIVO',   # QUESO DE CABRA
+        'AL0007': 'QUESO APERITIVO',   # QUESO OVEJA AHUMADO NAVARRA
+        'LE0003': 'CHACINAS',          # CECINA DE LEON IGP BABILLA
+        'SA0011': 'EMBUTIDOS APERITIVO', # SALCHICHON IBERICO PRIMERA
+    }
     
     def extraer_texto_pdfplumber(self, pdf_path: str) -> str:
         """Extrae texto de todas las paginas del PDF."""
@@ -80,13 +97,17 @@ class ExtractorFabeiro(ExtractorBase):
             descripcion = re.sub(r'\s*-\s*$', '', descripcion)
             descripcion = descripcion.strip()
             
+            # Obtener categoria del mapeo
+            categoria = self.CATEGORIAS.get(codigo, 'PENDIENTE')
+            
             lineas.append({
                 'codigo': codigo,
                 'articulo': descripcion[:50],
                 'cantidad': round(cantidad, 4),
                 'precio_ud': round(precio, 4),
                 'iva': int(iva),
-                'base': round(importe, 2)
+                'base': round(importe, 2),
+                'categoria': categoria
             })
         
         return lineas
@@ -109,7 +130,7 @@ class ExtractorFabeiro(ExtractorBase):
     def extraer_total(self, texto: str) -> Optional[float]:
         """Extrae total de la factura."""
         # Buscar TOTAL seguido de importe
-        # TOTAL 1.588,35 o TOTAL 1.588,35 €
+        # TOTAL 1.588,35 o TOTAL 1.588,35 EUR
         patron = re.search(r'TOTAL\s+(\d+\.?\d*,\d{2})\s*', texto)
         if patron:
             return self._convertir_europeo(patron.group(1))
@@ -132,7 +153,7 @@ class ExtractorFabeiro(ExtractorBase):
     def extraer_numero_factura(self, texto: str) -> Optional[str]:
         """Extrae numero de factura."""
         # Formato: 25 - 11.474
-        patron = re.search(r'N[º°]\s*Factura\s*Fecha.*?\n.*?(\d+\s*-\s*\d+\.?\d+)', texto, re.DOTALL)
+        patron = re.search(r'N[o0]\s*Factura\s*Fecha.*?\n.*?(\d+\s*-\s*\d+\.?\d+)', texto, re.DOTALL)
         if patron:
             return patron.group(1).replace(' ', '')
         # Alternativa

@@ -1,7 +1,7 @@
-# 📖 CÓMO AÑADIR UN EXTRACTOR NUEVO
+# 🔧 CÓMO AÑADIR UN EXTRACTOR NUEVO
 
-**Versión:** 4.3
-**Última actualización:** 20/12/2025
+**Versión:** 5.1  
+**Última actualización:** 26/12/2025
 
 ---
 
@@ -9,10 +9,11 @@
 
 ```
 1. Copia la plantilla: extractores/_plantilla.py → extractores/nuevo_proveedor.py
-2. Cambia el nombre, CIF y variantes
+2. Cambia el nombre, CIF y variantes en @registrar()
 3. Implementa extraer_lineas() → SIEMPRE líneas individuales
 4. Prueba: python tests/probar_extractor.py "PROVEEDOR" factura.pdf
 5. ¡Listo! El extractor se registra automáticamente
+6. Ejecuta: python generar_proveedores.py (actualiza docs)
 ```
 
 ---
@@ -21,24 +22,23 @@
 
 ### 1. SIEMPRE pdfplumber (OCR solo para escaneados)
 ```python
-metodo_pdf = 'pdfplumber'  # SIEMPRE
+metodo_pdf = 'pdfplumber'  # SIEMPRE por defecto
 metodo_pdf = 'ocr'         # SOLO si es imagen/escaneado
+metodo_pdf = 'hibrido'     # Si algunas facturas son escaneadas y otras no
 ```
 
 ### 2. SIEMPRE líneas individuales
 **1 artículo = 1 línea en el Excel**
 
-❌ MAL (desglose fiscal agrupado):
 ```python
+# ❌ MAL (desglose fiscal agrupado)
 lineas.append({
     'articulo': 'PRODUCTOS VARIOS IVA 21%',
     'base': 646.55,
     'iva': 21
 })
-```
 
-✅ BIEN (líneas individuales):
-```python
+# ✅ BIEN (líneas individuales)
 lineas.append({
     'codigo': '1594',
     'articulo': 'FEVER-TREE',
@@ -52,12 +52,12 @@ lineas.append({
 ### 3. Columnas obligatorias
 ```python
 {
-    'codigo': str,       # Código del producto ('' si no hay)
-    'articulo': str,     # Nombre del artículo (max 50 chars)
-    'cantidad': int/float,  # Unidades
-    'precio_ud': float,  # Precio unitario
-    'iva': int,          # 4, 10 o 21
-    'base': float        # Importe SIN IVA
+    'codigo': str,        # Código del producto ('' si no hay)
+    'articulo': str,      # Nombre del artículo (max 50 chars)
+    'cantidad': int/float,   # Unidades
+    'precio_ud': float,   # Precio unitario
+    'iva': int,           # 4, 10 o 21
+    'base': float         # Importe SIN IVA
 }
 ```
 
@@ -109,6 +109,7 @@ class ExtractorProveedor(ExtractorBase):
     cif = 'B12345678'
     iban = 'ES00 0000 0000 0000 0000 0000'
     metodo_pdf = 'pdfplumber'
+    # categoria_fija = 'CATEGORIA'  # Solo si SIEMPRE es la misma
     
     def extraer_texto_pdfplumber(self, pdf_path: str) -> str:
         """Extrae texto del PDF."""
@@ -196,7 +197,82 @@ class ExtractorProveedor(ExtractorBase):
 
 ---
 
-## 📋 PATRONES COMUNES
+## 🔄 PLANTILLA HÍBRIDA (pdfplumber + OCR)
+
+Para proveedores que tienen algunas facturas escaneadas y otras con texto:
+
+```python
+"""
+Extractor HÍBRIDO para [NOMBRE PROVEEDOR]
+
+Usa pdfplumber si hay texto, fallback a OCR si es escaneado.
+"""
+from extractores.base import ExtractorBase
+from extractores import registrar
+from typing import List, Dict, Optional
+import re
+import pdfplumber
+import subprocess
+import tempfile
+import os
+
+
+@registrar('PROVEEDOR', 'VARIANTE1')
+class ExtractorProveedorHibrido(ExtractorBase):
+    """Extractor híbrido para facturas de PROVEEDOR."""
+    
+    nombre = 'PROVEEDOR'
+    cif = 'B12345678'
+    metodo_pdf = 'hibrido'
+    
+    def extraer_texto(self, pdf_path: str) -> str:
+        """Extrae texto con pdfplumber, fallback a OCR."""
+        # Intentar pdfplumber primero
+        texto = ""
+        with pdfplumber.open(pdf_path) as pdf:
+            for page in pdf.pages:
+                t = page.extract_text()
+                if t:
+                    texto += t + "\n"
+        
+        # Si no hay texto suficiente, usar OCR
+        if len(texto.strip()) < 100:
+            texto = self._extraer_texto_ocr(pdf_path)
+            self._metodo_usado = 'OCR'
+        else:
+            self._metodo_usado = 'pdfplumber'
+        
+        return texto
+    
+    def _extraer_texto_ocr(self, pdf_path: str) -> str:
+        """Extrae texto usando OCR (Tesseract + pdftoppm)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = os.path.join(tmpdir, 'page')
+            subprocess.run(
+                ['pdftoppm', '-png', '-r', '300', pdf_path, base],
+                check=True, capture_output=True
+            )
+            
+            texto = ""
+            for img in sorted(os.listdir(tmpdir)):
+                if img.endswith('.png'):
+                    result = subprocess.run(
+                        ['tesseract', os.path.join(tmpdir, img), 'stdout', '-l', 'spa'],
+                        capture_output=True, text=True
+                    )
+                    texto += result.stdout + "\n"
+            return texto
+    
+    def extraer_lineas(self, texto: str) -> List[Dict]:
+        """Extrae líneas - mismo patrón funciona para ambos métodos."""
+        lineas = []
+        # ... implementar patrón ...
+        return lineas
+```
+
+---
+
+## 📋 PATRONES REGEX COMUNES
 
 ### Tabla estándar
 ```python
@@ -225,27 +301,40 @@ def _convertir_europeo(self, texto):
 
 ---
 
+## 🏷️ CATEGORÍA FIJA vs DICCIONARIO
+
+### Usar categoria_fija cuando:
+- El proveedor SIEMPRE vende lo mismo
+- Ejemplos: KINEMA (gestoría), YOIGO (teléfono), SEGURMA (alarma)
+
+```python
+class ExtractorKinema(ExtractorBase):
+    nombre = 'KINEMA'
+    categoria_fija = 'GESTORIA'
+```
+
+### Usar diccionario cuando:
+- El proveedor tiene productos variados
+- Ejemplos: CERES (cervezas), MERCADONA (supermercado)
+
+```python
+class ExtractorCeres(ExtractorBase):
+    nombre = 'CERES'
+    # Sin categoria_fija → busca en diccionario
+```
+
+---
+
 ## ⚠️ ERRORES COMUNES
 
-### 1. "Extractor no encontrado"
-**Causa:** El nombre en `@registrar()` no coincide
-**Solución:** Añadir más variantes
-
-### 2. "No se encontraron líneas"  
-**Causa:** Patrón regex incorrecto
-**Solución:** Probar con `--debug` y ajustar patrón
-
-### 3. "Solo 1 línea con desglose"
-**Causa:** Extractor usa desglose fiscal en vez de líneas
-**Solución:** REHACER para extraer líneas individuales
-
-### 4. "Total no cuadra"
-**Causa:** Base mal calculada o portes no distribuidos
-**Solución:** Verificar si hay portes y distribuirlos
-
-### 5. "IVA incorrecto"
-**Causa:** IVA hardcodeado cuando es variable
-**Solución:** Detectar IVA real del PDF
+| Error | Causa | Solución |
+|-------|-------|----------|
+| "Extractor no encontrado" | Nombre en @registrar() no coincide | Añadir más variantes |
+| "No se encontraron líneas" | Patrón regex incorrecto | Probar con --debug |
+| "Solo 1 línea con desglose" | Usa desglose fiscal | REHACER con líneas individuales |
+| "Total no cuadra" | Base mal calculada o portes | Verificar y distribuir portes |
+| "IVA incorrecto" | IVA hardcodeado | Detectar IVA real del PDF |
+| "Algunas facturas fallan" | Formato mixto | Usar extractor híbrido |
 
 ---
 
@@ -263,21 +352,38 @@ python tests/probar_extractor.py "PROVEEDOR" "factura.pdf" --debug
 
 ## 📚 EJEMPLOS REALES
 
-### OCR (facturas escaneadas)
-- `manipulados_abellan.py` - Conservas vegetales
-- `la_rosquilleria.py` - Rosquillas
-- `jimeluz.py` - Tickets
+### Por método de extracción
 
-### IVA mixto
-- `fabeiro.py` - 10% ibéricos, 4% quesos
-- `distribuciones_lavapies.py` - 10%/21% bebidas
+| Método | Proveedores ejemplo |
+|--------|---------------------|
+| **pdfplumber** | CERES, BM, ZUCCA, FABEIRO, KINEMA |
+| **OCR** | LA ROSQUILLERIA, FISHGOURMET, GADITAUN |
+| **Híbrido** | JULIO GARCIA, DE LUIS, ECOMS |
 
-### Con portes
-- `silva_cordero.py` - Portes 21% distribuidos
+### Por tipo especial
 
-### Categoría fija
-- `kinema.py` - Siempre categoría GESTORIA
+| Tipo | Proveedores | Nota |
+|------|-------------|------|
+| Con portes | SILVA CORDERO, ARGANZA, BIELLEBI | Distribuir proporcionalmente |
+| Categoría fija | KINEMA, YOIGO, SEGURMA | No busca en diccionario |
+| IVA mixto | FABEIRO, MERCADONA, BM | Detectar por línea |
+| Retención IRPF | JAIME FERNANDEZ, BENJAMIN ORTEGA | Alquileres |
+| Moneda extranjera | OPENAI (USD) | Convertir a EUR |
 
 ---
 
-*Última actualización: 20/12/2025 - Añadidos ejemplos OCR y portes*
+## ✅ CHECKLIST NUEVO EXTRACTOR
+
+- [ ] Copiar plantilla a `extractores/nuevo.py`
+- [ ] Definir nombre, CIF, variantes en @registrar()
+- [ ] Definir IBAN si lo tienes
+- [ ] Implementar extraer_lineas() con líneas individuales
+- [ ] Manejar portes (distribuir, no línea separada)
+- [ ] Probar con 3+ facturas reales
+- [ ] Verificar que cuadra (tolerancia 0.10€)
+- [ ] Ejecutar `python generar_proveedores.py`
+- [ ] Hacer commit y push
+
+---
+
+*Última actualización: 26/12/2025*

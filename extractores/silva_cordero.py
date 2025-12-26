@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 """
-Extractor para QUESOS DE ACEHUCHE TRADICIONALES S.L. (SILVA CORDERO)
+Extractor para SILVA CORDERO (Quesos de Acehuche Tradicionales S.L.)
 
-Queseria artesanal de Acehuche (Caceres)
+Proveedor de quesos artesanales de cabra.
 CIF: B09861535
-IBAN: ES48 3001 0050 7850 1000 3340
+IBAN: ES4830010050785010003340 (BBVA)
 
-Formato factura (PDF digital):
-- Lineas producto: CODIGO DESCRIPCION LOTE FEC.CADUC CAJAS PIEZAS CANTIDAD PRECIO DTO IMPORTE
-- Ejemplo: MINI DOP D.O.P MINI QUESO DE ACEHUCHE 250521 20/09/26 2 12 5,940 18,900000/kg. 0,00 112,27
+Formato factura:
+- Productos con precio por kg
+- IVA reducido: 2% (2024) o 4% (2025) para quesos
+- PORTES con IVA 21%
+- Tabla: CODIGO DESCRIPCION LOTE FECHA CAJAS PIEZAS CANTIDAD PRECIO DTO IMPORTE
 
-IVA:
-- 4%: Quesos (productos)
-- 21%: Portes (transporte)
-
-Los portes se distribuyen proporcionalmente entre los productos.
-
-Creado: 20/12/2025
+Actualizado: 21/12/2025
+- Soporte IVA 2% (2024) y 4% (2025)
+- Extraccion de PORTES con IVA 21%
+- Patron mejorado para codigos con puntos (D.O.P)
+- Fallback a TOTAL BRUTO si no hay lineas
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -25,186 +25,147 @@ import re
 import pdfplumber
 
 
-@registrar('SILVA CORDERO', 'QUESOS SILVA CORDERO', 'QUESOS DE ACEHUCHE', 
-           'ACEHUCHE', 'SILVACORDERO')
+@registrar('SILVA CORDERO', 'QUESOS SILVA CORDERO', 'QUESOS DE ACEHUCHE', 'SILVA_CORDERO')
 class ExtractorSilvaCordero(ExtractorBase):
-    """Extractor para facturas de SILVA CORDERO / Quesos de Acehuche."""
+    """Extractor para facturas de SILVA CORDERO."""
     
     nombre = 'SILVA CORDERO'
     cif = 'B09861535'
-    iban = 'ES48 3001 0050 7850 1000 3340'
+    iban = 'ES4830010050785010003340'
     metodo_pdf = 'pdfplumber'
-    
-    def extraer_texto_pdfplumber(self, pdf_path: str) -> str:
-        """Extrae texto del PDF."""
-        texto_completo = []
-        try:
-            with pdfplumber.open(pdf_path) as pdf:
-                for page in pdf.pages:
-                    texto = page.extract_text()
-                    if texto:
-                        texto_completo.append(texto)
-        except Exception as e:
-            pass
-        return '\n'.join(texto_completo)
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         """
-        Extrae lineas INDIVIDUALES de productos.
+        Extrae lineas de facturas SILVA CORDERO.
         
-        Formato:
-        CODIGO DESCRIPCION LOTE FEC.CADUC CAJAS PIEZAS CANTIDAD PRECIO DTO IMPORTE
-        MINI DOP D.O.P MINI QUESO DE ACEHUCHE 250521 20/09/26 2 12 5,940 18,900000/kg. 0,00 112,27
-        
-        Nota: El codigo y descripcion pueden estar pegados (QUESOAZULQUESO LA CABRA AZUL)
+        Los quesos tienen IVA reducido (2% en 2024, 4% en 2025).
+        Los PORTES tienen IVA 21%.
         """
+        if not texto:
+            return []
+            
         lineas = []
+        productos_extraidos = []
         
-        # Detectar tipo de IVA real del PDF (puede ser 2%, 4%, etc.)
-        iva_quesos = self._detectar_iva_quesos(texto)
+        # =====================================================
+        # DETECTAR IVA DE PRODUCTOS
+        # Formato en tabla: BASE IVA% CUOTA -> ej: "280,48 4,00 11,22"
+        # =====================================================
+        iva_productos = 4  # Default 2025
+        iva_match = re.search(r'([\d,.]+)\s+(2|4),00\s+([\d,.]+)', texto)
+        if iva_match:
+            iva_productos = int(iva_match.group(2))
         
-        # Patron para lineas de producto - formato con espacios
-        patron_linea = re.compile(
-            r'^([A-Z0-9\s]+?)\s+'              # Codigo + Descripcion
-            r'(\d{6})\s+'                       # Lote (6 digitos)
-            r'(\d{2}/\d{2}/\d{2})\s+'          # Fecha caducidad
-            r'(\d+)\s+'                         # Cajas
-            r'(\d+)\s+'                         # Piezas
-            r'(\d+,\d{3})\s+'                   # Cantidad (kg con 3 decimales)
-            r'(\d+,\d+)[^\d]*\s+'               # Precio (puede tener /kg.)
-            r'(\d+,\d{2})\s+'                   # Descuento
-            r'(\d+,\d{2})\s*$'                  # Importe
-        , re.MULTILINE)
+        # =====================================================
+        # EXTRAER LINEAS DE PRODUCTOS
+        # Patron: todo + lote + fecha + cajas + piezas + kg + precio/kg + dto + importe
+        # Ejemplo: "D.O.P D.O.P QUESO DE ACEHUCHE 240608 30/09/25 1 6 4,860 17,900000€/kg. 0,00 86,99"
+        # =====================================================
+        patron = re.compile(
+            r'^(.+?)\s+'                              # Descripcion completa
+            r'(\d{6})\s+'                             # Lote (YYMMDD)
+            r'(\d{2}/\d{2}/\d{2})\s+'                # Fecha caducidad
+            r'(\d+)\s+'                               # Cajas
+            r'(\d+)\s+'                               # Piezas
+            r'([\d,]+)\s+'                            # Cantidad (kg)
+            r'([\d,]+)[€/kg\.]+\s+'                  # Precio por kg
+            r'([\d,]+)\s+'                            # Dto
+            r'([\d,]+)$',                             # Importe
+            re.MULTILINE
+        )
         
-        # Patron alternativo - codigo pegado a descripcion (QUESOAZULQUESO)
-        patron_alt = re.compile(
-            r'^([A-Z0-9]+)([A-Z][A-Z\s]+)\s+'   # Codigo pegado + Descripcion
-            r'(\d{6})\s+'                       # Lote
-            r'(\d{2}/\d{2}/\d{2})\s+'          # Fecha
-            r'(\d+)\s+'                         # Cajas
-            r'(\d+)\s+'                         # Piezas
-            r'(\d+,\d{3})\s+'                   # Cantidad
-            r'(\d+,\d+)[^\d]*\s+'               # Precio
-            r'(\d+,\d{2})\s+'                   # Descuento
-            r'(\d+,\d{2})\s*$'                  # Importe
-        , re.MULTILINE)
-        
-        # Intentar patron principal
-        for match in patron_linea.finditer(texto):
-            descripcion_raw = match.group(1).strip()
-            cantidad = self._convertir_europeo(match.group(6))
-            precio = self._convertir_europeo(match.group(7))
-            importe = self._convertir_europeo(match.group(9))
+        for m in patron.finditer(texto):
+            desc_full = m.group(1).strip()
+            cantidad = float(m.group(6).replace(',', '.'))
+            precio = float(m.group(7).replace(',', '.'))
+            importe = float(m.group(9).replace(',', '.'))
             
-            descripcion = descripcion_raw
-            codigo = ''
+            # Ignorar cabeceras
+            if 'Producto' in desc_full or 'Albaran' in desc_full:
+                continue
             
-            codigo_match = re.match(r'^([A-Z0-9]+)\s+(.+)$', descripcion_raw)
-            if codigo_match:
-                codigo = codigo_match.group(1)
-                descripcion = codigo_match.group(2)
+            # Extraer codigo (primera palabra) y descripcion
+            parts = desc_full.split(None, 1)
+            codigo = parts[0] if parts else 'PROD'
+            articulo = parts[1] if len(parts) > 1 else desc_full
             
-            descripcion = re.sub(r'^(D\.O\.P\s+)?', '', descripcion)
-            descripcion = descripcion.strip()
-            
-            lineas.append({
-                'codigo': codigo,
-                'articulo': descripcion[:50],
-                'cantidad': round(cantidad, 3),
-                'precio_ud': round(precio, 2),
-                'iva': iva_quesos,
-                'base': round(importe, 2)
+            productos_extraidos.append({
+                'codigo': codigo[:12],
+                'articulo': articulo[:50],
+                'cantidad': cantidad,
+                'precio_ud': precio,
+                'iva': iva_productos,
+                'base': importe
             })
         
-        # Si no encontro lineas, intentar patron alternativo
-        if not lineas:
-            for match in patron_alt.finditer(texto):
-                codigo = match.group(1)
-                descripcion = match.group(2).strip()
-                cantidad = self._convertir_europeo(match.group(7))
-                precio = self._convertir_europeo(match.group(8))
-                importe = self._convertir_europeo(match.group(10))
-                
+        # Si se encontraron productos, usarlos
+        if productos_extraidos:
+            lineas.extend(productos_extraidos)
+        else:
+            # Fallback: usar TOTAL BRUTO cuando no se extraen lineas
+            bruto_match = re.search(r'TOTAL BRUTO\s+([\d,.]+)', texto)
+            if bruto_match:
+                bruto = float(bruto_match.group(1).replace('.', '').replace(',', '.'))
                 lineas.append({
-                    'codigo': codigo,
-                    'articulo': descripcion[:50],
-                    'cantidad': round(cantidad, 3),
-                    'precio_ud': round(precio, 2),
-                    'iva': iva_quesos,
-                    'base': round(importe, 2)
+                    'codigo': 'PRODUCTOS',
+                    'articulo': 'Quesos (total)',
+                    'cantidad': 1,
+                    'precio_ud': bruto,
+                    'iva': iva_productos,
+                    'base': bruto
                 })
         
-        # Extraer portes y distribuir proporcionalmente
-        portes = self._extraer_portes(texto)
-        if portes > 0:
-            base_productos = sum(l['base'] for l in lineas)
-            if base_productos > 0:
-                for linea in lineas:
-                    proporcion = linea['base'] / base_productos
-                    linea['base'] = round(linea['base'] + (portes * proporcion), 2)
+        # =====================================================
+        # EXTRAER PORTES (IVA 21%)
+        # =====================================================
+        portes_match = re.search(r'PORTES\s+([\d,]+)', texto)
+        if portes_match:
+            portes = float(portes_match.group(1).replace(',', '.'))
+            if portes > 0:
+                lineas.append({
+                    'codigo': 'PORTES',
+                    'articulo': 'Gastos de envio',
+                    'cantidad': 1,
+                    'precio_ud': portes,
+                    'iva': 21,
+                    'base': portes
+                })
         
         return lineas
     
-    def _detectar_iva_quesos(self, texto: str) -> int:
-        """Detecta el tipo de IVA de quesos del PDF (puede ser 2%, 4%, etc.)."""
-        # Buscar linea de IVA de quesos (la base mayor)
-        # Formato: BASE % IVA CUOTA
-        # 228,95 2,00 4,58  (IVA 2%)
-        # 175,77 4,00 7,03  (IVA 4%)
-        patron = re.search(r'(\d+,\d{2})\s+(2,00|4,00|10,00)\s+(\d+,\d{2})', texto)
-        if patron:
-            iva_str = patron.group(2)
-            if iva_str == '2,00':
-                return 2
-            elif iva_str == '4,00':
-                return 4
-            elif iva_str == '10,00':
-                return 10
-        return 4  # Default
-    
-    def _extraer_portes(self, texto: str) -> float:
-        """Extrae importe de portes."""
-        patron = re.search(r'PORTES\s+(\d+,\d{2})', texto)
-        if patron:
-            return self._convertir_europeo(patron.group(1))
-        return 0.0
-    
-    def _convertir_europeo(self, texto: str) -> float:
-        """Convierte formato europeo (1.234,56) a float."""
-        if not texto:
-            return 0.0
-        texto = texto.strip()
-        # Quitar sufijos como /kg.
-        texto = re.sub(r'[^\d,.]', '', texto)
-        if '.' in texto and ',' in texto:
-            texto = texto.replace('.', '').replace(',', '.')
-        elif ',' in texto:
-            texto = texto.replace(',', '.')
-        try:
-            return float(texto)
-        except:
-            return 0.0
-    
     def extraer_total(self, texto: str) -> Optional[float]:
-        """Extrae total de la factura."""
-        # Buscar TOTAL FACTURA seguido de importe
-        patron = re.search(r'TOTAL\s+FACTURA\s+(\d+,\d{2})', texto)
-        if patron:
-            return self._convertir_europeo(patron.group(1))
+        """Extrae el total de la factura."""
+        if not texto:
+            return None
+        
+        # Patron: TOTAL FACTURA XXX,XX €
+        m = re.search(r'TOTAL FACTURA\s+([\d,.]+)', texto)
+        if m:
+            total_str = m.group(1).replace('.', '').replace(',', '.')
+            return float(total_str)
+        
         return None
     
     def extraer_fecha(self, texto: str) -> Optional[str]:
-        """Extrae fecha de la factura."""
-        # Formato: Fecha DD/MM/YYYY
-        patron = re.search(r'Fecha\s+(\d{2}/\d{2}/\d{4})', texto)
-        if patron:
-            return patron.group(1)
+        """Extrae la fecha de la factura."""
+        if not texto:
+            return None
+        
+        # Formato: DD/MM/YYYY
+        m = re.search(r'Fecha\s+(\d{2}/\d{2}/\d{4})', texto)
+        if m:
+            return m.group(1)
+        
         return None
     
     def extraer_numero_factura(self, texto: str) -> Optional[str]:
-        """Extrae numero de factura."""
-        # Formato: F25/0000727 o F24/0000995
-        patron = re.search(r'(F\d{2}/\d{7})', texto)
-        if patron:
-            return patron.group(1)
+        """Extrae el numero de factura."""
+        if not texto:
+            return None
+        
+        # Formato: F25/0000XXX o F24/0000XXX
+        m = re.search(r'(F\d{2}/\d+)', texto)
+        if m:
+            return m.group(1)
+        
         return None

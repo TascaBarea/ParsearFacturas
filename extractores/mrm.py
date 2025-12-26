@@ -1,15 +1,19 @@
 """
-Extractor para INDUSTRIAS CÁRNICAS MRM-2 S.A.U.
+Extractor para MRM (Industrias Cárnicas MRM-2, S.A.U)
 
-Proveedor de salmón ahumado, patés y mousses de Móstoles (Madrid)
-CIF: A80280845
-IVA: 10% (productos cárnicos)
+Productos cárnicos: salmón ahumado, patés, mousses, foie gras.
+NIF: A80280845
+IVA: 10% (reducido)
+Categoría: Buscar en diccionario
 
-Formato factura (pdfplumber):
-- Líneas producto: CANTIDAD PESO CODIGO - DESCRIPCION TIPO PRECIO PRECIO IMPORTE
-- Ejemplo: 6,00 1,200 1159 - PATE COCHINILLO 200 U 4,300 4,300 25,800
+Formato factura:
+ 2,00 1,304 377 - SALMON AHUMADO P 37,650 37,650 49,100
+        PRECOR. 600 A 800 C/EST
 
-Creado: 19/12/2025
+Base Imponible TOTAL : 49,10
+10,00 % IVA Reducido sobre 49,10 4,910
+
+Creado: 26/12/2025
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -17,76 +21,68 @@ from typing import List, Dict, Optional
 import re
 
 
-@registrar('MRM', 'MRM-2', 'MRM2', 'INDUSTRIAS CARNICAS MRM', 'MANUEL RODRIGUEZ MANZANO')
+@registrar('MRM', 'MRM-2', 'MRM 2', 'INDUSTRIAS CARNICAS MRM', 'INDUSTRIAS CÁRNICAS MRM')
 class ExtractorMRM(ExtractorBase):
-    """Extractor para facturas de INDUSTRIAS CÁRNICAS MRM-2 S.A.U."""
+    """Extractor para facturas de MRM."""
     
     nombre = 'MRM'
     cif = 'A80280845'
-    iban = ''  # No aparece en las facturas
     metodo_pdf = 'pdfplumber'
+    usa_diccionario = True
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
-        """
-        Extrae líneas INDIVIDUALES de productos.
-        
-        Formato:
-        CANTIDAD PESO CODIGO - DESCRIPCION TIPO PRECIO PRECIO IMPORTE
-        6,00 1,200 1159 - PATE COCHINILLO 200 U 4,300 4,300 25,800
-        2,00 1,530 377 - SALMON AHUMADO P 35,620 35,620 54,500
-        """
+        """Extrae líneas de productos de MRM."""
         lineas = []
         
-        # Patrón para líneas de producto
-        # CANTIDAD PESO CODIGO - DESCRIPCION (multilínea posible) TIPO PRECIO PRECIO IMPORTE
-        patron_linea = re.compile(
-            r'^(\d+,\d{2})\s+'                      # Cantidad (6,00)
-            r'(\d+,\d{3})\s+'                       # Peso (1,200)
-            r'(\d+)\s+-\s+'                         # Código (1159 -)
-            r'(.+?)\s+'                             # Descripción
-            r'([UP])\s+'                            # Tipo (U o P)
-            r'(\d+,\d{3})\s+'                       # Precio 1
-            r'(\d+,\d{3})\s+'                       # Precio 2
-            r'(\d+,\d{3})\s*$'                      # Importe
-        , re.MULTILINE)
+        # Patrón para líneas de producto MRM
+        # Formato: CANT PESO COD - DESCRIPCION U/P PRECIO PRECIO IMPORTE
+        # Ejemplo: 2,00 1,304 377 - SALMON AHUMADO P 37,650 37,650 49,100
+        patron = re.compile(
+            r'(\d+[,.]?\d*)\s+'           # Cantidad (puede ser 2,00 o 6,00)
+            r'[\d,.]+'                     # Peso (ignorar)
+            r'\s+(\d+)\s+-\s+'             # Código
+            r'([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ0-9\s.,]+?)'  # Descripción
+            r'\s+[UP]\s+'                  # U o P (unidad/peso)
+            r'[\d,.]+\s+'                  # Precio unitario
+            r'[\d,.]+\s+'                  # Precio (repetido)
+            r'([\d,.]+)'                   # Importe total
+        )
         
-        for match in patron_linea.finditer(texto):
-            cantidad = self._convertir_europeo(match.group(1))
-            peso = self._convertir_europeo(match.group(2))
-            codigo = match.group(3)
-            descripcion = match.group(4).strip()
-            tipo = match.group(5)
-            precio = self._convertir_europeo(match.group(6))
-            importe = self._convertir_europeo(match.group(8))
+        for match in patron.finditer(texto):
+            cantidad_str = match.group(1).replace(',', '.')
+            codigo = match.group(2)
+            descripcion = match.group(3).strip()
+            importe_str = match.group(4)
             
-            # Limpiar descripción de textos adicionales
-            descripcion = re.sub(r'\s*(gr\.|grs\.|G\.|SELECT\.|SELECTOS|CASTILLA).*$', '', descripcion, flags=re.IGNORECASE)
-            descripcion = descripcion.strip()
+            cantidad = float(cantidad_str)
+            base = self._convertir_europeo(importe_str)
             
-            # La cantidad real depende del tipo
-            # U = unidades, P = peso en kg
-            if tipo == 'U':
-                cant_real = cantidad
-            else:
-                cant_real = peso
+            # Limpiar descripción (quitar líneas adicionales como "PRECOR...")
+            descripcion = re.sub(r'\s+', ' ', descripcion).strip()
+            # Quitar sufijos como "200" o "grs"
+            descripcion = re.sub(r'\s+\d+\s*$', '', descripcion).strip()
             
-            lineas.append({
-                'codigo': codigo,
-                'articulo': descripcion[:50],
-                'cantidad': cant_real,
-                'precio_ud': round(precio, 3),
-                'iva': 10,
-                'base': round(importe, 2)
-            })
+            if base > 0:
+                lineas.append({
+                    'codigo': codigo,
+                    'articulo': descripcion,
+                    'cantidad': cantidad,
+                    'precio_ud': round(base / cantidad, 4) if cantidad > 0 else base,
+                    'iva': 10,
+                    'base': round(base, 2),
+                    'categoria': ''  # Se asignará por diccionario
+                })
         
         return lineas
     
     def _convertir_europeo(self, texto: str) -> float:
-        """Convierte formato europeo (1.234,56) a float."""
+        """Convierte formato europeo a float."""
         if not texto:
             return 0.0
         texto = texto.strip()
-        if '.' in texto and ',' in texto:
+        # MRM usa punto como separador de miles y coma decimal
+        # Pero en este caso parece usar coma decimal
+        if ',' in texto and '.' in texto:
             texto = texto.replace('.', '').replace(',', '.')
         elif ',' in texto:
             texto = texto.replace(',', '.')
@@ -97,24 +93,24 @@ class ExtractorMRM(ExtractorBase):
     
     def extraer_total(self, texto: str) -> Optional[float]:
         """Extrae total de la factura."""
-        # Buscar "Importe Líquido :" seguido del importe
-        patron = re.search(r'Importe\s+Líquido\s*:\s*(\d+,\d{2})\s*€', texto)
-        if patron:
-            return self._convertir_europeo(patron.group(1))
+        # "Importe Líquido : 54,01 €"
+        m = re.search(r'Importe\s+L[ií]quido\s*:\s*([\d.,]+)\s*€', texto, re.IGNORECASE)
+        if m:
+            return self._convertir_europeo(m.group(1))
         return None
     
     def extraer_fecha(self, texto: str) -> Optional[str]:
         """Extrae fecha de la factura."""
-        # Formato en cabecera: DD/MM/YYYY EURO
-        patron = re.search(r'(\d{2}/\d{2}/\d{4})\s+EURO', texto)
-        if patron:
-            return patron.group(1)
+        # "27/11/2025" después de ALBARÁN / FACTURA
+        m = re.search(r'ALBAR[AÁ]N\s*/\s*FACTURA\s+[\d\-]+\s+(\d{2}/\d{2}/\d{4})', texto)
+        if m:
+            return m.group(1)
         return None
     
-    def extraer_numero_factura(self, texto: str) -> Optional[str]:
+    def extraer_referencia(self, texto: str) -> Optional[str]:
         """Extrae número de factura."""
-        # Formato: ALBARÁN / FACTURA 1-2025 -17.477
-        patron = re.search(r'ALBARÁN\s*/\s*FACTURA\s+([\d-]+\s*-[\d.]+)', texto)
-        if patron:
-            return patron.group(1).replace(' ', '')
+        # "ALBARÁN / FACTURA 1-2025 -54.667"
+        m = re.search(r'ALBAR[AÁ]N\s*/\s*FACTURA\s+([\d\-]+\s*[\-\d.]+)', texto)
+        if m:
+            return m.group(1).strip()
         return None

@@ -4,7 +4,7 @@ Sistema de extractores de facturas.
 Cada extractor es una clase que hereda de ExtractorBase y se registra
 automaticamente con el decorador @registrar.
 
-Actualizado: 20/12/2025
+Actualizado: 26/12/2025
 """
 
 # Registro global de extractores
@@ -90,7 +90,7 @@ try:
 except ImportError:
     pass
 
-# Extractores de madrueno (con ñ)
+# Extractores de madrueno (con n)
 try:
     from extractores import madrueño
 except ImportError:
@@ -148,7 +148,7 @@ except ImportError:
 # Estos tienen prioridad sobre los extractores antiguos
 # ============================================================
 
-# Sesión 19/12/2025 mañana
+# Sesion 19/12/2025 manana
 try:
     from extractores import molletes_artesanos  # MOLLETES ARTESANOS
 except ImportError:
@@ -205,7 +205,7 @@ except ImportError:
     pass
 
 # ============================================================
-# SESIÓN 19/12/2025 tarde - NUEVOS EXTRACTORES
+# SESION 19/12/2025 tarde - NUEVOS EXTRACTORES
 # ============================================================
 
 try:
@@ -239,16 +239,6 @@ except ImportError:
     pass
 
 try:
-    from extractores import manipulados_abellan # MANIPULADOS ABELLAN / EL LABRADOR / PEPEJO (OCR)
-except ImportError:
-    pass
-
-try:
-    from extractores import la_rosquilleria     # LA ROSQUILLERIA / EL TORRO (OCR)
-except ImportError:
-    pass
-
-try:
     from extractores import fabeiro             # FABEIRO S.L. (Productos ibericos, anchoas, quesos)
 except ImportError:
     pass
@@ -269,21 +259,11 @@ except ImportError:
     pass
 
 # ============================================================
-# SESIÓN 20/12/2025 - NUEVOS EXTRACTORES
+# SESION 20/12/2025 - NUEVOS EXTRACTORES
 # ============================================================
 
 try:
     from extractores import zucca               # QUESERIA ZUCCA / FORMAGGIARTE (quesos italianos, IVA 4%/10%)
-except ImportError:
-    pass
-
-try:
-    from extractores import panruje             # PANRUJE / ROSQUILLAS LA ERMITA (IVA 4%)
-except ImportError:
-    pass
-
-try:
-    from extractores import grupo_disber        # GRUPO DISBER / DISBER SL (vinos VEGAMAR, conservas)
 except ImportError:
     pass
 
@@ -298,22 +278,17 @@ except ImportError:
     pass
 
 try:
-    from extractores import gaditaun            # GADITAUN / MARILINA (OCR, vinos y conservas Cádiz)
+    from extractores import gaditaun            # GADITAUN / MARILINA (OCR, vinos y conservas Cadiz)
 except ImportError:
     pass
 
 try:
-    from extractores import de_luis            # DE LUIS SABORES UNICOS (quesos Cañarejal)
+    from extractores import de_luis            # DE LUIS SABORES UNICOS (quesos Canarejal)
 except ImportError:
     pass
 
 try:
-    from extractores import manipulados_abellan  # MANIPULADOS ABELLAN (OCR, conservas El Labrador)
-except ImportError:
-    pass
-
-try:
-    from extractores import ecoms                # ECOMS SUPERMARKET / DIA (híbrido)
+    from extractores import ecoms                # ECOMS SUPERMARKET / DIA (hibrido)
 except ImportError:
     pass
 
@@ -329,6 +304,149 @@ except ImportError:
 
 try:
     from extractores import fishgourmet          # FISHGOURMET (ahumados pescado, OCR)
+except ImportError:
+    pass
+
+# ============================================================
+# SESION 21/12/2025 - NUEVOS/ACTUALIZADOS EXTRACTORES
+# ============================================================
+
+try:
+    from extractores import territorio_campero   # GRUPO TERRITORIO CAMPERO (patatas fritas artesanas)
+except ImportError:
+    pass
+
+try:
+    from extractores import arganza              # VINOS DE ARGANZA (bodega Bierzo, portes distribuidos)
+except ImportError:
+    pass
+
+try:
+    from extractores import manipulados_abellan  # MANIPULADOS ABELLAN / EL LABRADOR (OCR robusto)
+except ImportError:
+    pass
+
+try:
+    from extractores import fishgourmet          # FISHGOURMET S.L. (ahumados pescado, OCR robusto)
+except ImportError:
+    pass
+
+try:
+    from extractores import welldone             # WELLDONE LACTICOS / RODOLFO DEL RIO (quesos artesanos, hibrido)
+except ImportError:
+    pass
+
+try:
+    from extractores import hernandez            # HERNANDEZ SUMINISTROS HOSTELEROS (menaje, hibrido)
+except ImportError:
+    pass
+
+try:
+    from extractores import jaime_fernandez      # JAIME FERNANDEZ MORENO (alquiler, retencion)
+except ImportError:
+    pass
+
+try:
+    from extractores import benjamin_ortega      # BENJAMIN ORTEGA ALONSO (alquiler, retencion)
+except ImportError:
+    pass
+
+try:
+    from extractores import ibarrako             # IBARRAKO PIPARRAK S. COOP. (piparras vascas)
+except ImportError:
+    pass
+
+try:
+    from extractores import angel_loli           # ALFARERIA ANGEL Y LOLI (vajilla artesanal)
+except ImportError:
+    pass
+
+try:
+    from extractores import abbati               # ABBATI CAFFE S.L. (cafe)
+except ImportError:
+    pass
+
+try:
+    from extractores import panifiesto           # PANIFIESTO LAVAPIES SL (pan)
+except ImportError:
+    pass
+
+try:
+    from extractores import julio_garcia         # JULIO GARCIA VIVAS (verduras)
+except ImportError:
+    pass
+
+try:
+    from extractores import productos_adell      # PRODUCTOS ADELL S.L. (conservas)
+except ImportError:
+    pass
+
+# ============================================================
+# SESION 26/12/2025 - NUEVOS EXTRACTORES v5.1
+# ============================================================
+
+try:
+    from extractores import la_alacena           # LA ALACENA DE MARIA (conservas gourmet)
+except ImportError:
+    pass
+
+try:
+    from extractores import debora_garcia        # DEBORA GARCIA / FLOR DE CAMPO (pasteleria)
+except ImportError:
+    pass
+
+try:
+    from extractores import yoigo                # YOIGO (telefono - categoria fija)
+except ImportError:
+    pass
+
+try:
+    from extractores import som_energia          # SOM ENERGIA (luz - categoria por contrato)
+except ImportError:
+    pass
+
+try:
+    from extractores import segurma              # SEGURMA (alarma - categoria fija)
+except ImportError:
+    pass
+
+try:
+    from extractores import trucco               # TRUCCO COPIAS (fotocopias - categoria fija)
+except ImportError:
+    pass
+
+try:
+    from extractores import biellebi             # BIELLEBI SRL (Italia - taralli, portes prorrateados)
+except ImportError:
+    pass
+
+try:
+    from extractores import la_purisima          # LA PURISIMA / COOPERATIVA VINO YECLA (vinos)
+except ImportError:
+    pass
+
+try:
+    from extractores import mercadona            # MERCADONA S.A. (supermercado, IVA por linea)
+except ImportError:
+    pass
+
+try:
+    from extractores import webempresa           # WEBEMPRESA (hosting - categoria fija GASTOS VARIOS)
+except ImportError:
+    pass
+
+try:
+    from extractores import openai               # OPENAI LLC (ChatGPT - USD a EUR, sin IVA)
+except ImportError:
+    pass
+
+try:
+    from extractores import anthropic            # ANTHROPIC PBC (Claude - EUR, sin IVA)
+except ImportError:
+    pass
+
+try:
+    from extractores import lavapies             # DISTRIBUCIONES LAVAPIES (bebidas, IVA mixto)
 except ImportError:
     pass
 
