@@ -1,24 +1,30 @@
 """
 Extractor para JAMONES Y EMBUTIDOS BERNAL SLU
 
-Jamones ibéricos y embutidos.
+Jamones ibéricos y embutidos de bellota.
 CIF: B67784231
+IBAN: ES49 2100 7191 2902 0003 7620
 
 Formato factura (pdfplumber):
-Producto C.Sec. Unidades Precio %Des%Iva Importe
-LO-JABELL JAMÓN DE BELLOTA 100% 12,00 1,000 10,0000 0,00 10,00 120,000
-P-PORTES PORTES 1,00 1,000 9,4850 0,00 21,00 9,485
+CÓDIGO DESCRIPCIÓN_PARCIAL C.SEC UNIDADES PRECIO %DES %IVA IMPORTE
+DESCRIPCIÓN_CONTINUACIÓN
+Lotes: XXX;
 
-Total Factura: 372,25 €
+Ejemplo:
+EM-MORCRE MORCILLA RECTA DE 0,00 1,370 12,7300 0,00 10,00 17,440
+BELLOTA 100% IBÉRICA
+Lotes: 3252;
 
 IVA: 10% productos, 21% portes
 
 Creado: 19/12/2025
+Corregido: 27/12/2025 - Patrón regex mejorado, descripciones completas
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
 from typing import List, Dict, Optional
 import re
+import pdfplumber
 
 
 @registrar('JAMONES BERNAL', 'BERNAL', 'JAMONES Y EMBUTIDOS BERNAL', 'EMBUTIDOS BERNAL')
@@ -35,90 +41,73 @@ class ExtractorBernal(ExtractorBase):
         Extrae líneas individuales de productos.
         
         Formato:
-        LO-JABELL JAMÓN DE BELLOTA 100% IBÉRICO LONCHEADO
-        12,00 1,000 10,0000 0,00 10,00 120,000
+        CÓDIGO DESCRIPCIÓN_PARCIAL C.SEC UNIDADES PRECIO %DES %IVA IMPORTE
+        DESCRIPCIÓN_CONTINUACIÓN (opcional)
+        Lotes: XXX;
         """
         lineas = []
+        lineas_texto = texto.split('\n')
         
         # Patrón para líneas de producto
-        # El formato tiene código y descripción en una línea, y números en otra
-        # Buscar líneas con: CANTIDAD UNIDADES PRECIO DTO IVA IMPORTE
-        patron_linea = re.compile(
-            r'^([A-Z]{1,3}-[A-Z]+)\s+'                 # Código (ej: LO-JABELL)
-            r'(.+?)\s+'                                # Descripción
-            r'(\d+,\d{2})\s+'                          # Cantidad
-            r'(\d+,\d{3})\s+'                          # Unidades
-            r'(\d+,\d{4})\s+'                          # Precio
-            r'(\d+,\d{2})\s+'                          # Descuento
-            r'(\d{1,2}),00\s+'                         # IVA
-            r'(\d+,\d{3})'                             # Importe
-        , re.MULTILINE)
+        # CÓDIGO DESC CSEC UNID PRECIO %DES %IVA IMPORTE
+        patron = re.compile(
+            r'^([A-Z]{1,3}-[A-Z0-9]+)\s+'          # Código (ej: EM-MORCRE, LO-JABELL, P-PORTES)
+            r'(.+?)\s+'                             # Descripción (parcial)
+            r'(\d+,\d{2})\s+'                       # C.Sec (cantidad)
+            r'(\d+,\d{3})\s+'                       # Unidades (peso/unidades)
+            r'(\d+,\d{4})\s+'                       # Precio unitario
+            r'(\d+,\d{2})\s+'                       # %Descuento
+            r'(\d+,\d{2})\s+'                       # %IVA
+            r'(\d+,\d{3})$'                         # Importe
+        )
         
-        for match in patron_linea.finditer(texto):
-            codigo = match.group(1)
-            descripcion = match.group(2).strip()
-            cantidad = self._convertir_europeo(match.group(3))
-            precio = self._convertir_europeo(match.group(5))
-            iva = int(match.group(7))
-            importe = self._convertir_europeo(match.group(8))
-            
-            # Limpiar descripción
-            descripcion = re.sub(r'\s*Lotes:.*$', '', descripcion, flags=re.IGNORECASE)
-            descripcion = re.sub(r'\s+', ' ', descripcion).strip()
-            
-            if importe < 0.50:
-                continue
-            
-            lineas.append({
-                'codigo': codigo,
-                'articulo': descripcion[:50],
-                'cantidad': int(cantidad) if cantidad == int(cantidad) else cantidad,
-                'precio_ud': round(precio, 2),
-                'iva': iva,
-                'base': round(importe, 2)
-            })
-        
-        # Si no encontró líneas, usar desglose fiscal
-        if not lineas:
-            lineas = self._extraer_desglose(texto)
-        
-        return lineas
-    
-    def _extraer_desglose(self, texto: str) -> List[Dict]:
-        """Extrae usando desglose fiscal."""
-        lineas = []
-        
-        # Buscar: BASE IVA% CUOTA
-        patron = re.compile(r'(\d+,\d{3})\s+(\d{1,2}),00\s+(\d+,\d{3})')
-        
-        for match in patron.finditer(texto):
-            base = self._convertir_europeo(match.group(1))
-            iva = int(match.group(2))
-            cuota = self._convertir_europeo(match.group(3))
-            
-            # Validar cuota
-            cuota_esperada = round(base * iva / 100, 2)
-            if base > 5 and iva in [10, 21] and abs(cuota - cuota_esperada) < 2.0:
-                if iva == 10:
-                    articulo = 'IBERICOS BERNAL'
-                else:
-                    articulo = 'PORTES'
+        for i, linea in enumerate(lineas_texto):
+            match = patron.match(linea.strip())
+            if match:
+                codigo = match.group(1)
+                descripcion = match.group(2).strip()
+                csec = self._convertir_europeo(match.group(3))
+                unidades = self._convertir_europeo(match.group(4))
+                precio = self._convertir_europeo(match.group(5))
+                iva = int(self._convertir_europeo(match.group(7)))
+                importe = self._convertir_europeo(match.group(8))
+                
+                # Buscar continuación de descripción en línea siguiente
+                if i + 1 < len(lineas_texto):
+                    linea_siguiente = lineas_texto[i + 1].strip()
+                    # Si no es un código ni "Lotes:" ni línea vacía, es continuación
+                    if (linea_siguiente and 
+                        not re.match(r'^[A-Z]{1,3}-[A-Z0-9]+\s+', linea_siguiente) and
+                        not linea_siguiente.startswith('Lotes:') and
+                        not linea_siguiente.startswith('%Desc')):
+                        descripcion = f"{descripcion} {linea_siguiente}"
+                
+                # Limpiar descripción
+                descripcion = re.sub(r'\s+', ' ', descripcion).strip()
+                
+                # Filtrar líneas con importe muy bajo (excepto ajustes)
+                if importe < 0.50:
+                    continue
+                
+                # Determinar cantidad: usar C.Sec si > 0, sino Unidades
+                cantidad = csec if csec > 0 else unidades
                 
                 lineas.append({
-                    'codigo': '',
-                    'articulo': articulo,
-                    'cantidad': 1,
-                    'precio_ud': round(base, 2),
+                    'codigo': codigo,
+                    'articulo': descripcion[:50],
+                    'cantidad': int(cantidad) if cantidad == int(cantidad) else round(cantidad, 3),
+                    'precio_ud': round(precio, 2),
                     'iva': iva,
-                    'base': round(base, 2)
+                    'base': round(importe, 2)
                 })
         
         return lineas
     
     def _convertir_europeo(self, texto: str) -> float:
+        """Convierte formato europeo (1.234,56) a float."""
         if not texto:
             return 0.0
-        texto = texto.strip()
+        texto = str(texto).strip()
         if '.' in texto and ',' in texto:
             texto = texto.replace('.', '').replace(',', '.')
         elif ',' in texto:
@@ -129,7 +118,20 @@ class ExtractorBernal(ExtractorBase):
             return 0.0
     
     def extraer_total(self, texto: str) -> Optional[float]:
-        patron = re.search(r'Total\s+Factura:\s*(\d+,\d{2})\s*€', texto, re.IGNORECASE)
+        """Extrae total de la factura."""
+        patron = re.search(r'Total\s+Factura:\s*([\d.,]+)\s*€', texto, re.IGNORECASE)
         if patron:
             return self._convertir_europeo(patron.group(1))
+        return None
+    
+    def extraer_fecha(self, texto: str) -> Optional[str]:
+        """Extrae fecha de expedición."""
+        patron = re.search(r'expedición\s*/\s*emisión:\s*(\d{2}/\d{2}/\d{2})', texto)
+        if patron:
+            fecha = patron.group(1)
+            # Convertir 19/11/25 a 19/11/2025
+            partes = fecha.split('/')
+            if len(partes) == 3 and len(partes[2]) == 2:
+                return f"{partes[0]}/{partes[1]}/20{partes[2]}"
+            return fecha
         return None

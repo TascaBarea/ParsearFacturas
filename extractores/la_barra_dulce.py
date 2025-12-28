@@ -117,3 +117,21 @@ class ExtractorBarraDulce(ExtractorBase):
             return f"{patron2.group(1)}/{patron2.group(2)}/{patron2.group(3)}"
         
         return None
+    
+    def extraer_numero_factura(self, texto: str) -> Optional[str]:
+        """
+        Extrae número de factura.
+        Formato: "Nº de factura" seguido del número en la siguiente parte.
+        Ejemplo: "Nº de factura\n563" o "Teléfono: 91 846 83 85 563"
+        """
+        # Buscar "Nº de factura" seguido de número
+        patron = re.search(r'Nº\s+de\s+factura\s*\n?\s*(\d+)', texto, re.IGNORECASE)
+        if patron:
+            return patron.group(1)
+        
+        # Alternativa: número después de teléfono en misma línea que "Nº de factura"
+        patron2 = re.search(r'Teléfono[^\n]+\s+(\d{3,})\s*$', texto, re.MULTILINE)
+        if patron2:
+            return patron2.group(1)
+        
+        return None

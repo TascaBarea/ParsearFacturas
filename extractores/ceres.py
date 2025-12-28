@@ -346,3 +346,28 @@ class ExtractorCeres(ExtractorBase):
         if m:
             return m.group(1)
         return None
+    
+    def extraer_numero_factura(self, texto: str) -> Optional[str]:
+        """
+        Extrae número de factura (REF).
+        Formato en PDF: "2539610 03/10/2025 B87760575 B2B DIARIO"
+        El número es el primero de 7 dígitos después de "Numero Fecha CIF/DNI".
+        """
+        if not texto:
+            return None
+        
+        # Buscar línea con formato: NUMERO FECHA CIF FORMA_PAGO
+        patron = re.search(
+            r'Numero\s+Fecha\s+CIF/DNI.*?\n'
+            r'(\d{7})\s+\d{2}/\d{2}/\d{4}',
+            texto, re.IGNORECASE
+        )
+        if patron:
+            return patron.group(1)
+        
+        # Alternativa: buscar directamente el patrón
+        patron2 = re.search(r'\n(\d{7})\s+\d{2}/\d{2}/\d{4}\s+B\d+', texto)
+        if patron2:
+            return patron2.group(1)
+        
+        return None

@@ -1,120 +1,154 @@
 # 📊 ESTADO DEL PROYECTO - ParsearFacturas
 
-**Última actualización:** 26/12/2025  
-**Versión actual:** v5.1  
+**Última actualización:** 28/12/2025  
+**Versión actual:** v5.3  
 **Repositorio:** https://github.com/TascaBarea/ParsearFacturas
 
 ---
 
 ## 🎯 MÉTRICAS ACTUALES
 
-### Resultados v5.1 (26/12/2025)
+### Resultados v5.3 (28/12/2025)
 
-| Trimestre | Facturas | Cuadre OK | % | Con Líneas | Importe |
-|-----------|----------|-----------|---|------------|---------|
-| 4T25 | 185 | 107 | **57.8%** | 154 (83.2%) | 61,454€ |
+| Métrica | Antes sesión | Después sesión | Cambio |
+|---------|--------------|----------------|--------|
+| **Tasa de éxito** | 52.2% | **~57%** | **+5 pts** |
+| **Facturas OK** | 473/906 | **~516/906** | **+43** |
+| **Extractores nuevos** | - | **+6** | - |
+
+### Desglose por tipo de error (última ejecución 28/12)
+
+| Error | Facturas | % | Estado |
+|-------|----------|---|--------|
+| ✅ OK | 473 | 52.2% | Procesadas correctamente |
+| ❌ SIN_TOTAL | 171 | 18.9% | Falta extraer_total() |
+| ❌ DESCUADRE | 202 | 22.3% | IVA/bases mal calculados |
+| ❌ SIN_LINEAS | 59 | 6.5% | Extractor no existe |
 
 **Objetivo:** 80% cuadre OK
 
 ### Evolución histórica
 
-| Versión | Fecha | Cuadre 1T25 | Cambio principal |
-|---------|-------|-------------|------------------|
+| Versión | Fecha | Cuadre | Cambio principal |
+|---------|-------|--------|------------------|
 | v3.5 | 09/12/2025 | 42% | Baseline - 70 extractores |
 | v4.0 | 18/12/2025 | 54% | Arquitectura modular @registrar |
-| v4.5 | 21/12/2025 | ~70% | +20 extractores |
-| v5.0 | 26/12/2025 | - | Normalización + prorrateo portes |
-| **v5.1** | **26/12/2025** | **57.8% (4T)** | **+16 extractores nuevos** |
+| v5.0 | 26/12/2025 | 54% | Normalización + prorrateo portes |
+| v5.2 | 26/12/2025 | ~66% | +10 extractores corregidos |
+| **v5.3** | **28/12/2025** | **~57%** | **+6 extractores nuevos** |
 
-**Mejora total:** 42% → ~60% = **+18 puntos**
+**Nota:** La tasa 52.2% es pre-integración. Tras integrar extractores v5.2 y v5.3 se estima ~57-60%.
 
 ---
 
-## ✅ SESIÓN 26/12/2025 - RESUMEN
+## ✅ SESIÓN 28/12/2025 - EXTRACTORES CREADOS
 
-### Extractores creados (16 nuevos)
+### 6 extractores nuevos (PENDIENTES INTEGRAR)
 
-| # | Proveedor | CIF | Categoría | IVA | Método |
-|---|-----------|-----|-----------|-----|--------|
-| 1 | YOIGO | A81020715 | TELEFONO Y COMUNICACIONES | 21% | pdfplumber |
-| 2 | SOM ENERGIA | F55091367 | ELECTRICIDAD TASCA/COMESTIBLES | 21% | pdfplumber |
-| 3 | SEGURMA | B86414901 | ALARMA | 21% | pdfplumber |
-| 4 | TRUCCO | 05247386M | OTROS GASTOS | 21% | pdfplumber |
-| 5 | MRM | A80280845 | Diccionario | 10% | pdfplumber |
-| 6 | BIELLEBI | IT06089700725 | TARALLI/DULCES | 0% | pdfplumber |
-| 7 | PANRUJE | B13858014 | ROSQUILLAS MARINERAS | 4% | pdfplumber |
-| 8 | LA PURISIMA | F30005193 | Diccionario | 21% | pdfplumber |
-| 9 | MERCADONA | A46103834 | Diccionario | Variable | pdfplumber |
-| 10 | WEBEMPRESA | B65739856 | GASTOS VARIOS | 21% | pdfplumber |
-| 11 | OPENAI | EU372041333 | GASTOS VARIOS | 0% | pdfplumber |
-| 12 | ANTHROPIC | - (USA) | GASTOS VARIOS | 0% | pdfplumber |
-| 13 | LAVAPIES | F88424072 | Diccionario | 10%/21% | pdfplumber |
-| 14 | LA ALACENA | B45776233 | Diccionario | 10% | pdfplumber |
-| 15 | DEBORA GARCIA | 53401030Y | Co2 GAS PARA LA CERVEZA | 21% | pdfplumber |
-| 16 | BORBOTON | B09530601 | Diccionario | 21% | pdfplumber |
+| # | Proveedor | CIF | Facturas | Tasa | Método |
+|---|-----------|-----|----------|------|--------|
+| 1 | **ECOMS SUPERMARKET** | B72738602 | 14 | 64% | Híbrido (pdfplumber + OCR) |
+| 2 | **VIRGEN DE LA SIERRA** | F50019868 | 7 | 100% | Híbrido |
+| 3 | **MARITA COSTA** | 48207369J | 7 | 100% | pdfplumber |
+| 4 | **CASA DEL DUQUE** | B23613697 | 10 | 80% | OCR |
+| 5 | **CELONIS/MAKE** | DE315052800 | 10 | 100% | pdfplumber |
+| 6 | **PIFEMA** | B79048914 | 5 | 100% | pdfplumber |
 
-### Decisiones técnicas tomadas
-
-1. **SOM ENERGIA:** Categoría según contrato (TASCA vs COMESTIBLES)
-2. **BIELLEBI:** Regla categoría - si empieza por "TRECCE" → DULCES, sino TARALLI
-3. **OPENAI:** Conversión USD→EUR via API frankfurter.app
-4. **ANTHROPIC:** Manejo de ajustes negativos como línea neta
-5. **Portes PANRUJE:** Se suman al artículo, no línea separada
+**LIDL:** Verificado OK (5/5) - ya funcionaba correctamente
 
 ### Archivos generados
 
-Todos los extractores están en el repositorio:
-https://github.com/TascaBarea/ParsearFacturas/tree/main/extractores
+| Archivo | Descripción |
+|---------|-------------|
+| `ecoms.py` | Supermercado - tickets OCR híbrido, letras IVA (A=4%, B=10%, C=21%) |
+| `virgen_de_la_sierra.py` | Bodega cooperativa Zaragoza - vinos, portes |
+| `marita_costa.py` | Distribuidora gourmet - IVA mixto (4%/10%) |
+| `casa_del_duque.py` | Tienda alimentación Jaén - OCR puro |
+| `celonis.py` | SaaS Make/Integromat - facturas extranjeras |
+| `pifema.py` | Distribuidor vinos Madrid - multi-albaranes |
+
+### Características técnicas implementadas
+
+| Proveedor | Características especiales |
+|-----------|---------------------------|
+| ECOMS | Letras IVA (A=4%, B=10%, C=21%), método híbrido |
+| VIRGEN DE LA SIERRA | Portes incluidos, método híbrido OCR fallback |
+| MARITA COSTA | IVA mixto (4% AOVE/picos, 10% resto), códigos con espacios |
+| CASA DEL DUQUE | OCR puro para tickets escaneados |
+| CELONIS | SaaS extranjero, IVA 0%, conversión USD→EUR |
+| PIFEMA | Multi-albaranes por factura, bonificaciones |
 
 ---
 
-## ⚠️ ERRORES PENDIENTES (4T25)
+## ⚠️ PROVEEDORES PRIORITARIOS (PRÓXIMA SESIÓN)
 
-### Por tipo de error
+### 🔴 TOP 10 por impacto (errores pendientes)
 
-| Error | Cantidad | Acción |
-|-------|----------|--------|
-| FECHA_PENDIENTE | 9 | Mejorar extractor |
-| SIN_TOTAL | 14 | Crear/arreglar extractor |
-| DESCUADRE | 25 | Revisar extractor |
-| CIF_PENDIENTE | 10 | Dar de alta proveedor |
-| SIN_LINEAS | 7 | Crear extractor |
-| PROVEEDOR_PENDIENTE | 5 | Nombrar archivo correctamente |
+| # | Proveedor | Errores | Tipo | Dificultad |
+|---|-----------|---------|------|------------|
+| 1 | **BM + BM SUPERMERCADOS** | 37 | DESCUADRE | 🟡 Media |
+| 2 | **JIMELUZ** | 19 | OCR (SIN_TOTAL/SIN_LINEAS) | 🔴 Alta |
+| 3 | **FELISA GOURMET** | 12 | DESCUADRE | 🟢 Fácil |
+| 4 | **DISTRIBUCIONES LAVAPIES** | 11 | DESCUADRE | 🟢 Fácil |
+| 5 | **LA ROSQUILLERIA** | 10 | OCR (SIN_LINEAS) | 🔴 Alta |
+| 6 | JAMONES BERNAL | 6 | DESCUADRE | 🟡 Media |
+| 7 | SILVA CORDERO | 5 | DESCUADRE | 🟡 Media |
+| 8 | EMJAMESA | 4 | DESCUADRE | 🟡 Media |
+| 9 | ECOFICUS | 4 | DESCUADRE | 🟡 Media |
+| 10 | ALCAMPO | 4 | DESCUADRE | 🟡 Media |
 
-### Proveedores prioritarios
+### Recomendación próxima sesión
 
-| Proveedor | Facturas | Error | Impacto |
-|-----------|----------|-------|---------|
-| HERNÁNDEZ | 1 | DESCUADRE gigante | Bug crítico |
-| COOPERATIVA MONTBRIONE | 1 | DESCUADRE 245€ | Nuevo extractor |
-| PIFEMA | 1 | DESCUADRE 266€ | Revisar |
-| DE LUIS | 2 | DESCUADRE ~100€ | Revisar |
-| SILVA CORDERO | 3 | DESCUADRE | Revisar |
+**Opción A - Quick wins (DESCUADRES):**
+- BM SUPERMERCADOS (37)
+- FELISA GOURMET (12)
+- DISTRIBUCIONES LAVAPIES (11)
+- Potencial: **+60 facturas** (+6.6%)
 
-### Extractores a revisar
-
-Mencionados por el usuario:
-- **SERRIN NO CHAN** - No funciona bien
-- **SILVA CORDERO** - No funciona bien
+**Opción B - OCR (más complejo):**
+- JIMELUZ (19) - Tickets escaneados
+- LA ROSQUILLERIA (10) - Tickets escaneados
+- Potencial: **+29 facturas** (+3.2%)
 
 ---
 
-## 📋 PRÓXIMOS PASOS
+## 📋 CHECKLIST DESPLIEGUE
 
-### Inmediato (próxima sesión)
-- [ ] Arreglar SERRIN NO CHAN
-- [ ] Arreglar SILVA CORDERO
-- [ ] Investigar bug HERNÁNDEZ (descuadre gigante)
+```cmd
+# 1. Copiar extractores nuevos de sesión 28/12
+copy ecoms.py C:\...\ParsearFacturas-main\extractores\
+copy virgen_de_la_sierra.py C:\...\ParsearFacturas-main\extractores\
+copy marita_costa.py C:\...\ParsearFacturas-main\extractores\
+copy casa_del_duque.py C:\...\ParsearFacturas-main\extractores\
+copy celonis.py C:\...\ParsearFacturas-main\extractores\
+copy pifema.py C:\...\ParsearFacturas-main\extractores\
 
-### Corto plazo
-- [ ] Crear extractores para proveedores con SIN_TOTAL
-- [ ] Dar de alta proveedores con CIF_PENDIENTE
-- [ ] Llegar a 80% cuadre OK
+# 2. Regenerar documentación
+python generar_proveedores.py
 
-### Medio plazo
-- [ ] Integrar extractor Gmail
-- [ ] Completar IBANs (actualmente ~25%)
-- [ ] Generador SEPA con validación
+# 3. Commit
+git add .
+git commit -m "Sesión 28/12: +6 extractores (ECOMS, VIRGEN, MARITA, CASA DUQUE, CELONIS, PIFEMA)"
+git push
+
+# 4. Reprocesar facturas
+python main.py -i "ruta\1 TRI 2025"
+python main.py -i "ruta\2 TRI 2025"
+python main.py -i "ruta\3 TRI 2025"
+python main.py -i "ruta\4 TRI 2025"
+```
+
+---
+
+## 📈 PROYECCIÓN
+
+| Escenario | Tasa | Facturas OK |
+|-----------|------|-------------|
+| Antes de hoy | 52.2% | 473 |
+| **+ Extractores 28/12** | **~57%** | **~516** |
+| + BM + FELISA + LAVAPIES | ~63% | ~571 |
+| + JIMELUZ + ROSQUILLERIA | ~66% | ~600 |
+| **OBJETIVO** | **80%** | **725** |
 
 ---
 
@@ -122,35 +156,47 @@ Mencionados por el usuario:
 
 | Métrica | Valor |
 |---------|-------|
-| Extractores totales | ~120 |
-| Proveedores en diccionario | 50 |
-| Artículos en diccionario | 904 |
-| % PENDIENTES categoría | ~40% |
+| Extractores totales | ~136 |
+| Facturas analizadas | 906 (4 trimestres) |
+| Proveedores únicos | ~100 |
+| Artículos en diccionario | ~925 |
+| % con errores | 47.8% |
 
 ---
 
-## 🔧 CONFIGURACIÓN ACTUAL
+## 🔍 HISTORIAL DE SESIONES
 
-| Parámetro | Valor |
-|-----------|-------|
-| Fuzzy matching | 80% similitud |
-| Tolerancia cuadre | 0.10€ |
-| Método PDF default | pdfplumber |
-| Diccionario | `datos/DiccionarioProveedoresCategoria.xlsx` |
-
----
-
-## 📝 HISTORIAL DE SESIONES
-
-| Fecha | Versión | Extractores | Destacado |
-|-------|---------|-------------|-----------|
-| 26/12/2025 | v5.1 | +16 | YOIGO, SOM, OPENAI, ANTHROPIC, BIELLEBI... |
-| 21/12/2025 PM | v4.5 | +8 | JAIME FERNANDEZ, PANIFIESTO, JULIO GARCIA |
-| 21/12/2025 AM | v4.4 | +12 | ZUCCA, ROSQUILLERIA, FISHGOURMET (OCR) |
-| 20/12/2025 | v4.3 | +6 | FABEIRO, KINEMA, SILVA CORDERO |
-| 19/12/2025 | v4.2 | +12 | BM refactorizado, bug IVA 0 |
-| 18/12/2025 | v4.0 | - | Arquitectura modular |
+| Fecha | Versión | Extractores | Mejora | Destacado |
+|-------|---------|-------------|--------|-----------|
+| **28/12/2025** | **v5.3** | **+6 nuevos** | **52%→57%** | **ECOMS, VIRGEN, MARITA, CASA DUQUE, CELONIS, PIFEMA** |
+| 26/12/2025 PM | v5.2 | +10 corregidos | 54%→66% | BM, JIMELUZ, ECOMS, LAVAPIES |
+| 26/12/2025 AM | v5.1 | +16 nuevos | - | YOIGO, SOM, OPENAI, ANTHROPIC |
+| 21/12/2025 | v4.5 | +20 | - | JAIME FERNANDEZ, ROSQUILLERIA OCR |
+| 18/12/2025 | v4.0 | - | 42%→54% | Arquitectura modular |
 
 ---
 
-*Actualizado: 26/12/2025 - Sesión extractores v5.1*
+## 🔧 TAREAS PENDIENTES
+
+### Inmediato (próxima sesión)
+- [ ] **DESPLEGAR** los 6 extractores de sesión 28/12
+- [ ] Quick wins: BM, FELISA GOURMET, DISTRIBUCIONES LAVAPIES
+- [ ] Revisar SERRIN NO CHAN (reportado como problemático)
+- [ ] Revisar SILVA CORDERO (reportado como problemático)
+
+### Corto plazo
+- [ ] **CONSOLIDAR nombres de proveedores duplicados:**
+  - "BM" + "BM SUPERMERCADOS" → Unificar
+  - "ECOMS" + "ECOMS SUPERMARKET SL" → Unificar
+- [ ] Crear extractores para proveedores con SIN_TOTAL
+- [ ] Llegar a **70%** cuadre OK
+
+### Medio plazo
+- [ ] Llegar a **80%** cuadre OK (objetivo)
+- [ ] Integrar extractor Gmail
+- [ ] Completar IBANs (actualmente ~25%)
+- [ ] Generador SEPA con validación
+
+---
+
+*Actualizado: 28/12/2025 - Sesión extractores v5.3*

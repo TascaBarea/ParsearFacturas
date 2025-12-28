@@ -1,27 +1,29 @@
 """
 Extractor para BENJAMIN ORTEGA ALONSO
 
-Alquiler local Calle Rodas 2 (persona fisica)
+Alquiler local Calle Rodas 2 (persona física)
 NIF: 09342596L
-Direccion: Abades 16 3ºC, 28012 Madrid
+Dirección: Abades 16 3ºC, 28012 Madrid
 
 METODO: pdfplumber (PDF texto)
 
 Factura mensual:
 - Base: 500€
 - IVA 21%: 105€
-- Retencion IRPF 19%: -95€
+- Retención IRPF 19%: -95€
 - Total a pagar: 510€
 
-Categoria: ALQUILER
+Categoría: ALQUILER
 
 Creado: 21/12/2025
-Validado: 7/7 facturas (2T25-3T25)
+Corregido: 26/12/2025 - Símbolo € 
+Validado: 4/4 facturas (2T25-3T25)
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
 from typing import List, Dict, Optional
 import re
+import pdfplumber
 
 
 @registrar('BENJAMIN ORTEGA', 'BENJAMIN ORTEGA ALONSO', 'ORTEGA ALONSO')
@@ -29,16 +31,14 @@ class ExtractorBenjaminOrtega(ExtractorBase):
     """Extractor para facturas de alquiler de BENJAMIN ORTEGA ALONSO."""
     
     nombre = 'BENJAMIN ORTEGA ALONSO'
-    cif = '09342596L'  # NIF persona fisica
+    cif = '09342596L'  # NIF persona física
     iban = ''  # PENDIENTE
     metodo_pdf = 'pdfplumber'
     categoria_fija = 'ALQUILER'
     tiene_retencion = True
     
-    def extraer_texto(self, pdf_path: str) -> str:
+    def extraer_texto_pdfplumber(self, pdf_path: str) -> str:
         """Extrae texto con pdfplumber."""
-        import pdfplumber
-        
         texto = ""
         with pdfplumber.open(pdf_path) as pdf:
             for page in pdf.pages:
@@ -49,10 +49,10 @@ class ExtractorBenjaminOrtega(ExtractorBase):
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         """
-        Extrae linea de alquiler.
+        Extrae línea de alquiler.
         
         Formato factura:
-        DESCRIPCION                    IMPORTE
+        DESCRIPCIÓN                    IMPORTE
         Alquiler mensual local...      500,00 €
         SUBTOTAL                       500,00 €
         IVA AL 21%                     105,00 €
@@ -79,8 +79,7 @@ class ExtractorBenjaminOrtega(ExtractorBase):
     def extraer_total(self, texto: str) -> Optional[float]:
         """
         Extrae total de la factura.
-        
-        Total = Base + IVA - Retencion
+        Total = Base + IVA - Retención
         """
         m_total = re.search(r'^TOTAL\s+([\d.,]+)\s*€', texto, re.MULTILINE)
         if m_total:
@@ -98,12 +97,12 @@ class ExtractorBenjaminOrtega(ExtractorBase):
         return None
     
     def extraer_numero_factura(self, texto: str) -> Optional[str]:
-        """Extrae numero de factura."""
+        """Extrae número de factura."""
         m = re.search(r'N\.º de factura:\s*(\d+-\d+)', texto)
         return m.group(1) if m else None
     
     def extraer_retencion(self, texto: str) -> Optional[float]:
-        """Extrae importe de retencion IRPF."""
+        """Extrae importe de retención IRPF."""
         m = re.search(r'RETENCION.*?-?\s*(\d+[.,]\d{2})\s*€', texto)
         if m:
             return float(m.group(1).replace(',', '.'))

@@ -6,24 +6,24 @@ CIF: B73814949
 
 REQUIERE OCR - Las facturas son imágenes escaneadas
 
-Formato factura:
-- Líneas: Refer. | Descripción | Lote | Cajas | Bolsas | Tot.Bolsa | Precio | IVA | Importe
-- Productos: ROSQUILLA ORIGINAL (4%)
-- Gastos envío: 0% IVA
-
-IVA:
-- 4%: Rosquillas (alimentación básica)
-- 0%: Gastos de envío
+MÉTODO ESPECIAL DE CÁLCULO:
+- BASE = TOTAL / 1,04 (incluye portes prorrateados)
+- Si hay múltiples productos, prorratear BASE según importe de cada línea
+- IVA siempre 4%
+- Los portes NO se extraen como línea separada (ya están en el total)
 
 Categoría fija: ROSQUILLAS MARINERAS
 
 Creado: 20/12/2025
-Validado: 7/7 facturas (2T25, 3T25, 4T25)
+Corregido: 27/12/2025 - Método especial Total/1,04
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
 from typing import List, Dict, Optional
 import re
+import subprocess
+import tempfile
+import os
 
 
 @registrar('LA ROSQUILLERIA', 'ROSQUILLERIA', 'EL TORRO', 'ROSQUILLAS EL TORRO')
@@ -32,81 +32,106 @@ class ExtractorLaRosquilleria(ExtractorBase):
     
     nombre = 'LA ROSQUILLERIA'
     cif = 'B73814949'
-    iban = ''  # Pendiente de añadir
+    iban = ''
     metodo_pdf = 'ocr'
     categoria_fija = 'ROSQUILLAS MARINERAS'
     
-    def extraer_texto_ocr(self, pdf_path: str) -> str:
-        """Extrae texto del PDF usando OCR."""
+    def extraer_texto(self, pdf_path: str) -> str:
+        """Extrae texto del PDF usando OCR (tesseract)."""
         try:
-            from pdf2image import convert_from_path
-            import pytesseract
-            
-            images = convert_from_path(pdf_path, dpi=300)
-            texto = ""
-            for img in images:
-                texto += pytesseract.image_to_string(img, lang='eng')
-            return texto
+            with tempfile.TemporaryDirectory() as tmpdir:
+                # Convertir PDF a imagen
+                subprocess.run(
+                    ['pdftoppm', '-png', '-r', '300', pdf_path, f'{tmpdir}/page'],
+                    capture_output=True
+                )
+                
+                # OCR cada imagen
+                texto = ""
+                for img in sorted(os.listdir(tmpdir)):
+                    if img.endswith('.png'):
+                        result = subprocess.run(
+                            ['tesseract', f'{tmpdir}/{img}', 'stdout', '-l', 'eng'],
+                            capture_output=True, text=True
+                        )
+                        texto += result.stdout
+                return texto
         except Exception as e:
             return ""
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         """
-        Extrae líneas de productos.
+        Extrae líneas de productos con método especial.
         
-        Productos:
-        - RN-1.15 ROSQUILLA ORIGINAL: IVA 4%
-        - GSE GASTOS DE ENVIO: IVA 0%
+        ALGORITMO:
+        1. Extraer TOTAL de la factura
+        2. BASE_TOTAL = TOTAL / 1,04
+        3. Extraer productos (cantidad + importe_linea)
+        4. Prorratear BASE_TOTAL entre productos según importe_linea
+        5. Precio_ud = base_prorrateada / cantidad
+        6. IVA = 4% siempre
+        7. Portes NO se extraen (ya incluidos en total)
         """
         lineas = []
         
-        # Patrón para rosquilla
-        # RN-1.15 ROSQUILLA ORIGINAL LOTE CAJAS BOLSAS TOT ... PRECIO 4% IMPORTE
-        patron_rosquilla = re.compile(
-            r'RN-[\d.]+\s+'                           # Referencia
-            r'(ROSQUILLA\s+\w+).*?'                   # Descripción
-            r'(\d+[,.]\d{2})\s*€?\s+'                 # Precio unitario
-            r'4%\s+'                                   # IVA 4%
-            r'(\d+[,.]\d{2})'                          # Importe
-        , re.DOTALL | re.IGNORECASE)
+        # 1. Extraer TOTAL
+        total = self.extraer_total(texto)
+        if not total or total == 0:
+            return []
         
-        match = patron_rosquilla.search(texto)
-        if match:
+        # 2. Calcular BASE TOTAL
+        base_total = round(total / 1.04, 2)
+        
+        # 3. Extraer productos (no portes)
+        productos_raw = []
+        
+        # Patrón para líneas de producto con IVA 4%
+        # RN-X.XX DESCRIPCION ... TOT_BOLSA ... PRECIO 4% IMPORTE
+        patron_producto = re.compile(
+            r'RN-[\d.]+\s+'                        # Código RN-X.XX
+            r'([A-Z]+(?:\s+[A-Z]+)?)\s+'           # Descripción
+            r'.*?'                                  # Lote, cajas, bolsas...
+            r'(\d+)\s+'                             # Tot. Bolsa (cantidad)
+            r'[\d.,]+[€]?\s+'                       # Precio unitario (ignorar)
+            r'4%\s+'                                # IVA 4%
+            r'([\d.,]+)'                            # Importe
+        , re.DOTALL)
+        
+        for match in patron_producto.finditer(texto):
             descripcion = match.group(1).strip()
-            precio = self._convertir_europeo(match.group(2))
+            cantidad = int(match.group(2))
             importe = self._convertir_europeo(match.group(3))
-            cantidad = round(importe / precio, 0) if precio > 0 else 1
+            
+            if cantidad > 0 and importe > 0:
+                productos_raw.append({
+                    'descripcion': descripcion,
+                    'cantidad': cantidad,
+                    'importe_linea': importe
+                })
+        
+        if not productos_raw:
+            return []
+        
+        # 4. Prorratear BASE_TOTAL entre productos
+        suma_importes = sum(p['importe_linea'] for p in productos_raw)
+        
+        for p in productos_raw:
+            proporcion = p['importe_linea'] / suma_importes
+            base_prorrateada = round(base_total * proporcion, 2)
+            precio_ud = round(base_prorrateada / p['cantidad'], 4)
+            
+            # Mejorar nombre del artículo
+            articulo = p['descripcion']
+            if articulo == 'ROSQUILLA':
+                articulo = 'ROSQUILLA ORIGINAL'
             
             lineas.append({
                 'codigo': 'RN-1.15',
-                'articulo': 'ROSQUILLA MARINERA',
-                'cantidad': int(cantidad),
-                'precio_ud': round(precio, 2),
+                'articulo': articulo,
+                'cantidad': p['cantidad'],
+                'precio_ud': precio_ud,
                 'iva': 4,
-                'base': round(importe, 2)
-            })
-        
-        # Patrón para gastos de envío
-        # GSE / GSE 2 GASTOS DE ENVIO HASTA X CJS ... PRECIO 0% IMPORTE
-        patron_envio = re.compile(
-            r'GSE\s*\d*\s+'                            # Referencia GSE o GSE 2
-            r'(GASTOS DE ENVIO.*?)'                    # Descripción
-            r'(\d+[,.]\d{2})\s*€?\s+'                  # Precio
-            r'0%\s+'                                    # IVA 0%
-            r'(\d+[,.]\d{2})'                           # Importe
-        , re.DOTALL | re.IGNORECASE)
-        
-        match_envio = patron_envio.search(texto)
-        if match_envio:
-            importe_envio = self._convertir_europeo(match_envio.group(3))
-            
-            lineas.append({
-                'codigo': 'GSE',
-                'articulo': 'GASTOS DE ENVIO',
-                'cantidad': 1,
-                'precio_ud': round(importe_envio, 2),
-                'iva': 0,
-                'base': round(importe_envio, 2)
+                'base': base_prorrateada
             })
         
         return lineas
@@ -115,10 +140,8 @@ class ExtractorLaRosquilleria(ExtractorBase):
         """Convierte formato europeo (1.234,56) a float."""
         if not texto:
             return 0.0
-        texto = texto.strip().replace('€', '').strip()
-        if '.' in texto and ',' in texto:
-            texto = texto.replace('.', '').replace(',', '.')
-        elif ',' in texto:
+        texto = str(texto).strip().replace('€', '').replace(' ', '')
+        if ',' in texto:
             texto = texto.replace(',', '.')
         try:
             return float(texto)
@@ -126,30 +149,10 @@ class ExtractorLaRosquilleria(ExtractorBase):
             return 0.0
     
     def extraer_total(self, texto: str) -> Optional[float]:
-        """
-        Extrae total de la factura.
-        
-        Nota: El OCR puede fallar en el total, por lo que se prefiere
-        calcular desde las líneas si hay discrepancia significativa.
-        """
-        # Buscar TOTAL: XX,XX €
-        patron = re.search(r'TOTAL:\s*(\d+[,.]\d{2})\s*€?', texto, re.IGNORECASE)
+        """Extrae total de la factura."""
+        patron = re.search(r'TOTAL:\s*([\d.,]+)\s*[€]?', texto, re.IGNORECASE)
         if patron:
-            total_ocr = self._convertir_europeo(patron.group(1))
-            
-            # Validación: calcular total desde líneas
-            lineas = self.extraer_lineas(texto)
-            if lineas:
-                base_rosquillas = sum(l['base'] for l in lineas if l['iva'] == 4)
-                base_envio = sum(l['base'] for l in lineas if l['iva'] == 0)
-                iva_calc = round(base_rosquillas * 0.04, 2)
-                total_calc = round(base_rosquillas + base_envio + iva_calc, 2)
-                
-                # Si hay discrepancia > 10%, usar el calculado
-                if abs(total_ocr - total_calc) > total_calc * 0.10:
-                    return total_calc
-            
-            return total_ocr
+            return self._convertir_europeo(patron.group(1))
         return None
     
     def extraer_fecha(self, texto: str) -> Optional[str]:

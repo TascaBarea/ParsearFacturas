@@ -4,21 +4,27 @@ Extractor para JULIO GARCIA VIVAS (Ay Madre!)
 Verdulería del Mercado de San Fernando (Embajadores).
 NIF: 02869898G
 
-Formato factura (pdfplumber):
-DESCRIPCIÓN                              CANTIDAD  PRECIO  TOTAL
-ALBARÁN Nº 28706692 DE FECHA 06/11/2025                    10,64
-ALBARÁN Nº 28707466 DE FECHA 11/11/2025                    1,73
+METODO: OCR (tesseract) - Las facturas son imágenes escaneadas
+
+Formato factura:
+FACTURA Nº 28693354
+FECHA: 30/09/2025
+
+ALBARÁN Nº ... DE FECHA ...    TOTAL
 ...
 
-Cuadro fiscal:
-BASE IMPONIBLE  I.V.A.    R.E.
-65,87           4%  2,65  0,5%  0,00
-                10% 1,4%
-                21% 5,2%
+BASE IMPONIBLE    I.V.A.    R.E.
+36,72    4%    1,47    0,5%    0,00
+0,59    10%   0,06    1,4%    0,00
+         21%         5,2%
 
-IVA: Principalmente 4% (verduras), ocasionalmente 10% o 21%
+TOTAL BASE IMPONIBLE    37,31
+TOTAL I.V.A.            1,53
+TOTAL R.E.              0,00
+TOTAL FACTURA          38,84
+
+IVA: Principalmente 4% (verduras), ocasionalmente 10%
 Categoría fija: GENERICO PARA VERDURAS
-NOTA: Se genera UNA línea por tipo de IVA con artículo "VERDURAS AY MADRE"
 
 Creado: 26/12/2025
 """
@@ -26,38 +32,61 @@ from extractores.base import ExtractorBase
 from extractores import registrar
 from typing import List, Dict, Optional
 import re
+import subprocess
+import tempfile
+import os
 
 
 @registrar('JULIO GARCIA VIVAS', 'GARCIA VIVAS JULIO', 'JULIO GARCIA', 'AY MADRE')
 class ExtractorJulioGarcia(ExtractorBase):
-    """Extractor para facturas de JULIO GARCIA VIVAS."""
+    """Extractor para facturas de JULIO GARCIA VIVAS (OCR)."""
     
     nombre = 'JULIO GARCIA VIVAS'
     cif = '02869898G'
     iban = ''  # Pendiente
-    metodo_pdf = 'pdfplumber'
+    metodo_pdf = 'ocr'
     categoria_fija = 'GENERICO PARA VERDURAS'
+    
+    def extraer_texto_ocr(self, pdf_path: str) -> str:
+        """Extrae texto usando OCR (tesseract)."""
+        try:
+            from pdf2image import convert_from_path
+            
+            # Convertir PDF a imagen(es)
+            images = convert_from_path(pdf_path, dpi=300)
+            
+            texto_completo = ""
+            for img in images:
+                # Guardar imagen temporal
+                with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+                    img.save(tmp.name)
+                    # OCR con tesseract
+                    result = subprocess.run(
+                        ['tesseract', tmp.name, 'stdout', '-l', 'eng'],
+                        capture_output=True, text=True
+                    )
+                    texto_completo += result.stdout
+                    os.unlink(tmp.name)
+            
+            return texto_completo
+        except Exception as e:
+            return ""
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         """
-        Extrae UNA línea por tipo de IVA del cuadro fiscal.
+        Extrae líneas del cuadro fiscal.
         
-        Cuadro fiscal:
-        BASE IMPONIBLE  I.V.A.    R.E.
-        65,87           4%  2,65  0,5%  0,00
-                        10% 1,4%
-                        21% 5,2%
+        Formato OCR (con posibles errores):
+        BASE IMPONIBLE LWA. R.E.
+        36,72 4% 147 0,5% 0,00
+        0,59 10% 0,06 1,4% 0,00
         """
         lineas = []
         
-        # Buscar el cuadro fiscal con formato:
-        # BASE_IMPONIBLE   4%  CUOTA_4%  0,5%  0,00
-        #                  10% R.E.10%
-        #                  21% R.E.21%
-        
-        # Patrón para IVA 4% (línea principal con base)
+        # Patrón para IVA 4%: "base 4% cuota"
+        # El OCR puede leer "1,47" como "147" o "1.47"
         match_4 = re.search(
-            r'(\d+[.,]\d{2})\s+4%\s+(\d+[.,]\d{2})',
+            r'(\d+[.,]\d{2})\s+4%\s+(\d+[.,]?\d*)',
             texto
         )
         
@@ -74,10 +103,9 @@ class ExtractorJulioGarcia(ExtractorBase):
                     'categoria': self.categoria_fija
                 })
         
-        # Buscar si hay IVA 10% con base
-        # Formato alternativo cuando hay múltiples IVAs
+        # Patrón para IVA 10%: "base 10% cuota"
         match_10 = re.search(
-            r'(\d+[.,]\d{2})\s+10%\s+(\d+[.,]\d{2})',
+            r'(\d+[.,]\d{2})\s+10%\s+(\d+[.,]?\d*)',
             texto
         )
         
@@ -86,7 +114,7 @@ class ExtractorJulioGarcia(ExtractorBase):
             if base > 0:
                 lineas.append({
                     'codigo': '',
-                    'articulo': 'VERDURAS AY MADRE',
+                    'articulo': 'VERDURAS AY MADRE 10%',
                     'cantidad': 1,
                     'precio_ud': round(base, 2),
                     'iva': 10,
@@ -94,9 +122,9 @@ class ExtractorJulioGarcia(ExtractorBase):
                     'categoria': self.categoria_fija
                 })
         
-        # Buscar si hay IVA 21% con base
+        # Patrón para IVA 21% (raro, pero posible)
         match_21 = re.search(
-            r'(\d+[.,]\d{2})\s+21%\s+(\d+[.,]\d{2})',
+            r'(\d+[.,]\d{2})\s+21%\s+(\d+[.,]?\d*)',
             texto
         )
         
@@ -105,7 +133,7 @@ class ExtractorJulioGarcia(ExtractorBase):
             if base > 0:
                 lineas.append({
                     'codigo': '',
-                    'articulo': 'VERDURAS AY MADRE',
+                    'articulo': 'VERDURAS AY MADRE 21%',
                     'cantidad': 1,
                     'precio_ud': round(base, 2),
                     'iva': 21,
@@ -113,22 +141,22 @@ class ExtractorJulioGarcia(ExtractorBase):
                     'categoria': self.categoria_fija
                 })
         
-        # Si no encontramos el cuadro fiscal, intentar extraer la base total
+        # Si no encontramos cuadro fiscal, buscar TOTAL BASE IMPONIBLE
         if not lineas:
-            match_total_base = re.search(
-                r'TOTAL\s+BASE\s+IMPONIBLE\s+(\d+[.,]\d{2})',
+            match_total = re.search(
+                r'TOTAL\s*BASE\s*IMPONIBLE\s*(\d+[.,]\d{2})',
                 texto,
                 re.IGNORECASE
             )
-            if match_total_base:
-                base = self._convertir_europeo(match_total_base.group(1))
+            if match_total:
+                base = self._convertir_europeo(match_total.group(1))
                 if base > 0:
                     lineas.append({
                         'codigo': '',
                         'articulo': 'VERDURAS AY MADRE',
                         'cantidad': 1,
                         'precio_ud': round(base, 2),
-                        'iva': 4,  # IVA por defecto para verduras
+                        'iva': 4,  # Por defecto verduras
                         'base': round(base, 2),
                         'categoria': self.categoria_fija
                     })
@@ -140,6 +168,7 @@ class ExtractorJulioGarcia(ExtractorBase):
         if not texto:
             return 0.0
         texto = texto.strip()
+        # Manejar caso "1.234,56" o "1234,56" o "1234.56"
         if '.' in texto and ',' in texto:
             texto = texto.replace('.', '').replace(',', '.')
         elif ',' in texto:
@@ -151,23 +180,36 @@ class ExtractorJulioGarcia(ExtractorBase):
     
     def extraer_total(self, texto: str) -> Optional[float]:
         """Extrae total de la factura."""
-        # Formato: "TOTAL FACTURA 68,52"
-        m = re.search(r'TOTAL\s*FACTURA\s*(\d+[.,]\d{2})', texto, re.IGNORECASE)
-        if m:
-            return self._convertir_europeo(m.group(1))
+        # Patrón: "TOTAL FACTURA 38,84" o "TOTAL FACTURA 115,79"
+        patrones = [
+            r'TOTAL\s*FACTURA\s*(\d+[.,]\d{2})',
+            r'TOTAL\s+(\d+[.,]\d{2})\s*$',
+        ]
         
-        # Alternativa: última línea del cuadro "68,52"
-        m = re.search(r'(\d+[.,]\d{2})\s*$', texto.strip())
-        if m:
-            return self._convertir_europeo(m.group(1))
+        for patron in patrones:
+            m = re.search(patron, texto, re.IGNORECASE | re.MULTILINE)
+            if m:
+                return self._convertir_europeo(m.group(1))
+        
+        # Alternativa: calcular desde bases
+        lineas = self.extraer_lineas(texto)
+        if lineas:
+            total = 0
+            for l in lineas:
+                total += l['base'] * (1 + l['iva'] / 100)
+            return round(total, 2)
         
         return None
     
     def extraer_fecha(self, texto: str) -> Optional[str]:
         """Extrae fecha de la factura."""
-        # Formato: "FECHA: 30/11/2025"
+        # Formato: "FECHA: 30/09/2025"
         m = re.search(r'FECHA[:\s]+(\d{2})/(\d{2})/(\d{4})', texto, re.IGNORECASE)
         if m:
             return f"{m.group(1)}/{m.group(2)}/{m.group(3)}"
-        
         return None
+    
+    def extraer_numero_factura(self, texto: str) -> Optional[str]:
+        """Extrae número de factura."""
+        m = re.search(r'FACTURA\s*N[°ºo]?\s*(\d+)', texto, re.IGNORECASE)
+        return m.group(1) if m else None

@@ -1,7 +1,7 @@
 # 📖 ParsearFacturas - Manual del Proyecto
 
-**Versión:** 5.1  
-**Última actualización:** 26/12/2025  
+**Versión:** 5.3  
+**Última actualización:** 28/12/2025  
 **Negocio:** TASCA BAREA S.L.L. (restaurante + distribución gourmet COMESTIBLES BAREA)
 
 ---
@@ -18,19 +18,20 @@ Automatizar el flujo completo de facturas de proveedores:
 
 ---
 
-## 📊 ESTADO ACTUAL (26/12/2025)
+## 📊 ESTADO ACTUAL (28/12/2025)
 
 | Componente | Estado | Progreso |
 |------------|--------|----------|
-| **ParsearFacturas** | ✅ Funcional | v5.1 - 120+ extractores |
+| **ParsearFacturas** | ✅ Funcional | v5.3 - ~136 extractores |
 | **Categorización** | ✅ Funcional | Fuzzy matching 80% |
 | **Generador SEPA** | ✅ Prototipo | Falta validación IBAN |
 | **Extractor Gmail** | 🟡 OAuth2 OK | Falta integrar |
 | **Orquestador** | ❌ Pendiente | - |
 
-**Métricas ParsearFacturas v5.1:**
-- Cuadre OK: **57.8%** (4T25)
-- Con líneas: **83.2%**
+**Métricas ParsearFacturas v5.3:**
+- Cuadre OK: **52.2%** (pre-integración) → **~57%** (post-integración)
+- Facturas analizadas: **906**
+- Artículos en diccionario: **~925**
 - Objetivo: **80%**
 
 ---
@@ -51,7 +52,7 @@ El negocio maneja estas tablas de datos:
 
 ### 3. COMPRAS POR ARTICULOS (ParsearFacturas)
 - **Origen:** Este proyecto - extracción de facturas PDF
-- **Contenido:** 698 artículos de compra, 116 categorías
+- **Contenido:** ~925 artículos de compra, 116 categorías
 - **Uso:** Análisis de costes, categorización
 
 ### 4. FACTURAS
@@ -71,37 +72,37 @@ El negocio maneja estas tablas de datos:
 
 ---
 
-## 🔄 FLUJO DEL SISTEMA
+## 📄 FLUJO DEL SISTEMA
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                     FLUJO SEMANAL (VIERNES)                         │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  07:00  ┌──────────┐    ┌────────────────┐    ┌──────────────────┐  │
-│   AM    │  Gmail   │───▶│ ParsearFacturas│───▶│ Categorización   │  │
-│         │ Extractor│    │  (120+ extrac) │    │ (Diccionario)    │  │
-│         └──────────┘    └────────────────┘    └──────────────────┘  │
-│              │                                        │             │
-│              ▼                                        ▼             │
-│         ┌──────────┐                          ┌──────────────────┐  │
-│         │ Dropbox  │                          │ Excel Facturas   │  │
-│         │ Backup   │                          │ (revisar)        │  │
-│         └──────────┘                          └──────────────────┘  │
-│                                                       │             │
-│  09:00                                               ▼             │
-│   AM    ┌─────────────────────────────────────────────────────────┐ │
-│         │         REVISIÓN MANUAL + CONFIRMACIÓN                  │ │
-│         │         (Corregir PENDIENTES, verificar)                │ │
-│         └─────────────────────────────────────────────────────────┘ │
-│                                                       │             │
-│  12:00                                               ▼             │
-│   PM    ┌──────────────────┐    ┌──────────────────────────────┐   │
-│         │ Generador SEPA   │───▶│ pain.001.xml → BS Online     │   │
-│         │ (pain.001.001.03)│    │ Autorizar → Ejecutar         │   │
-│         └──────────────────┘    └──────────────────────────────┘   │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     FLUJO SEMANAL (VIERNES)                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  07:00  ┌──────────┐    ┌────────────────┐    ┌──────────────────┐          │
+│   AM    │  Gmail   │───▶│ ParsearFacturas│───▶│ Categorización   │          │
+│         │ Extractor│    │  (~136 extrac) │    │ (Diccionario)    │          │
+│         └──────────┘    └────────────────┘    └──────────────────┘          │
+│              │                                        │                     │
+│              ▼                                        ▼                     │
+│         ┌──────────┐                          ┌──────────────────┐          │
+│         │ Dropbox  │                          │ Excel Facturas   │          │
+│         │ Backup   │                          │ (revisar)        │          │
+│         └──────────┘                          └──────────────────┘          │
+│                                                       │                     │
+│  09:00                                               ▼                     │
+│   AM    ┌─────────────────────────────────────────────────────────────────┐ │
+│         │         REVISIÓN MANUAL + CONFIRMACIÓN                          │ │
+│         │         (Corregir PENDIENTES, verificar)                        │ │
+│         └─────────────────────────────────────────────────────────────────┘ │
+│                                                       │                     │
+│  12:00                                               ▼                     │
+│   PM    ┌──────────────────┐    ┌──────────────────────────────────┐       │
+│         │ Generador SEPA   │───▶│ pain.001.xml → BS Online         │       │
+│         │ (pain.001.001.03)│    │ Autorizar → Ejecutar             │       │
+│         └──────────────────┘    └──────────────────────────────────┘       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -146,11 +147,11 @@ python actualizar_diccionario.py
 
 ```
 ParsearFacturas-main/
-├── main.py                          # Script principal v5.1
+├── main.py                          # Script principal v5.3
 ├── actualizar_diccionario.py        # Actualiza categorías
 ├── generar_proveedores.py           # Genera PROVEEDORES.md
 │
-├── extractores/                     # 120+ extractores
+├── extractores/                     # ~136 extractores
 │   ├── __init__.py                  # Registro automático
 │   ├── base.py                      # Clase ExtractorBase
 │   ├── ceres.py                     # 1 archivo por proveedor
@@ -225,6 +226,23 @@ def _convertir_europeo(self, texto):
     return float(texto)
 ```
 
+### 6. Patrones para resolver DESCUADRE (aprendidos 26-28/12/2025)
+
+```python
+# Calcular IVA real (si etiquetas están intercambiadas)
+iva_real = round(cuota / base * 100)  # Da 10 o 21
+
+# Buscar símbolo € (a veces corrupto)
+m = re.search(r'TOTAL\s+([\d,]+)\s*€', texto)  # Usa € no â‚¬
+
+# Usar cuadro fiscal como fuente de verdad
+# Formato típico: BASE IMP. AL 10% 71,76 IVA 10% 7,18
+
+# Método híbrido para PDFs mixtos (pdfplumber + OCR fallback)
+if len(texto.strip()) < 100:
+    texto = self._extraer_texto_ocr(pdf_path)
+```
+
 ---
 
 ## 📋 RUTINA DE TRABAJO CON CLAUDE
@@ -234,7 +252,8 @@ def _convertir_europeo(self, texto):
    - `docs/ESTADO_PROYECTO.md`
    - `docs/PROVEEDORES.md` (si hay cambios en extractores)
    - Facturas PDF del proveedor a trabajar
-2. Decir: "Continúo proyecto ParsearFacturas v5.1. Tarea: [describir]"
+   - Extractor actual si existe
+2. Decir: "Continúo proyecto ParsearFacturas v5.3. Tarea: [describir]"
 
 ### Al CERRAR sesión:
 1. Pedir: "Actualiza ESTADO_PROYECTO.md con lo de hoy"
@@ -253,6 +272,22 @@ git push
 
 ---
 
+## 📈 EVOLUCIÓN DEL PROYECTO
+
+| Versión | Fecha | Cuadre | Extractores | Cambio principal |
+|---------|-------|--------|-------------|------------------|
+| v3.5 | 09/12/2025 | 42% | 70 | Baseline |
+| v4.0 | 18/12/2025 | 54% | 90 | Arquitectura modular |
+| v5.1 | 26/12/2025 AM | 54% | 120 | +16 extractores nuevos |
+| v5.2 | 26/12/2025 PM | ~66% | 130 | +10 corregidos |
+| **v5.3** | **28/12/2025** | **~57%** | **136** | **+6 extractores nuevos** |
+
+**Nota:** La tasa v5.3 (52.2%→57%) es pre/post integración de extractores de sesión 28/12. La bajada aparente respecto a v5.2 se debe a que v5.2 estimaba ~66% pero no todos los extractores estaban integrados.
+
+**Mejora total confirmada:** 42% → 52.2% base + ~5% pendiente = **~57%**
+
+---
+
 ## 🔗 ENLACES ÚTILES
 
 - **Repositorio:** https://github.com/TascaBarea/ParsearFacturas
@@ -268,4 +303,4 @@ Para continuar el trabajo, usa el patrón descrito en "Rutina de trabajo con Cla
 
 ---
 
-*Documento generado el 26/12/2025*
+*Documento generado el 28/12/2025 - v5.3*
