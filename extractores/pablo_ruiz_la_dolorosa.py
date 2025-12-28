@@ -13,25 +13,27 @@ IBAN: ES27 0049 4680 8124 1609 2645
 IVA: 21% (productos gourmet/servicios)
 
 Creado: 27/12/2025
+Corregido: 28/12/2025 - Integración con sistema
 """
-# from extractores.base import ExtractorBase
-# from extractores import registrar
+from extractores.base import ExtractorBase
+from extractores import registrar
 from typing import List, Dict, Optional
 import re
 import pdfplumber
 
 
-# @registrar('PABLO RUIZ', 'LA DOLOROSA', 'PABLO RUIZ LA DOLOROSA', 
-#            'PABLO RUIZ HERRERA', 'LA DOLOROSA CASA DE FERMENTOS')
-class ExtractorPabloRuiz:  # (ExtractorBase):
+@registrar('PABLO RUIZ', 'LA DOLOROSA', 'PABLO RUIZ LA DOLOROSA', 
+           'PABLO RUIZ HERRERA', 'LA DOLOROSA CASA DE FERMENTOS')
+class ExtractorPabloRuiz(ExtractorBase):
     """Extractor para facturas de PABLO RUIZ - LA DOLOROSA."""
     
     nombre = 'PABLO RUIZ LA DOLOROSA'
     cif = '32081620R'  # DNI (autónomo)
     iban = 'ES27 0049 4680 8124 1609 2645'
     metodo_pdf = 'pdfplumber'
+    categoria_fija = 'FERMENTOS'
     
-    def extraer_texto_pdfplumber(self, pdf_path: str) -> str:
+    def extraer_texto(self, pdf_path: str) -> str:
         """Extrae texto del PDF."""
         texto_completo = []
         try:
@@ -81,7 +83,7 @@ class ExtractorPabloRuiz:  # (ExtractorBase):
                 'precio_ud': precio_ud,
                 'iva': 21,  # Siempre 21%
                 'base': total,
-                'categoria': 'FERMENTOS'
+                'categoria': self.categoria_fija
             })
         
         return lineas
@@ -151,60 +153,3 @@ class ExtractorPabloRuiz:  # (ExtractorBase):
             return float(texto)
         except:
             return 0.0
-
-
-# ============================================================
-# CÓDIGO DE PRUEBA
-# ============================================================
-
-if __name__ == '__main__':
-    import sys
-    
-    extractor = ExtractorPabloRuiz()
-    
-    if len(sys.argv) > 1:
-        pdf_path = sys.argv[1]
-    else:
-        pdf_path = '/mnt/user-data/uploads/4071_4T25_1030_PABLO_RUIZ_LA_DOLOROSA_TF.pdf'
-    
-    print(f"\n{'='*60}")
-    print(f"PROBANDO EXTRACTOR PABLO RUIZ - LA DOLOROSA")
-    print(f"{'='*60}")
-    print(f"Archivo: {pdf_path}\n")
-    
-    texto = extractor.extraer_texto_pdfplumber(pdf_path)
-    
-    fecha = extractor.extraer_fecha(texto)
-    num_factura = extractor.extraer_numero_factura(texto)
-    total = extractor.extraer_total(texto)
-    base_total = extractor.extraer_base_total(texto)
-    lineas = extractor.extraer_lineas(texto)
-    
-    print(f"📅 Fecha: {fecha}")
-    print(f"📄 Nº Factura: {num_factura}")
-    print(f"💰 Base: {base_total}€")
-    print(f"💰 TOTAL: {total}€")
-    print(f"\n📦 LÍNEAS ({len(lineas)}):")
-    print("-" * 80)
-    
-    suma_bases = 0
-    for i, linea in enumerate(lineas, 1):
-        print(f"  {i}. {linea['articulo']}")
-        print(f"     Cant: {linea['cantidad']} x {linea['precio_ud']}€ = {linea['base']}€ (IVA {linea['iva']}%)")
-        suma_bases += linea['base']
-    
-    print("-" * 80)
-    
-    if total:
-        iva_calculado = round(suma_bases * 0.21, 2)
-        total_calculado = round(suma_bases + iva_calculado, 2)
-        diferencia = round(total - total_calculado, 2)
-        cuadra = abs(diferencia) < 0.10
-        
-        print(f"\n✅ VALIDACIÓN DE CUADRE:")
-        print(f"   Suma bases:      {round(suma_bases, 2)}€")
-        print(f"   IVA 21%:         {iva_calculado}€")
-        print(f"   Total calculado: {total_calculado}€")
-        print(f"   Total factura:   {total}€")
-        print(f"   Diferencia:      {diferencia}€")
-        print(f"   {'✅ CUADRA' if cuadra else '❌ DESCUADRE'}")

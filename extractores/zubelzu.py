@@ -1,23 +1,23 @@
+# -*- coding: utf-8 -*-
 """
 Extractor para ZUBELZU PIPARRAK S.L.
 Piparras, guindillas y mousse de piparra del País Vasco.
 
 Autor: Claude (ParsearFacturas v5.0)
 Fecha: 27/12/2025
+Corregido: 28/12/2025 - Integración con sistema
 Validado: 6/6 facturas (100%)
 """
-
+from extractores.base import ExtractorBase
+from extractores import registrar
 import re
 from typing import List, Dict, Optional
-
-# DESCOMENTAR estas líneas cuando integres en el proyecto:
-# from extractores import registrar
-# from extractores.base import ExtractorBase
+import pdfplumber
 
 
-# DESCOMENTAR el decorador cuando integres en el proyecto:
-# @registrar('ZUBELZU', 'ZUBELZU PIPARRAK', 'ZUBELZU PIPARRAK SL', 'ZUBELZU PIPARRAK S.L.', 'ZUBELZU PIPARRAK S.L')
-class ExtractorZubelzu:  # Cambiar a: class ExtractorZubelzu(ExtractorBase):
+@registrar('ZUBELZU', 'ZUBELZU PIPARRAK', 'ZUBELZU PIPARRAK SL', 
+           'ZUBELZU PIPARRAK S.L.', 'ZUBELZU PIPARRAK S.L')
+class ExtractorZubelzu(ExtractorBase):
     """
     Extractor para facturas de ZUBELZU PIPARRAK.
     
@@ -35,9 +35,8 @@ class ExtractorZubelzu:  # Cambiar a: class ExtractorZubelzu(ExtractorBase):
     categoria_fija = 'PIPARRAS'  # Todos los productos son piparras/guindillas
     iva_fijo = 10  # Siempre 10%
     
-    def extraer_texto_pdfplumber(self, pdf_path: str) -> str:
+    def extraer_texto(self, pdf_path: str) -> str:
         """Extrae texto del PDF usando pdfplumber."""
-        import pdfplumber
         texto_completo = []
         try:
             with pdfplumber.open(pdf_path) as pdf:
@@ -236,81 +235,3 @@ class ExtractorZubelzu:  # Cambiar a: class ExtractorZubelzu(ExtractorBase):
             return float(texto)
         except:
             return 0.0
-    
-    def validar_cuadre(self, lineas: List[Dict], total_factura: float) -> Dict:
-        """
-        Valida que la suma de líneas + IVA = total factura.
-        """
-        suma_bases = sum(linea['base'] for linea in lineas)
-        iva_calculado = round(suma_bases * 0.10, 2)
-        total_calculado = round(suma_bases + iva_calculado, 2)
-        
-        diferencia = round(total_factura - total_calculado, 2)
-        
-        return {
-            'suma_bases': round(suma_bases, 2),
-            'iva_calculado': iva_calculado,
-            'total_calculado': total_calculado,
-            'total_factura': total_factura,
-            'diferencia': diferencia,
-            'cuadra': abs(diferencia) < 0.02  # Tolerancia de 2 céntimos
-        }
-
-
-# ============================================================
-# CÓDIGO DE PRUEBA - Ejecutar directamente para testear
-# ============================================================
-
-if __name__ == '__main__':
-    import sys
-    import pdfplumber
-    
-    extractor = ExtractorZubelzu()
-    
-    # Si se pasa un PDF como argumento
-    if len(sys.argv) > 1:
-        pdf_path = sys.argv[1]
-    else:
-        # PDF de prueba por defecto
-        pdf_path = '/mnt/user-data/uploads/4118_4T25_1114_ZUBELZU_PIPARRAK_TF.pdf'
-    
-    print(f"\n{'='*60}")
-    print(f"PROBANDO EXTRACTOR ZUBELZU")
-    print(f"{'='*60}")
-    print(f"Archivo: {pdf_path}\n")
-    
-    # Extraer texto
-    texto = extractor.extraer_texto_pdfplumber(pdf_path)
-    
-    # Extraer datos
-    fecha = extractor.extraer_fecha(texto)
-    num_factura = extractor.extraer_numero_factura(texto)
-    total = extractor.extraer_total(texto)
-    base = extractor.extraer_base_imponible(texto)
-    iva = extractor.extraer_iva(texto)
-    lineas = extractor.extraer_lineas(texto)
-    
-    print(f"📅 Fecha: {fecha}")
-    print(f"📄 Nº Factura: {num_factura}")
-    print(f"💰 Base imponible: {base}€")
-    print(f"💰 IVA (10%): {iva}€")
-    print(f"💰 TOTAL: {total}€")
-    print(f"\n📦 LÍNEAS ({len(lineas)}):")
-    print("-" * 80)
-    
-    for i, linea in enumerate(lineas, 1):
-        print(f"  {i}. [{linea['codigo']}] {linea['articulo']}")
-        print(f"     Cant: {linea['cantidad']} x {linea['precio_ud']}€ = {linea['base']}€ (IVA {linea['iva']}%)")
-    
-    print("-" * 80)
-    
-    # Validar cuadre
-    if total:
-        cuadre = extractor.validar_cuadre(lineas, total)
-        print(f"\n✅ VALIDACIÓN DE CUADRE:")
-        print(f"   Suma bases:      {cuadre['suma_bases']}€")
-        print(f"   IVA calculado:   {cuadre['iva_calculado']}€")
-        print(f"   Total calculado: {cuadre['total_calculado']}€")
-        print(f"   Total factura:   {cuadre['total_factura']}€")
-        print(f"   Diferencia:      {cuadre['diferencia']}€")
-        print(f"   {'✅ CUADRA' if cuadre['cuadra'] else '❌ DESCUADRE'}")
