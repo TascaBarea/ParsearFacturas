@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """
-PARSEAR FACTURAS v5.1
+PARSEAR FACTURAS v5.2
 =====================
 Sistema modular para extraccion y procesamiento de facturas.
+
+CAMBIOS v5.2 (30/12/2025):
+- Prorrateo de portes mejorado para IVAs mixtos
+- Maneja productos IVA 4%/10% con portes IVA 21%
+- Recalcula base inversa para que total cuadre siempre
 
 CAMBIOS v5.1 (26/12/2025):
 - Mejorada normalización de proveedor usando alias de extractores
@@ -20,6 +25,7 @@ Uso:
 """
 
 import sys
+sys.dont_write_bytecode = True  # Evita generar __pycache__
 import argparse
 from pathlib import Path
 from datetime import datetime
@@ -246,6 +252,18 @@ def buscar_en_diccionario(proveedor: str, indice: dict) -> str:
 def prorratear_portes(lineas: list) -> list:
     """
     Prorratea los portes/transporte proporcionalmente entre los productos.
+    
+    MEJORADO v5.2 (30/12/2025):
+    - Maneja IVAs mixtos (productos 4%/10% + portes 21%)
+    - Distribuye el total del porte CON IVA proporcionalmente
+    - Recalcula base para que: base × (1 + iva/100) = total_asignado
+    - Garantiza que suma de lineas = total factura
+    
+    Casos que maneja:
+    - Productos IVA 4% + Portes IVA 21% (quesos)
+    - Productos IVA 10% + Portes IVA 21% (alimentacion)
+    - Productos IVA 21% + Portes IVA 21% (general)
+    - Mezcla de IVAs en productos + Portes
     """
     if not lineas:
         return lineas
@@ -267,27 +285,64 @@ def prorratear_portes(lineas: list) -> list:
         else:
             lineas_producto.append(linea)
     
+    # Si no hay portes, devolver todo sin cambios
     if not lineas_porte:
         return lineas
     
-    total_porte = sum(linea.base for linea in lineas_porte if linea.base)
-    
-    if total_porte <= 0:
+    # Si no hay productos, devolver todo sin cambios
+    if not lineas_producto:
         return lineas
     
-    total_productos = sum(linea.base for linea in lineas_producto if linea.base and linea.base > 0)
+    # Calcular total del porte CON IVA (normalmente 21%)
+    total_porte_con_iva = 0
+    for linea in lineas_porte:
+        if linea.base and linea.base > 0:
+            iva_porte = linea.iva if linea.iva is not None else 21
+            total_porte_con_iva += linea.base * (1 + iva_porte / 100)
     
-    if total_productos <= 0:
+    if total_porte_con_iva <= 0:
         return lineas
     
+    # Calcular total de productos CON IVA (cada uno con su IVA)
+    totales_producto = []
     for linea in lineas_producto:
         if linea.base and linea.base > 0:
-            proporcion = linea.base / total_productos
-            porte_linea = total_porte * proporcion
-            linea.base = round(linea.base + porte_linea, 2)
-            if linea.cantidad and linea.cantidad > 0:
-                linea.precio_ud = round(linea.base / linea.cantidad, 4)
+            iva_prod = linea.iva if linea.iva is not None else 21
+            total_con_iva = linea.base * (1 + iva_prod / 100)
+            totales_producto.append((linea, total_con_iva, iva_prod))
     
+    if not totales_producto:
+        return lineas
+    
+    suma_totales_producto = sum(t[1] for t in totales_producto)
+    
+    if suma_totales_producto <= 0:
+        return lineas
+    
+    # Distribuir porte proporcionalmente y recalcular base
+    for linea, total_prod_con_iva, iva_prod in totales_producto:
+        # Proporcion segun total con IVA
+        proporcion = total_prod_con_iva / suma_totales_producto
+        
+        # Parte del porte que le corresponde (ya con IVA incluido)
+        porte_asignado = total_porte_con_iva * proporcion
+        
+        # Nuevo total de la linea (producto + su parte de porte)
+        nuevo_total = total_prod_con_iva + porte_asignado
+        
+        # Recalcular base usando el IVA del producto
+        # nueva_base = nuevo_total / (1 + iva/100)
+        nueva_base = nuevo_total / (1 + iva_prod / 100)
+        
+        # Actualizar linea
+        linea.base = round(nueva_base, 2)
+        
+        # Recalcular precio unitario si hay cantidad
+        if linea.cantidad and linea.cantidad > 0:
+            linea.precio_ud = round(linea.base / linea.cantidad, 4)
+    
+    # Devolver productos (con porte prorrateado) + excluidas
+    # Los portes se eliminan porque ya estan incluidos
     return lineas_producto + lineas_excluidas
 
 
@@ -522,7 +577,7 @@ def detectar_trimestre(carpeta_nombre: str) -> str:
 def main():
     """Funcion principal."""
     parser = argparse.ArgumentParser(
-        description='ParsearFacturas v5.1',
+        description='ParsearFacturas v5.2',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Ejemplos:
@@ -539,7 +594,7 @@ Ejemplos:
                         help='DiccionarioProveedoresCategoria.xlsx')
     parser.add_argument('--listar-extractores', action='store_true',
                         help='Listar extractores disponibles y salir')
-    parser.add_argument('--version', '-v', action='version', version='v5.1')
+    parser.add_argument('--version', '-v', action='version', version='v5.2')
     
     args = parser.parse_args()
     
@@ -572,7 +627,7 @@ Ejemplos:
         print(f"   {len(indice)} proveedores indexados")
     
     print("\n" + "="*60)
-    print("PARSEAR FACTURAS v5.1")
+    print("PARSEAR FACTURAS v5.2")
     print("="*60)
     
     script_dir = Path(__file__).parent

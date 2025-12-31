@@ -133,8 +133,9 @@ class ExtractorBase(ABC):
         """
         Extrae el número de referencia/factura.
         
-        Por defecto busca patrones comunes. Sobrescribir si el formato
-        del proveedor es especial.
+        IMPORTANTE: Si la subclase define extraer_numero_factura(), 
+        se usa automáticamente ese método. Esto permite compatibilidad
+        con extractores que usen cualquiera de los dos nombres.
         
         Args:
             texto: Texto extraído del PDF
@@ -142,6 +143,16 @@ class ExtractorBase(ABC):
         Returns:
             Número de referencia o None si no se encuentra
         """
+        # =========================================================
+        # COMPATIBILIDAD: Si la subclase define extraer_numero_factura,
+        # usarlo automáticamente (fix bug 29/12/2025)
+        # =========================================================
+        if hasattr(self, 'extraer_numero_factura'):
+            resultado = self.extraer_numero_factura(texto)
+            if resultado:
+                return resultado
+        
+        # Fallback: patrones genéricos
         patrones = [
             r'(?:Factura|Fra|Nº|Número)[:\s]*([A-Z]?\d{4,10})',
             r'(?:FACTURA|FRA|Nº)[:\s]*([A-Z]?\d{4,10})',

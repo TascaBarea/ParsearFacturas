@@ -292,6 +292,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from extractores import montbrione           # MONTBRIONE (vermuts, aceites, vinagres cooperativa)
+except ImportError:
+    pass
+
 # ============================================================
 # SESION 21/12/2025 - NUEVOS/ACTUALIZADOS EXTRACTORES
 # ============================================================

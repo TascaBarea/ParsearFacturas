@@ -1,7 +1,7 @@
 # 📖 ParsearFacturas - Manual del Proyecto
 
-**Versión:** 5.3  
-**Última actualización:** 28/12/2025  
+**Versión:** 5.4  
+**Última actualización:** 31/12/2025  
 **Negocio:** TASCA BAREA S.L.L. (restaurante + distribución gourmet COMESTIBLES BAREA)
 
 ---
@@ -18,92 +18,33 @@ Automatizar el flujo completo de facturas de proveedores:
 
 ---
 
-## 📊 ESTADO ACTUAL (28/12/2025)
+## 📊 ESTADO ACTUAL (31/12/2025)
 
 | Componente | Estado | Progreso |
 |------------|--------|----------|
-| **ParsearFacturas** | ✅ Funcional | v5.3 - ~136 extractores |
+| **ParsearFacturas** | ✅ Funcional | v5.4 - 140+ extractores |
 | **Categorización** | ✅ Funcional | Fuzzy matching 80% |
 | **Generador SEPA** | ✅ Prototipo | Falta validación IBAN |
 | **Extractor Gmail** | 🟡 OAuth2 OK | Falta integrar |
 | **Orquestador** | ❌ Pendiente | - |
 
-**Métricas ParsearFacturas v5.3:**
-- Cuadre OK: **52.2%** (pre-integración) → **~57%** (post-integración)
-- Facturas analizadas: **906**
-- Artículos en diccionario: **~925**
+**Métricas ParsearFacturas v5.4:**
+- Cuadre OK: **~60%**
+- Con líneas: **~85%**
 - Objetivo: **80%**
 
 ---
 
 ## 🗂️ TABLAS DEL SISTEMA
 
-El negocio maneja estas tablas de datos:
-
-### 1. ARTICULOS LOYVERSE (CRM)
-- **Origen:** Exportación desde Loyverse POS
-- **Contenido:** 578 artículos de venta con código, nombre, precio, categoría
-- **Uso:** Referencia para análisis de márgenes
-
-### 2. VENTAS POR ARTICULOS (CRM)
-- **Origen:** Exportación desde Loyverse
-- **Contenido:** Ventas detalladas por artículo
-- **Uso:** Análisis de ventas
-
-### 3. COMPRAS POR ARTICULOS (ParsearFacturas)
-- **Origen:** Este proyecto - extracción de facturas PDF
-- **Contenido:** ~925 artículos de compra, 116 categorías
-- **Uso:** Análisis de costes, categorización
-
-### 4. FACTURAS
-- **Origen:** Facturas procesadas
-- **Contenido:** Código (del nombre archivo), Cuenta contable, Proveedor, Fecha, Ref, Total
-- **Uso:** Contabilidad, cruce con gestoría
-
-### 5. MOVIMIENTOS BANCO (N43)
-- **Origen:** Descarga semanal de Banco Sabadell
-- **Contenido:** Movimientos TASCA + COMESTIBLES
-- **Uso:** Conciliación de pagos
-
-### 6. PROVEEDORES (MAESTROS)
-- **Origen:** Manual + extraído de facturas
-- **Contenido:** Nombre, CIF, IBAN, forma de pago, cuenta contable
-- **Uso:** Generación SEPA, cruce facturas
-
----
-
-## 📄 FLUJO DEL SISTEMA
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                     FLUJO SEMANAL (VIERNES)                                 │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  07:00  ┌──────────┐    ┌────────────────┐    ┌──────────────────┐          │
-│   AM    │  Gmail   │───▶│ ParsearFacturas│───▶│ Categorización   │          │
-│         │ Extractor│    │  (~136 extrac) │    │ (Diccionario)    │          │
-│         └──────────┘    └────────────────┘    └──────────────────┘          │
-│              │                                        │                     │
-│              ▼                                        ▼                     │
-│         ┌──────────┐                          ┌──────────────────┐          │
-│         │ Dropbox  │                          │ Excel Facturas   │          │
-│         │ Backup   │                          │ (revisar)        │          │
-│         └──────────┘                          └──────────────────┘          │
-│                                                       │                     │
-│  09:00                                               ▼                     │
-│   AM    ┌─────────────────────────────────────────────────────────────────┐ │
-│         │         REVISIÓN MANUAL + CONFIRMACIÓN                          │ │
-│         │         (Corregir PENDIENTES, verificar)                        │ │
-│         └─────────────────────────────────────────────────────────────────┘ │
-│                                                       │                     │
-│  12:00                                               ▼                     │
-│   PM    ┌──────────────────┐    ┌──────────────────────────────────┐       │
-│         │ Generador SEPA   │───▶│ pain.001.xml → BS Online         │       │
-│         │ (pain.001.001.03)│    │ Autorizar → Ejecutar             │       │
-│         └──────────────────┘    └──────────────────────────────────┘       │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+| Tabla | Origen | Contenido | Uso |
+|-------|--------|-----------|-----|
+| ARTICULOS LOYVERSE | Loyverse POS | 578 artículos venta | Análisis márgenes |
+| VENTAS POR ARTICULOS | Loyverse | Ventas detalladas | Análisis ventas |
+| COMPRAS POR ARTICULOS | Este proyecto | 698 artículos, 116 categorías | Análisis costes |
+| FACTURAS | Facturas procesadas | Código, Proveedor, Fecha, Total | Contabilidad |
+| MOVIMIENTOS BANCO | Banco Sabadell N43 | Movimientos TASCA + COMESTIBLES | Conciliación |
+| PROVEEDORES | Manual + facturas | Nombre, CIF, IBAN, método pago | SEPA |
 
 ---
 
@@ -134,55 +75,38 @@ python tests/probar_extractor.py "CERES" "factura.pdf" --debug
 python main.py --listar-extractores
 ```
 
-### Actualizar diccionario de categorías
-
-```cmd
-python actualizar_diccionario.py
-```
-(Se abre ventana para seleccionar Excel corregido)
-
 ---
 
 ## 📁 ESTRUCTURA DEL PROYECTO
 
 ```
 ParsearFacturas-main/
-├── main.py                          # Script principal v5.3
+├── main.py                          # Script principal v5.4
 ├── actualizar_diccionario.py        # Actualiza categorías
 ├── generar_proveedores.py           # Genera PROVEEDORES.md
 │
-├── extractores/                     # ~136 extractores
-│   ├── __init__.py                  # Registro automático
+├── extractores/                     # 140+ extractores
+│   ├── __init__.py                  # Registro automático @registrar
 │   ├── base.py                      # Clase ExtractorBase
 │   ├── ceres.py                     # 1 archivo por proveedor
 │   ├── bm.py
+│   ├── lavapies.py                  # NUEVO 31/12
 │   └── ...
 │
 ├── nucleo/                          # Funciones core
-│   ├── factura.py                   # Dataclass LineaFactura
-│   └── ...
-│
 ├── salidas/                         # Generación Excel/logs
-│   └── ...
-│
-├── datos/                           # Datos del sistema
-│   └── DiccionarioProveedoresCategoria.xlsx
-│
+├── datos/                           # DiccionarioProveedoresCategoria.xlsx
 ├── config/                          # Configuración
-│   └── settings.py
 │
 ├── docs/                            # Documentación
 │   ├── README.md                    # Este archivo
 │   ├── ESTADO_PROYECTO.md           # Estado actual
 │   ├── PROVEEDORES.md               # Lista extractores
+│   ├── LEEME_PRIMERO.md             # Guía rápida
 │   └── COMO_AÑADIR_EXTRACTOR.md     # Guía técnica
 │
 ├── tests/                           # Testing
-│   └── probar_extractor.py
-│
 └── outputs/                         # Salidas generadas
-    ├── Facturas_1T25.xlsx
-    └── log_*.txt
 ```
 
 ---
@@ -197,8 +121,6 @@ metodo_pdf = 'hibrido'     # Si algunas facturas son escaneadas y otras no
 ```
 
 ### 2. Siempre líneas individuales
-**1 artículo = 1 línea en el Excel**
-
 ```python
 # ❌ MAL (agrupado)
 lineas.append({'articulo': 'PRODUCTOS IVA 10%', 'base': 500.00})
@@ -226,22 +148,8 @@ def _convertir_europeo(self, texto):
     return float(texto)
 ```
 
-### 6. Patrones para resolver DESCUADRE (aprendidos 26-28/12/2025)
-
-```python
-# Calcular IVA real (si etiquetas están intercambiadas)
-iva_real = round(cuota / base * 100)  # Da 10 o 21
-
-# Buscar símbolo € (a veces corrupto)
-m = re.search(r'TOTAL\s+([\d,]+)\s*€', texto)  # Usa € no â‚¬
-
-# Usar cuadro fiscal como fuente de verdad
-# Formato típico: BASE IMP. AL 10% 71,76 IVA 10% 7,18
-
-# Método híbrido para PDFs mixtos (pdfplumber + OCR fallback)
-if len(texto.strip()) < 100:
-    texto = self._extraer_texto_ocr(pdf_path)
-```
+### 6. Bug extraer_referencia (SOLUCIONADO en base.py)
+El método `extraer_referencia()` en `base.py` llama automáticamente a `extraer_numero_factura()` si existe. No hace falta añadir alias en cada extractor.
 
 ---
 
@@ -250,41 +158,26 @@ if len(texto.strip()) < 100:
 ### Al INICIAR sesión:
 1. Subir estos archivos a Claude:
    - `docs/ESTADO_PROYECTO.md`
-   - `docs/PROVEEDORES.md` (si hay cambios en extractores)
+   - `docs/PROVEEDORES.md`
+   - `docs/LEEME_PRIMERO.md`
    - Facturas PDF del proveedor a trabajar
-   - Extractor actual si existe
-2. Decir: "Continúo proyecto ParsearFacturas v5.3. Tarea: [describir]"
+2. Decir: "Continúo proyecto ParsearFacturas v5.4. Tarea: [describir]"
 
 ### Al CERRAR sesión:
-1. Pedir: "Actualiza ESTADO_PROYECTO.md con lo de hoy"
-2. Descargar el archivo actualizado
+1. Pedir: "Prepara documentación de cierre"
+2. Descargar archivos actualizados
 3. Copiar a `docs/` y hacer commit:
 ```cmd
-git add docs/ESTADO_PROYECTO.md
-git commit -m "Actualizar estado sesión DD/MM/YYYY"
+git add .
+git commit -m "Sesión DD/MM: [resumen cambios]"
 git push
 ```
 
 ### Si añades extractores:
 1. Copiar archivos `.py` a `extractores/`
-2. Ejecutar: `python generar_proveedores.py`
-3. Hacer commit de todo
-
----
-
-## 📈 EVOLUCIÓN DEL PROYECTO
-
-| Versión | Fecha | Cuadre | Extractores | Cambio principal |
-|---------|-------|--------|-------------|------------------|
-| v3.5 | 09/12/2025 | 42% | 70 | Baseline |
-| v4.0 | 18/12/2025 | 54% | 90 | Arquitectura modular |
-| v5.1 | 26/12/2025 AM | 54% | 120 | +16 extractores nuevos |
-| v5.2 | 26/12/2025 PM | ~66% | 130 | +10 corregidos |
-| **v5.3** | **28/12/2025** | **~57%** | **136** | **+6 extractores nuevos** |
-
-**Nota:** La tasa v5.3 (52.2%→57%) es pre/post integración de extractores de sesión 28/12. La bajada aparente respecto a v5.2 se debe a que v5.2 estimaba ~66% pero no todos los extractores estaban integrados.
-
-**Mejora total confirmada:** 42% → 52.2% base + ~5% pendiente = **~57%**
+2. Limpiar caché: `rmdir /s /q extractores\__pycache__`
+3. Ejecutar: `python generar_proveedores.py`
+4. Hacer commit de todo
 
 ---
 
@@ -303,4 +196,4 @@ Para continuar el trabajo, usa el patrón descrito en "Rutina de trabajo con Cla
 
 ---
 
-*Documento generado el 28/12/2025 - v5.3*
+*Documento actualizado: 31/12/2025*

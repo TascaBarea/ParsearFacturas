@@ -4,18 +4,15 @@ Extractor para ECOMS SUPERMARKET S.L.
 Supermercado local en C/ Huertas 72, Madrid
 
 CIF: B72738602
-Método: Híbrido (pdfplumber + OCR fallback)
+Método: pdfplumber (corregido de 'hibrido')
 
 Creado: 28/12/2025
-Corregido: 28/12/2025 - Integración con sistema
+Corregido: 29/12/2025 - metodo_pdf = 'pdfplumber'
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
 from typing import List, Dict, Optional
 import re
-import subprocess
-import tempfile
-import os
 import pdfplumber
 
 
@@ -26,40 +23,16 @@ class ExtractorEcoms(ExtractorBase):
     nombre = 'ECOMS SUPERMARKET'
     cif = 'B72738602'
     iban = ''
-    metodo_pdf = 'hibrido'
-    
-    def extraer_texto(self, pdf_path: str) -> str:
-        texto = self._extraer_pdfplumber(pdf_path)
-        if texto and len(texto.strip()) > 100:
-            return texto
-        return self._extraer_ocr(pdf_path)
-    
-    def _extraer_pdfplumber(self, pdf_path: str) -> str:
-        try:
-            texto_completo = []
-            with pdfplumber.open(pdf_path) as pdf:
-                for page in pdf.pages:
-                    texto = page.extract_text()
-                    if texto:
-                        texto_completo.append(texto)
-            return '\n'.join(texto_completo)
-        except:
-            return ''
-    
-    def _extraer_ocr(self, pdf_path: str) -> str:
-        try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                img_path = os.path.join(tmpdir, 'page.png')
-                subprocess.run(['pdftoppm', '-png', '-r', '300', '-singlefile',
-                    pdf_path, os.path.join(tmpdir, 'page')], capture_output=True, check=True)
-                result = subprocess.run(['tesseract', img_path, 'stdout', '-l', 'spa'],
-                    capture_output=True, text=True)
-                return result.stdout
-        except:
-            return ''
+    metodo_pdf = 'pdfplumber'  # CORREGIDO de 'hibrido'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
+        """Extrae líneas de productos."""
+        if not texto:
+            return []
+        
         lineas = []
+        
+        # Patrón: DESCRIPCION IMPORTE IVA%
         patron_linea = re.compile(
             r'^([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ0-9\s\-\.]+?)\s+'
             r'(\d+[,\.]\d+)\s+'
@@ -89,12 +62,14 @@ class ExtractorEcoms(ExtractorBase):
                     'base': importe
                 })
         
+        # Fallback: extraer desde cuadro fiscal
         if not lineas:
             lineas = self._extraer_desde_cuadro_fiscal(texto)
         
         return lineas
     
     def _extraer_desde_cuadro_fiscal(self, texto: str) -> List[Dict]:
+        """Extrae desde cuadro fiscal."""
         lineas = []
         cuadro = self._extraer_cuadro_fiscal(texto)
         for item in cuadro:
@@ -109,6 +84,7 @@ class ExtractorEcoms(ExtractorBase):
         return lineas
     
     def _extraer_cuadro_fiscal(self, texto: str) -> List[Dict]:
+        """Extrae cuadro de IVA."""
         desglose = []
         patron = re.compile(r'(\d+)[,\.]00%\s+(\d+[,\.]\d+)\s+(\d+[,\.]\d+)', re.MULTILINE)
         for match in patron.finditer(texto):
@@ -120,6 +96,10 @@ class ExtractorEcoms(ExtractorBase):
         return desglose
     
     def extraer_total(self, texto: str) -> Optional[float]:
+        """Extrae el total."""
+        if not texto:
+            return None
+        
         patrones = [
             r'TOTAL\s+FACTURA\s+(\d+[,\.]\d+)',
             r'TOTAL\s+FAÉTURA\s+(\d+[,\.]\d+)',
@@ -130,12 +110,19 @@ class ExtractorEcoms(ExtractorBase):
             match = re.search(patron, texto, re.IGNORECASE)
             if match:
                 return self._convertir_europeo(match.group(1))
+        
+        # Calcular desde cuadro fiscal
         cuadro = self._extraer_cuadro_fiscal(texto)
         if cuadro:
             return round(sum(d['base'] + d['iva'] for d in cuadro), 2)
+        
         return None
     
     def extraer_fecha(self, texto: str) -> Optional[str]:
+        """Extrae la fecha."""
+        if not texto:
+            return None
+        
         patron = re.search(r'EMITIDA:?\s*(\d{2}-\d{2}-\d{4})', texto, re.IGNORECASE)
         if patron:
             return patron.group(1).replace('-', '/')
@@ -145,6 +132,7 @@ class ExtractorEcoms(ExtractorBase):
         return None
     
     def _convertir_europeo(self, texto: str) -> float:
+        """Convierte formato europeo a float."""
         if not texto:
             return 0.0
         texto = str(texto).strip()

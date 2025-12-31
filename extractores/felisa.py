@@ -183,3 +183,6 @@ class ExtractorFelisa(ExtractorBase):
         """Extrae número de factura."""
         m = re.search(r'TG\d+/\d+', texto)
         return m.group(0) if m else None
+    
+    # Alias para main.py
+    extraer_referencia = extraer_numero_factura

@@ -14,7 +14,7 @@ CATEGORIA FIJA: CONSERVAS PESCADO
 Variantes nombre: PORVAZ, PORVAZ TITO, PORVAZ VILLAGARCIA, CONSERVAS TITO
 
 Creado: 19/12/2025
-Actualizado: 21/12/2025 - Categoria fija CONSERVAS PESCADO
+Actualizado: 30/12/2025 - Corregido patron para incluir Ñ (ZAMBURIÑA)
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -40,16 +40,15 @@ class ExtractorPorvaz(ExtractorBase):
         Formato:
         DESCRIPCION CANTIDAD PRECIO IVA IMPORTE
         BERBERECHO ENLATADO 40/60 RR120 AL 10 4,500 10,0 45,00
+        ZAMBURIÑA SALSA DE VIEIRA 10 3,050 10,0 30,50
+        
+        NOTA: El patron incluye Ñ y acentos para capturar productos como ZAMBURIÑA
         """
         lineas = []
         
-        # Patron para lineas de producto
-        # La descripcion puede contener numeros (40/60, 8/12, etc.)
-        # Formato: DESCRIPCION CANTIDAD PRECIO IVA IMPORTE
-        # Ejemplo: MEJILLON ESCABECHE 8/12 RR120 AL 20 3,800 10,0 76,00
-        
+        # Patron corregido: incluye Ñ y acentos en la descripcion
         patron_linea = re.compile(
-            r'^([A-ZAEIOUN0-9/\s]+?)\s+'       # Descripcion (empieza con mayuscula)
+            r'^([A-ZÁÉÍÓÚÑ0-9/\s]+?)\s+'       # Descripcion con acentos y Ñ
             r'(\d+)\s+'                         # Cantidad (entero)
             r'(\d+,\d{3})\s+'                   # Precio (X,XXX)
             r'(\d+,\d)\s+'                      # IVA (10,0)
@@ -122,7 +121,9 @@ class ExtractorPorvaz(ExtractorBase):
     def extraer_numero_factura(self, texto: str) -> Optional[str]:
         """Extrae numero de factura."""
         # Formato: Numero: 0132/25
-        patron = re.search(r'Numero:\s*(\d+/\d+)', texto)
+        patron = re.search(r'N[uú]mero:\s*(\d+/\d+)', texto)
         if patron:
             return patron.group(1)
         return None
+    
+    extraer_referencia = extraer_numero_factura
