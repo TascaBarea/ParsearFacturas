@@ -1,281 +1,226 @@
 """
-Extractor para JIMELUZ EMPRENDEDORES S.L. (Carrefour Express franquicia)
+Extractor para JIMELUZ EMPRENDEDORES S.L.
 
-Franquicia de Carrefour Express en Calle Embajadores, 50 - Madrid
-CIF: B-87501243
+Supermercado / Autoservicio en Calle Embajadores, 50 - 28005 Madrid.
+Venta de frutas, verduras, limpieza, hielo, etc.
 
-Formato ticket (pdfplumber):
- * * CARREFOUR EXPRESS * *
- * * * * * PVP IVA INCLUIDO * * * * *
- SALMON AHUMADO 100 G 4,09
- LIMON CDC 1,19
- HIELO CUBITOS 2 KG
-  5 x ( 1,25 ) 6,25
- ==========================================
- 5 ART. TOTAL A PAGAR : 5,11
- ==========================================
- TIPO BASE CUOTA
- 4,00% 2,51 0,10
- 10,00% 2,27 0,23
+CIF: (pendiente confirmar)
+IBAN: (pendiente - pago en efectivo/tarjeta)
 
-Tipos de línea:
-1. Simple: "LIMON CDC 1,19"
-2. Con cantidad inicio: "3 BAYETAS MICROFIBRA 1,95"
-3. Cantidad en línea siguiente: "HIELO CUBITOS 2 KG" + "5 x ( 1,25 ) 6,25"
+IMPORTANTE: Las facturas de JIMELUZ son tickets escaneados (imágenes).
+Este extractor requiere OCR (Tesseract) para funcionar.
 
-IVA: 4% (frutas, verduras, pan), 10% (alimentación), 21% (droguería)
-Pago: Tarjeta
+Productos típicos:
+- Frutas/verduras (IVA 4%): limón, naranja, rúcula, lima
+- Alimentación (IVA 10%): hielo, agua, chocolate
+- Limpieza (IVA 21%): papel higiénico, bayetas, lejía, bolsas
 
-Creado: 26/12/2025
+Estructura del ticket:
+- Cabecera con datos fiscales
+- Líneas de productos: CANT DESCRIPCION %IVA IMPORTE
+- Cuadro fiscal: %IVA BASE CUOTA TOTAL
+- TOTAL COMPRA / TOTAL PAGADO / TOTAL FACTURA
+
+Creado: 01/01/2026
+Validado: 8/10 facturas (2 con OCR muy malo)
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional
 import re
-import pdfplumber
+from collections import Counter
+
+# Intentar importar OCR
+try:
+    from pdf2image import convert_from_path
+    import pytesseract
+    OCR_DISPONIBLE = True
+except ImportError:
+    OCR_DISPONIBLE = False
 
 
-@registrar('JIMELUZ', 'JIMELUZ EMPRENDEDORES', 'CARREFOUR EXPRESS EMBAJADORES')
+@registrar('JIMELUZ', 'JIMELUZ EMPRENDEDORES', 'JIMELUZ EMPRENDEDORES S.L.',
+           'JIMELUZ EMPRENDEDORES SL', 'IMELUZ', 'JIME LUZ')
 class ExtractorJimeluz(ExtractorBase):
-    """Extractor para tickets de JIMELUZ (Carrefour Express)."""
+    """Extractor para tickets escaneados de JIMELUZ (requiere OCR)."""
     
-    nombre = 'JIMELUZ'
-    cif = 'B87501243'
-    iban = ''  # Pago tarjeta
-    metodo_pdf = 'pdfplumber'
+    nombre = 'JIMELUZ EMPRENDEDORES S.L.'
+    cif = ''  # Pendiente confirmar
+    iban = ''  # Pago en efectivo/tarjeta
+    metodo_pdf = 'ocr'  # Requiere OCR
     
-    # Productos conocidos con IVA específico
-    PRODUCTOS_IVA_4 = [
-        'LIMON', 'LIMA', 'NARANJA', 'MANZANA', 'PERA', 'PLATANO', 'UVA',
-        'MELON', 'SANDIA', 'FRESA', 'KIWI', 'PIÑA', 'MANGO',
-        'TOMATE', 'LECHUGA', 'RUCULA', 'CALABACIN', 'PEPINO', 'CEBOLLA',
-        'PATATA', 'ZANAHORIA', 'PIMIENTO', 'BERENJENA', 'JUDIAS',
-        'PAN ', 'BARRA', 'MOLLETE', 'CHAPATA', 'HOGAZA',
-        'LECHE', 'HUEVO', 'QUESO', 'YOGUR',
-        'ACEITE', 'OLIVA',
-        'HARINA', 'ARROZ', 'PASTA', 'LEGUMBRE',
-    ]
-    
-    PRODUCTOS_IVA_21 = [
-        'BAYETA', 'FREGONA', 'ESCOBA', 'RECOGEDOR',
-        'DETERGENTE', 'SUAVIZANTE', 'LEJIA', 'LIMPIA', 'QUITAGRASA',
-        'JABON', 'CHAMPU', 'GEL', 'CREMA', 'DESODORANTE',
-        'PAPEL COCINA', 'PAPEL HIGIEN', 'SERVILLETA',
-        'BOLSA BASURA', 'FILM', 'ALUMINIO',
-        'PILA', 'BOMBILLA', 'MECHERO', 'VELA',
-        'PALILLERO', 'PALILLO',
-    ]
-    
-    def extraer_texto_pdfplumber(self, pdf_path: str) -> str:
-        """Extrae texto del PDF usando pdfplumber."""
-        texto_completo = []
+    def _convertir_importe(self, texto: str) -> float:
+        """Convierte texto a float (formato europeo)."""
+        if not texto:
+            return 0.0
+        texto = str(texto).strip().replace(' ', '')
+        texto = re.sub(r'[^\d,.]', '', texto)
+        if '.' in texto and ',' in texto:
+            texto = texto.replace('.', '').replace(',', '.')
+        elif ',' in texto:
+            texto = texto.replace(',', '.')
         try:
-            with pdfplumber.open(pdf_path) as pdf:
-                for page in pdf.pages:
-                    texto = page.extract_text()
-                    if texto:
-                        texto_completo.append(texto)
+            return float(texto)
+        except:
+            return 0.0
+    
+    def _extraer_texto_ocr(self, pdf_path: str) -> str:
+        """Extrae texto del PDF usando OCR."""
+        if not OCR_DISPONIBLE:
+            return ""
+        
+        try:
+            images = convert_from_path(pdf_path, dpi=300)
+            texto_completo = []
+            for img in images:
+                texto = pytesseract.image_to_string(img)
+                texto_completo.append(texto)
+            return '\n'.join(texto_completo)
         except Exception as e:
-            pass
-        return '\n'.join(texto_completo)
-    
-    def _extraer_cuadro_fiscal(self, texto: str) -> List[Tuple[float, float, float]]:
-        """
-        Extrae el cuadro fiscal del ticket.
-        Retorna lista de tuplas: (tipo_iva, base, cuota)
-        """
-        cuadro = []
-        # Patrón: "4,00% 2,51 0,10"
-        patron = re.compile(r'(\d+,\d{2})%\s+(\d+,\d{2})\s+(\d+,\d{2})')
-        
-        for match in patron.finditer(texto):
-            tipo_iva = float(match.group(1).replace(',', '.'))
-            base = float(match.group(2).replace(',', '.'))
-            cuota = float(match.group(3).replace(',', '.'))
-            cuadro.append((tipo_iva, base, cuota))
-        
-        return cuadro
-    
-    def _determinar_iva_producto(self, descripcion: str) -> int:
-        """Determina el IVA de un producto basándose en su descripción."""
-        desc_upper = descripcion.upper()
-        
-        # Primero buscar en productos IVA 21%
-        for producto in self.PRODUCTOS_IVA_21:
-            if producto in desc_upper:
-                return 21
-        
-        # Luego productos IVA 4%
-        for producto in self.PRODUCTOS_IVA_4:
-            if producto in desc_upper:
-                return 4
-        
-        # Por defecto: 10% (alimentación general)
-        return 10
-    
-    def extraer_lineas(self, texto: str) -> List[Dict]:
-        """
-        Extrae líneas individuales de productos del ticket.
-        """
-        lineas = []
-        cuadro_fiscal = self._extraer_cuadro_fiscal(texto)
-        
-        # Encontrar zona de productos (entre "PVP IVA INCLUIDO" y "TOTAL A PAGAR")
-        lines = texto.split('\n')
-        in_productos = False
-        producto_pendiente = None  # Para manejar líneas de cantidad
-        
-        for i, linea in enumerate(lines):
-            linea = linea.strip()
-            
-            # Inicio zona productos
-            if 'PVP IVA INCLUIDO' in linea:
-                in_productos = True
-                continue
-            
-            # Fin zona productos
-            if 'TOTAL A PAGAR' in linea or '= = =' in linea:
-                in_productos = False
-                continue
-            
-            if not in_productos or not linea:
-                continue
-            
-            # Patrón para línea de cantidad: "5 x ( 1,25 ) 6,25"
-            match_cantidad = re.match(r'^(\d+)\s*x\s*\(\s*(\d+,\d{2})\s*\)\s*(\d+,\d{2})$', linea)
-            if match_cantidad and producto_pendiente:
-                cantidad = int(match_cantidad.group(1))
-                precio_ud = float(match_cantidad.group(2).replace(',', '.'))
-                importe = float(match_cantidad.group(3).replace(',', '.'))
-                
-                iva = self._determinar_iva_producto(producto_pendiente)
-                lineas.append({
-                    'codigo': '',
-                    'articulo': producto_pendiente[:50],
-                    'cantidad': cantidad,
-                    'precio_ud': round(precio_ud, 2),
-                    'iva': iva,
-                    'base': round(importe / (1 + iva / 100), 2),
-                    'importe_iva_inc': importe
-                })
-                producto_pendiente = None
-                continue
-            
-            # Patrón: cantidad al inicio + descripción + importe
-            # "3 BAYETAS MICROFIBRA 1,95"
-            match_con_cantidad = re.match(r'^(\d+)\s+([A-ZÁÉÍÓÚÑa-záéíóúñ][A-ZÁÉÍÓÚÑa-záéíóúñ0-9\s\.\,\-\/\(\)]+?)\s+(\d+,\d{2})$', linea)
-            if match_con_cantidad:
-                cantidad = int(match_con_cantidad.group(1))
-                descripcion = match_con_cantidad.group(2).strip()
-                importe = float(match_con_cantidad.group(3).replace(',', '.'))
-                
-                # Verificar que no sea solo un número (ej: "100 G")
-                if cantidad <= 20 and len(descripcion) >= 3:
-                    iva = self._determinar_iva_producto(descripcion)
-                    lineas.append({
-                        'codigo': '',
-                        'articulo': descripcion[:50],
-                        'cantidad': cantidad,
-                        'precio_ud': round(importe / cantidad, 2),
-                        'iva': iva,
-                        'base': round(importe / (1 + iva / 100), 2),
-                        'importe_iva_inc': importe
-                    })
-                    producto_pendiente = None
-                    continue
-            
-            # Patrón simple: descripción + importe
-            # "SALMON AHUMADO 100 G 4,09"
-            match_simple = re.match(r'^([A-ZÁÉÍÓÚÑa-záéíóúñ][A-ZÁÉÍÓÚÑa-záéíóúñ0-9\s\.\,\-\/\(\)]+?)\s+(\d+,\d{2})$', linea)
-            if match_simple:
-                descripcion = match_simple.group(1).strip()
-                importe = float(match_simple.group(2).replace(',', '.'))
-                
-                if len(descripcion) >= 3:
-                    iva = self._determinar_iva_producto(descripcion)
-                    lineas.append({
-                        'codigo': '',
-                        'articulo': descripcion[:50],
-                        'cantidad': 1,
-                        'precio_ud': round(importe, 2),
-                        'iva': iva,
-                        'base': round(importe / (1 + iva / 100), 2),
-                        'importe_iva_inc': importe
-                    })
-                    producto_pendiente = None
-                    continue
-            
-            # Línea sin importe - podría ser producto con cantidad en siguiente línea
-            # "HIELO CUBITOS 2 KG"
-            if re.match(r'^[A-ZÁÉÍÓÚÑa-záéíóúñ][A-ZÁÉÍÓÚÑa-záéíóúñ0-9\s\.\,\-\/\(\)]+$', linea):
-                if len(linea) >= 3 and not any(x in linea.upper() for x in ['ART.', 'VENTAJAS', 'CLUB', 'VENTA', 'MASTERCARD']):
-                    producto_pendiente = linea
-        
-        # Ajustar bases con cuadro fiscal
-        if cuadro_fiscal and lineas:
-            lineas = self._ajustar_bases_con_cuadro_fiscal(lineas, cuadro_fiscal)
-        
-        # Eliminar campo temporal
-        for l in lineas:
-            if 'importe_iva_inc' in l:
-                del l['importe_iva_inc']
-        
-        return lineas
-    
-    def _ajustar_bases_con_cuadro_fiscal(self, lineas: List[Dict], cuadro_fiscal: List[Tuple]) -> List[Dict]:
-        """Ajusta las bases para que cuadren con el cuadro fiscal."""
-        # Bases del cuadro fiscal
-        bases_fiscales = {}
-        for tipo_iva, base, cuota in cuadro_fiscal:
-            iva_int = int(round(tipo_iva))
-            bases_fiscales[iva_int] = bases_fiscales.get(iva_int, 0) + base
-        
-        # Bases extraídas
-        bases_extraidas = {}
-        for linea in lineas:
-            iva = linea['iva']
-            bases_extraidas[iva] = bases_extraidas.get(iva, 0) + linea['base']
-        
-        # Factores de ajuste
-        factores = {}
-        for iva in bases_extraidas:
-            if iva in bases_fiscales and bases_extraidas[iva] > 0:
-                factores[iva] = bases_fiscales[iva] / bases_extraidas[iva]
-            else:
-                factores[iva] = 1.0
-        
-        # Aplicar ajuste
-        for linea in lineas:
-            iva = linea['iva']
-            if iva in factores:
-                linea['base'] = round(linea['base'] * factores[iva], 2)
-        
-        return lineas
+            print(f"Error OCR: {e}")
+            return ""
     
     def extraer_total(self, texto: str) -> Optional[float]:
-        """Extrae total de la factura."""
-        # Formato: "5 ART. TOTAL A PAGAR : 5,11"
-        m = re.search(r'TOTAL A PAGAR\s*:\s*(\d+,\d{2})', texto)
-        if m:
-            return float(m.group(1).replace(',', '.'))
+        """
+        Extrae TOTAL del ticket.
         
-        # Alternativa: "VENTA 5,11"
-        m = re.search(r'\nVENTA\s+(\d+,\d{2})\n', texto)
-        if m:
-            return float(m.group(1).replace(',', '.'))
+        Estrategia optimizada para OCR de tickets escaneados:
+        1. TOTAL FACTURA con número
+        2. TOTAL PAGADO con número
+        3. Número que aparece 2+ veces (total aparece en COMPRA/PAGADO/FACTURA)
+        4. TOTAL COMPRA con número
+        5. Línea con FACTURA/PAGADO + número al final
+        """
+        texto_norm = texto.upper()
+        
+        # 1. TOTAL FACTURA
+        m1 = re.search(r'TOTAL\s*FACTURA[^\d]*([\d]+[,.][\d]{2})', texto_norm)
+        if m1:
+            return self._convertir_importe(m1.group(1))
+        
+        # 2. TOTAL PAGADO
+        m2 = re.search(r'TOTAL\s*PAGADO[^\d]*([\d]+[,.][\d]{2})', texto_norm)
+        if m2:
+            return self._convertir_importe(m2.group(1))
+        
+        # 3. Número que aparece 2+ veces (el total aparece en múltiples lugares)
+        todos = re.findall(r'([\d]+[,.][\d]{2})', texto)
+        if todos:
+            valores = [self._convertir_importe(v) for v in todos]
+            # Filtrar %IVA y valores pequeños
+            valores_filtrados = [v for v in valores if v not in [21.0, 10.0, 4.0, 0.0] and v > 2]
+            if valores_filtrados:
+                contador = Counter(valores_filtrados)
+                mas_comun = contador.most_common(1)
+                if mas_comun and mas_comun[0][1] >= 2:
+                    return mas_comun[0][0]
+        
+        # 4. TOTAL COMPRA (con espacios en números)
+        m4 = re.search(r'TOTAL\s*COMPRA[^\d]*([\d]+[,.\s]?[\d]{2})', texto_norm)
+        if m4:
+            return self._convertir_importe(m4.group(1).replace(' ', ''))
+        
+        # 5. Líneas con FACTURA/PAGADO + número al final
+        for line in texto.split('\n'):
+            line_upper = line.upper()
+            if ('FACTURA' in line_upper or 'PAGADO' in line_upper) and '%' not in line:
+                m = re.search(r'([\d]+[,.\s]?[\d]{2})\s*$', line.strip())
+                if m:
+                    val = self._convertir_importe(m.group(1).replace(' ', ''))
+                    if 1 < val < 500:
+                        return val
         
         return None
     
+    def extraer_cuadro_fiscal(self, texto: str) -> List[Dict]:
+        """
+        Extrae cuadro fiscal con múltiples tipos de IVA.
+        
+        Formato: %IVA BASE CUOTA TOTAL
+        Ej: "4,00% 2,34 0,10 2,44"
+        """
+        cuadros = []
+        
+        patron = re.compile(
+            r'(\d{1,2})[,.]?(\d{0,2})\s*%\s+'
+            r'([\d]+[,.][\d]{2})\s+'
+            r'([\d]+[,.][\d]{2})\s+'
+            r'([\d]+[,.][\d]{2})',
+            re.IGNORECASE
+        )
+        
+        for m in patron.finditer(texto):
+            iva_entero = int(m.group(1))
+            iva_decimal = m.group(2) or '0'
+            iva = float(f"{iva_entero}.{iva_decimal}")
+            base = self._convertir_importe(m.group(3))
+            cuota = self._convertir_importe(m.group(4))
+            total = self._convertir_importe(m.group(5))
+            
+            cuadros.append({
+                'iva': iva,
+                'base': base,
+                'cuota': cuota,
+                'total': total
+            })
+        
+        return cuadros
+    
+    def extraer_lineas(self, texto: str) -> List[Dict]:
+        """
+        Extrae líneas de productos del ticket.
+        
+        Formato: CANT DESCRIPCION %IVA IMPORTE
+        Ej: "2 RUCULA CRF BL/50GR 4,00 1,50"
+        """
+        lineas = []
+        
+        patron = re.compile(
+            r'^(\d+)\s+'                           # Cantidad
+            r'([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ0-9\s/,\.]+?)\s+'  # Descripción
+            r'(\d{1,2}[,.]00)\s+'                  # %IVA (4,00 / 10,00 / 21,00)
+            r'([\d]+[,.][\d]{2})',                 # Importe
+            re.MULTILINE
+        )
+        
+        for m in patron.finditer(texto):
+            cantidad = int(m.group(1))
+            descripcion = m.group(2).strip()
+            iva = int(self._convertir_importe(m.group(3)))
+            importe = self._convertir_importe(m.group(4))
+            
+            # Determinar categoría por IVA
+            if iva == 4:
+                categoria = 'FRUTAS Y VERDURAS'
+            elif iva == 10:
+                categoria = 'ALIMENTACION'
+            else:
+                categoria = 'LIMPIEZA'
+            
+            lineas.append({
+                'codigo': '',
+                'articulo': descripcion[:50],
+                'cantidad': cantidad,
+                'precio_ud': importe / cantidad if cantidad > 0 else importe,
+                'iva': iva,
+                'base': importe / (1 + iva/100),  # Calcular base desde importe con IVA
+                'categoria': categoria
+            })
+        
+        return lineas
+    
     def extraer_fecha(self, texto: str) -> Optional[str]:
         """Extrae fecha del ticket."""
-        # Formato: "02/02/2025 12:06:14"
-        m = re.search(r'(\d{2})/(\d{2})/(\d{4})\s+\d{2}:\d{2}', texto)
+        # Formato: "FECHA FACTURA: 04/01/2025" o "FECHA: 04/01/2025"
+        m = re.search(r'FECHA[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
         if m:
-            return f"{m.group(1)}/{m.group(2)}/{m.group(3)}"
-        
-        # Formato alternativo: "02/02/25"
-        m = re.search(r'(\d{2})/(\d{2})/(\d{2})\s+\d{2}:\d{2}', texto)
+            return m.group(1)
+        return None
+    
+    def extraer_referencia(self, texto: str) -> Optional[str]:
+        """Extrae número de factura."""
+        # Formato: "FACTURA N.: A250000005" o "FAC URA N : A250000146"
+        m = re.search(r'FA?C?T?U?RA?\s*N[.:]?\s*:?\s*([A-Z]?\d{6,12})', texto, re.IGNORECASE)
         if m:
-            return f"{m.group(1)}/{m.group(2)}/20{m.group(3)}"
-        
+            return m.group(1)
         return None

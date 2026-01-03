@@ -1,109 +1,149 @@
+# -*- coding: utf-8 -*-
 """
-Extractor para BENJAMIN ORTEGA ALONSO
+Extractor para BENJAMIN ORTEGA ALONSO.
+Alquiler local Calle Rodas 2, Madrid.
 
-Alquiler local Calle Rodas 2 (persona física)
 NIF: 09342596L
-Dirección: Abades 16 3ºC, 28012 Madrid
+Método: pdfplumber
 
-METODO: pdfplumber (PDF texto)
+Formato factura:
+- Base: 500,00€ (SUBTOTAL)
+- IVA: 21% = 105,00€
+- Retención IRPF: 19% = -95,00€
+- TOTAL A PAGAR: 510,00€
 
-Factura mensual:
-- Base: 500€
-- IVA 21%: 105€
-- Retención IRPF 19%: -95€
-- Total a pagar: 510€
-
-Categoría: ALQUILER
+IMPORTANTE: La retención se modela como línea negativa con IVA 0%
+para que el cuadre funcione: 500×1.21 + (-95)×1.00 = 510€ ✓
 
 Creado: 21/12/2025
-Corregido: 26/12/2025 - Símbolo € 
-Validado: 4/4 facturas (2T25-3T25)
+Corregido: 01/01/2026 - Retención como línea negativa
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
 from typing import List, Dict, Optional
 import re
-import pdfplumber
 
 
-@registrar('BENJAMIN ORTEGA', 'BENJAMIN ORTEGA ALONSO', 'ORTEGA ALONSO')
+@registrar(
+    'BENJAMIN ORTEGA',
+    'BENJAMIN ORTEGA ALONSO',
+    'BENJAMIN ORTEGA  OJO RETENCION',
+    'BENJAMIN ORTEGA OJO RETENCION'
+)
 class ExtractorBenjaminOrtega(ExtractorBase):
-    """Extractor para facturas de alquiler de BENJAMIN ORTEGA ALONSO."""
+    """Extractor para BENJAMIN ORTEGA ALONSO (alquiler local)."""
     
     nombre = 'BENJAMIN ORTEGA ALONSO'
-    cif = '09342596L'  # NIF persona física
-    iban = ''  # PENDIENTE
+    cif = '09342596L'
+    iban = ''
     metodo_pdf = 'pdfplumber'
-    categoria_fija = 'ALQUILER'
-    tiene_retencion = True
-    
-    def extraer_texto_pdfplumber(self, pdf_path: str) -> str:
-        """Extrae texto con pdfplumber."""
-        texto = ""
-        with pdfplumber.open(pdf_path) as pdf:
-            for page in pdf.pages:
-                t = page.extract_text()
-                if t:
-                    texto += t + "\n"
-        return texto
+    categoria_fija = 'ALQUILER LOCAL'
+    RETENCION_PORCENTAJE = 19
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
-        """
-        Extrae línea de alquiler.
+        """Extrae líneas incluyendo la retención como línea negativa."""
+        if not texto:
+            return []
         
-        Formato factura:
-        DESCRIPCIÓN                    IMPORTE
-        Alquiler mensual local...      500,00 €
-        SUBTOTAL                       500,00 €
-        IVA AL 21%                     105,00 €
-        RETENCION 19%                  -95,00 €
-        TOTAL                          510,00 €
-        """
         lineas = []
         
-        # Base (SUBTOTAL)
-        m_base = re.search(r'SUBTOTAL\s*([\d.,]+)\s*€', texto)
-        if m_base:
-            base = float(m_base.group(1).replace('.', '').replace(',', '.'))
-            lineas.append({
-                'codigo': '',
-                'articulo': 'ALQUILER LOCAL RODAS 2',
-                'cantidad': 1,
-                'precio_ud': base,
-                'iva': 21,
-                'base': base
-            })
+        # Extraer base (SUBTOTAL)
+        base = self._extraer_subtotal(texto)
+        if not base:
+            return []
+        
+        # Extraer descripción
+        descripcion = self._extraer_descripcion(texto)
+        
+        # Línea 1: Alquiler con IVA 21%
+        lineas.append({
+            'codigo': '',
+            'articulo': descripcion,
+            'cantidad': 1,
+            'precio_ud': base,
+            'iva': 21,
+            'base': base
+        })
+        
+        # Línea 2: Retención IRPF como línea NEGATIVA con IVA 0%
+        retencion = round(base * self.RETENCION_PORCENTAJE / 100, 2)
+        lineas.append({
+            'codigo': '',
+            'articulo': f'RETENCION IRPF {self.RETENCION_PORCENTAJE}%',
+            'cantidad': 1,
+            'precio_ud': -retencion,
+            'iva': 0,
+            'base': -retencion
+        })
         
         return lineas
     
+    def _extraer_subtotal(self, texto: str) -> Optional[float]:
+        """Extrae el subtotal (base imponible)."""
+        patron = re.search(r'SUBTOTAL\s+(\d+[,\.]\d+)\s*€?', texto, re.IGNORECASE)
+        if patron:
+            return self._convertir_europeo(patron.group(1))
+        
+        patron2 = re.search(r'Alquiler.*?(\d+[,\.]\d+)\s*€', texto, re.IGNORECASE)
+        if patron2:
+            return self._convertir_europeo(patron2.group(1))
+        
+        return None
+    
+    def _extraer_descripcion(self, texto: str) -> str:
+        """Extrae la descripción del servicio."""
+        patron = re.search(r'(Alquiler\s+mensual\s+local[^\n\d]*)', texto, re.IGNORECASE)
+        if patron:
+            return patron.group(1).strip()[:50]
+        return 'ALQUILER LOCAL RODAS 2'
+    
     def extraer_total(self, texto: str) -> Optional[float]:
-        """
-        Extrae total de la factura.
-        Total = Base + IVA - Retención
-        """
-        m_total = re.search(r'^TOTAL\s+([\d.,]+)\s*€', texto, re.MULTILINE)
-        if m_total:
-            return float(m_total.group(1).replace('.', '').replace(',', '.'))
+        """Extrae el total a pagar (después de retención)."""
+        if not texto:
+            return None
+        
+        # Usar lookbehind negativo para excluir SUBTOTAL
+        patron = re.search(r'(?<!SUB)TOTAL\s+(\d+[,\.]\d+)\s*€?', texto, re.IGNORECASE)
+        if patron:
+            return self._convertir_europeo(patron.group(1))
+        
         return None
     
     def extraer_fecha(self, texto: str) -> Optional[str]:
-        """Extrae fecha de la factura."""
-        m = re.search(r'Fecha:\s*(\d{2})-(\d{2})-(\d{2,4})', texto)
-        if m:
-            dia, mes, año = m.groups()
-            if len(año) == 2:
-                año = '20' + año
-            return f"{dia}/{mes}/{año}"
+        """Extrae la fecha de la factura."""
+        if not texto:
+            return None
+        
+        patron = re.search(r'Fecha:\s*(\d{2})-(\d{2})-(\d{2})', texto, re.IGNORECASE)
+        if patron:
+            dia = patron.group(1)
+            mes = patron.group(2)
+            ano = patron.group(3)
+            return f"{dia}/{mes}/20{ano}"
+        
         return None
     
     def extraer_numero_factura(self, texto: str) -> Optional[str]:
-        """Extrae número de factura."""
-        m = re.search(r'N\.º de factura:\s*(\d+-\d+)', texto)
-        return m.group(1) if m else None
-    
-    def extraer_retencion(self, texto: str) -> Optional[float]:
-        """Extrae importe de retención IRPF."""
-        m = re.search(r'RETENCION.*?-?\s*(\d+[.,]\d{2})\s*€', texto)
-        if m:
-            return float(m.group(1).replace(',', '.'))
+        """Extrae el número de factura."""
+        if not texto:
+            return None
+        
+        patron = re.search(r'N[.º°]\s*de\s+factura:\s*([^\n]+)', texto, re.IGNORECASE)
+        if patron:
+            return patron.group(1).strip()
+        
         return None
+    
+    def _convertir_europeo(self, texto: str) -> float:
+        """Convierte formato europeo a float."""
+        if not texto:
+            return 0.0
+        texto = str(texto).strip()
+        if ',' in texto and '.' in texto:
+            texto = texto.replace('.', '').replace(',', '.')
+        elif ',' in texto:
+            texto = texto.replace(',', '.')
+        try:
+            return float(texto)
+        except:
+            return 0.0

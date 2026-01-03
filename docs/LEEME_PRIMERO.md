@@ -1,7 +1,7 @@
 # 📖 LEEME PRIMERO - ParsearFacturas
 
-**Versión:** v5.4  
-**Fecha:** 31/12/2025  
+**Versión:** v5.9  
+**Fecha:** 03/01/2026  
 **Autor:** Tasca Barea + Claude  
 **Repositorio:** https://github.com/TascaBarea/ParsearFacturas (privado)
 
@@ -9,22 +9,37 @@
 
 ## ⚠️ IMPORTANTE - LEER ANTES DE CONTINUAR
 
-### Estado actual (31/12/2025)
+### Estado actual (03/01/2026 noche)
 
-**Última sesión - 1 extractor nuevo + 2 mejorados:**
+**Última sesión - Fix categoria_fija:**
 ```
-lavapies.py             # NUEVO - IVA deducido de factura (13/13 ✅)
-bodegas_munoz.py        # MEJORADO - Soporte OCR (4/4 ✅)
-gredales.py             # MEJORADO - Líneas individuales (5/5 ✅)
+main.py v5.9           # Fix: categoria_fija como fallback
+praizal.py             # NUEVO extractor (Quesos)
+fishgourmet.py         # CORREGIDO: SALAZONES (no AHUMADOS PESCADO)
+7 extractores          # Añadido categoria_fija
+```
+
+**⚠️ PROBLEMA PENDIENTE:** SIN_PROVEEDOR sigue apareciendo. Limpiar TODOS los cachés:
+```cmd
+rmdir /s /q extractores\__pycache__
+rmdir /s /q nucleo\__pycache__
+rmdir /s /q salidas\__pycache__
+rmdir /s /q __pycache__
 ```
 
 ### Para verificar que todo funciona
 ```cmd
 cd C:\_ARCHIVOS\TRABAJO\Facturas\ParsearFacturas-main
+python main.py --version
+```
+
+Debe mostrar: **v5.9**
+
+```cmd
 python -c "from extractores import listar_extractores; print(len(listar_extractores()), 'extractores')"
 ```
 
-Debe mostrar: **~140 extractores**
+Debe mostrar: **~83 extractores**
 
 ---
 
@@ -43,17 +58,17 @@ PDF factura → Detectar proveedor → Extractor específico → Líneas product
 
 ---
 
-## 📊 ESTADO ACTUAL (31/12/2025)
+## 📊 ESTADO ACTUAL (03/01/2026)
 
 ### Métricas de procesamiento
 
 | Trimestre | Facturas | Cuadre OK | % |
 |-----------|----------|-----------|---|
-| 1T25 | ~250 | ~150 | ~60% |
-| 2T25 | ~300 | ~180 | ~60% |
-| 3T25 | ~160 | ~96 | ~60% |
-| 4T25 | ~200 | ~120 | ~60% |
-| **TOTAL** | **~910** | **~546** | **~60%** |
+| 1T25 | 252 | 188 | **74.6%** ⭐ |
+| 2T25 | 307 | 183 | 59.6% |
+| 3T25 | 161 | 99 | 61.5% |
+| 4T25 | 217 | 156 | **71.9%** |
+| **TOTAL** | **937** | **626** | **~67%** |
 
 **Objetivo:** 80% cuadre OK
 
@@ -63,12 +78,10 @@ PDF factura → Detectar proveedor → Extractor específico → Líneas product
 |---------|-------|--------|------------------|
 | v3.5 | 09/12/2025 | 42% | Baseline - 70 extractores |
 | v4.0 | 18/12/2025 | 54% | Arquitectura modular @registrar |
-| v4.5 | 21/12/2025 | ~70% | +20 extractores |
-| v5.0 | 26/12/2025 | 54% | Normalización + prorrateo portes |
-| v5.1 | 26/12/2025 | 57.8% | +16 extractores nuevos |
-| v5.2 | 28/12/2025 | ~57% | +6 extractores (ECOMS, VIRGEN...) |
-| v5.3 | 29-30/12/2025 | ~58% | Bugs corregidos + 4 extractores |
-| **v5.4** | **31/12/2025** | **~60%** | **+LAVAPIES, mejoras OCR** |
+| v5.5 | 01/01/2026 | ~62% | +BM SUPERMERCADOS, FELISA |
+| v5.7 | 01/01/2026 | ~66% | LA ROSQUILLERIA corregido |
+| v5.8 | 02/01/2026 | ~66% | Nueva hoja Facturas (cabeceras) |
+| **v5.9** | **03/01/2026** | **~67%** | **Fix categoria_fija, +PRAIZAL** |
 
 ---
 
@@ -77,18 +90,19 @@ PDF factura → Detectar proveedor → Extractor específico → Líneas product
 ```
 ParsearFacturas-main/
 │
-├── 📄 main.py                 # Punto de entrada principal
+├── 📄 main.py                 # Punto de entrada principal v5.9
 ├── 📄 requirements.txt        # Dependencias Python
 │
-├── 📦 extractores/            # ⭐ ~140 EXTRACTORES
+├── 📦 extractores/            # ⭐ ~83 EXTRACTORES
 │   ├── __init__.py            # Sistema de registro @registrar
 │   ├── base.py                # Clase base ExtractorBase
-│   └── [140+ extractores]     # Un archivo por proveedor
+│   └── [83+ extractores]      # Un archivo por proveedor
 │
 ├── 📁 nucleo/                 # Funciones core
 ├── 📁 salidas/                # Generación Excel/logs
+│   └── excel.py               # ⭐ v5.8 con hoja Facturas
 ├── 📁 datos/                  # DiccionarioProveedoresCategoria.xlsx
-├── 📁 config/                 # Configuración
+├── 📁 config/                 # Configuración (settings.py)
 ├── 📁 docs/                   # Documentación
 ├── 📁 tests/                  # Testing
 └── 📁 outputs/                # Salidas generadas
@@ -98,60 +112,48 @@ ParsearFacturas-main/
 
 ## ✅ SESIONES RECIENTES
 
-### 31/12/2025 - Sesión actual (v5.4)
+### 03/01/2026 noche - Sesión actual (v5.9)
 
-| Proveedor | CIF | Facturas | Método | Peculiaridad |
-|-----------|-----|----------|--------|--------------|
-| **DISTRIBUCIONES LAVAPIES** | F88424072 | 13/13 ✅ | pdfplumber | **IVA deducido de factura** |
-| BODEGAS MUÑOZ MARTIN | E83182683 | 4/4 ✅ | **híbrido** | OCR para escaneadas |
-| LOS GREDALES | B83594150 | 5/5 ✅ | pdfplumber | Líneas individuales |
+| Módulo | Cambio | Estado |
+|--------|--------|--------|
+| **main.py** | Fix categoria_fija fallback | ✅ LISTO |
+| **praizal.py** | Nuevo extractor | ✅ LISTO |
+| **fishgourmet.py** | Categoría → SALAZONES | ✅ LISTO |
+| **7 extractores** | + categoria_fija | ✅ LISTO |
 
-**Técnicas nuevas:**
-- **IVA deducido por subset-sum:** Para proveedores con IVA variable/errores
-- **Sistema de avisos:** Alerta cuando IVA factura ≠ IVA esperado
+**Problema pendiente:** SIN_PROVEEDOR (posible caché)
 
-### 30/12/2025 - Sesión anterior
+### 02/01/2026 noche - (v5.8)
 
-| Proveedor | CIF | Estado |
-|-----------|-----|--------|
-| DE LUIS | B78380685 | ✅ Corregido (deduplicación) |
-| ALFARERIA TALAVERANA | B45007374 | ✅ Corregido (descuento/portes) |
-| PORVAZ | E36131709 | ✅ Corregido (bug Ñ ZAMBURIÑA) |
-| INMAREPRO | B86310109 | ✅ Nuevo (mantenimiento extintores) |
-
-### 29/12/2025 - Bugs corregidos
-
-| Extractor | Problema | Solución |
-|-----------|----------|----------|
-| DEBORA GARCIA | IRPF mal calculado | Corregido |
-| FELISA | No detectaba alias | Alias añadido |
-| HERNÁNDEZ BODEGA | Encoding Ñ | UTF-8 |
-| SILVA CORDERO | IVA mixto | Corregido |
-| **base.py** | extraer_referencia no llamaba a extraer_numero_factura | **SOLUCIONADO** |
+| Módulo | Cambio | Estado |
+|--------|--------|--------|
+| **salidas/excel.py** | Nueva hoja "Facturas" | ✅ LISTO |
+| **salidas/excel.py** | Integración cuentas | ✅ LISTO |
 
 ---
 
 ## ⚠️ PROBLEMAS CONOCIDOS Y PENDIENTES
 
+### 🔴 CRÍTICO - Resolver primero
+
+**SIN_PROVEEDOR aparece** a pesar de categoria_fija definida:
+```cmd
+# Diagnóstico
+python -c "from extractores.artesanos_mollete import *; print(ExtractorArtesanosMollete.categoria_fija)"
+# Debe mostrar: PAN Y BOLLERIA
+
+# Si muestra error o vacío → problema de importación
+# Si muestra bien pero Excel tiene SIN_PROVEEDOR → problema en main.py
+```
+
 ### Proveedores prioritarios
 
 | # | Proveedor | Errores | Tipo | Dificultad |
 |---|-----------|---------|------|------------|
-| 1 | **BM SUPERMERCADOS** | 37 | DESCUADRE | 🟡 Media |
-| 2 | **JIMELUZ** | 19 | OCR | 🔴 Alta |
-| 3 | **FELISA GOURMET** | 12 | DESCUADRE | 🟢 Fácil |
-| 4 | **LA ROSQUILLERIA** | 10 | OCR | 🔴 Alta |
-| 5 | JAMONES BERNAL | 6 | DESCUADRE | 🟡 Media |
-| 6 | SILVA CORDERO | 5 | DESCUADRE | 🟡 Media |
-
-### Por tipo de error
-
-| Error | Cantidad | Acción |
-|-------|----------|--------|
-| DESCUADRE | ~80 | Revisar extractor |
-| SIN_TOTAL | ~30 | Crear/arreglar extractor |
-| SIN_LINEAS | ~15 | Crear extractor |
-| FECHA_PENDIENTE | ~10 | Mejorar extractor |
+| 1 | **JIMELUZ** | 21 | OCR | 🔴 Alta |
+| 2 | **DIA/ECOMS** | 17 | SIN_LINEAS | 🟡 Media |
+| 3 | **MARITA COSTA** | 8 | DESCUADRE | 🟡 Media |
+| 4 | **LA ROSQUILLERIA** | 7 | SIN_LINEAS | 🟡 Media |
 
 ---
 
@@ -161,14 +163,14 @@ ParsearFacturas-main/
 
 ```cmd
 cd C:\_ARCHIVOS\TRABAJO\Facturas\ParsearFacturas-main
-python main.py -i "C:\path\to\facturas\4 TRI 2025"
+python main.py -i "C:\path\to\facturas\2 TRI 2025"
 ```
 
 ### Probar un extractor específico
 
 ```cmd
-python tests/probar_extractor.py "LAVAPIES" "factura.pdf"
-python tests/probar_extractor.py "LAVAPIES" "factura.pdf" --debug
+python tests/probar_extractor.py "PRAIZAL" "factura.pdf"
+python tests/probar_extractor.py "BM" "factura.pdf" --debug
 ```
 
 ### Añadir nuevo extractor
@@ -176,8 +178,9 @@ python tests/probar_extractor.py "LAVAPIES" "factura.pdf" --debug
 1. Copiar plantilla: `extractores/_plantilla.py` → `extractores/nuevo.py`
 2. Cambiar nombre, CIF, variantes en `@registrar()`
 3. Implementar `extraer_lineas()` con líneas individuales
-4. Probar con facturas reales
-5. ¡Listo! Se registra automáticamente
+4. Si categoría única → añadir `categoria_fija = 'CATEGORIA'`
+5. Probar con facturas reales
+6. ¡Listo! Se registra automáticamente
 
 ---
 
@@ -193,17 +196,25 @@ lineas.append({'articulo': 'PRODUCTOS IVA 10%', 'base': 500.00, 'iva': 10})
 lineas.append({'articulo': 'QUESO MANCHEGO', 'cantidad': 2, 'base': 15.50, 'iva': 10})
 ```
 
-### 2. Portes: distribuir proporcionalmente
+### 2. categoria_fija para proveedores mono-categoría
 
 ```python
-# Los portes NUNCA van como línea separada
-if portes > 0:
+class ExtractorNuevo(ExtractorBase):
+    nombre = 'NUEVO PROVEEDOR'
+    categoria_fija = 'CATEGORIA'  # Se usa automáticamente si línea no tiene categoría
+```
+
+### 3. Portes: distribuir proporcionalmente
+
+```python
+# Si portes tienen mismo IVA que productos → prorratear
+if portes > 0 and iva_portes == iva_productos:
     for linea in lineas:
         proporcion = linea['base'] / base_total
         linea['base'] += portes * proporcion
 ```
 
-### 3. Formato números europeo
+### 4. Formato números europeo
 
 ```python
 def _convertir_europeo(self, texto):
@@ -212,10 +223,7 @@ def _convertir_europeo(self, texto):
     return float(texto)
 ```
 
-### 4. Tolerancia de cuadre: 0.10€
-
-### 5. IVA variable: deducir de factura
-Para proveedores con errores frecuentes de IVA (ej: LAVAPIES), deducir el IVA de las bases imponibles de la factura usando algoritmo subset-sum.
+### 5. Tolerancia de cuadre: 0.10€
 
 ---
 
@@ -226,12 +234,12 @@ Antes de cada sesión de trabajo:
 - [ ] ¿Está el Excel de salida cerrado?
 - [ ] ¿Hay facturas nuevas por procesar?
 - [ ] ¿El último commit de GitHub está actualizado?
-- [ ] ¿Subiste ESTADO_PROYECTO.md y PROVEEDORES.md a Claude?
+- [ ] Subir a Claude: ESTADO_PROYECTO.md, LEEME_PRIMERO.md, SESION_XX.md
 
 Después de añadir extractores:
 
 - [ ] ¿Están copiados a `extractores/`?
-- [ ] ¿Se limpió el caché? (`rmdir /s /q __pycache__`)
+- [ ] ¿Se limpió el caché? (`rmdir /s /q __pycache__` en TODAS las carpetas)
 - [ ] ¿Se ejecutó test con facturas reales?
 - [ ] ¿Se actualizó la documentación?
 
@@ -241,14 +249,12 @@ Después de añadir extractores:
 
 | Fecha | Versión | Cambios |
 |-------|---------|---------|
-| **31/12/2025** | **v5.4** | **+LAVAPIES (IVA deducido), MUÑOZ OCR, GREDALES líneas** |
-| 30/12/2025 | v5.3+ | DE LUIS, ALFARERIA, PORVAZ, INMAREPRO |
-| 29/12/2025 | v5.3 | Bugs: DEBORA, FELISA, HERNÁNDEZ, SILVA, base.py |
-| 28/12/2025 | v5.2 | +6: ECOMS, VIRGEN, MARITA, CASA DUQUE, CELONIS, PIFEMA |
-| 26/12/2025 | v5.1 | +16: YOIGO, SOM, OPENAI, ANTHROPIC... |
-| 21/12/2025 | v4.5 | +20 extractores (OCR: ROSQUILLERIA, FISHGOURMET) |
-| 18/12/2025 | v4.0 | Arquitectura modular @registrar |
+| **03/01/2026 noche** | **v5.9** | **Fix categoria_fija, +PRAIZAL, FISHGOURMET→SALAZONES** |
+| 02/01/2026 noche | v5.8 | Nueva hoja Facturas, integración cuentas |
+| 01/01/2026 noche | v5.7 | LA ROSQUILLERIA (IVA 10%), +4 verificados |
+| 01/01/2026 mañana | v5.5 | +BM SUPERMERCADOS, FELISA |
+| 31/12/2025 | v5.4 | +LAVAPIES, MUÑOZ OCR, GREDALES |
 
 ---
 
-*Última actualización: 31/12/2025 - ¡Feliz Año Nuevo! 🎉*
+*Última actualización: 03/01/2026 (noche)*

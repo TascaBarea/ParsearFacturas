@@ -3,8 +3,8 @@
 Extractor para PABLO RUIZ HERRERA - LA DOLOROSA CASA DE FERMENTOS
 
 Productos fermentados artesanales:
-- Degustaciones de vermut
-- Encurtidos fermentados
+- Talleres/degustaciones de vermut
+- Encurtidos fermentados (pepinillos, kimchi, escabeche)
 - Fermentos varios
 
 DNI: 32081620R (autónomo)
@@ -12,14 +12,19 @@ IBAN: ES27 0049 4680 8124 1609 2645
 
 IVA: 21% (productos gourmet/servicios)
 
+FORMATO FACTURA:
+El total aparece ANTES de la palabra "TOTAL", no después:
+    150,03 €
+    TOTAL
+
 Creado: 27/12/2025
-Corregido: 28/12/2025 - Integración con sistema
+Corregido: 01/01/2026 - Fix patrón extracción total
+Validado: 5/5 facturas (3T25-4T25)
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
 from typing import List, Dict, Optional
 import re
-import pdfplumber
 
 
 @registrar('PABLO RUIZ', 'LA DOLOROSA', 'PABLO RUIZ LA DOLOROSA', 
@@ -33,38 +38,38 @@ class ExtractorPabloRuiz(ExtractorBase):
     metodo_pdf = 'pdfplumber'
     categoria_fija = 'FERMENTOS'
     
-    def extraer_texto(self, pdf_path: str) -> str:
-        """Extrae texto del PDF."""
-        texto_completo = []
+    def _convertir_europeo(self, texto: str) -> float:
+        """Convierte formato europeo a float."""
+        if not texto:
+            return 0.0
+        texto = str(texto).strip().replace('€', '').strip()
+        if '.' in texto and ',' in texto:
+            texto = texto.replace('.', '').replace(',', '.')
+        elif ',' in texto:
+            texto = texto.replace(',', '.')
         try:
-            with pdfplumber.open(pdf_path) as pdf:
-                for page in pdf.pages:
-                    texto = page.extract_text()
-                    if texto:
-                        texto_completo.append(texto)
-        except Exception as e:
-            pass
-        return '\n'.join(texto_completo)
+            return float(texto)
+        except:
+            return 0.0
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         """
         Extrae líneas de productos.
         
-        Formato:
-        Descripción Unidades Precio Unitario Total
-        Degustación Vermut 7/10 3 12,40 € 37,20 €
-        Degustacion Encurtidos 15/10 13 12,40 € 161,20 €
+        Formatos posibles:
+        - Taller vermut 10/12 10 12,40 € 123,99 €
+        - Apio Fermentado 200gr 5 2,90 € 14,50 €
+        - Pepinillos encurtidos 1KG 1 15,00 € 15,00 €
         """
         lineas = []
         
-        # Patrón para líneas de producto
-        # DESCRIPCION + UNIDADES + PRECIO € + TOTAL €
+        # Patrón general: DESCRIPCION + UNIDADES + PRECIO € + TOTAL €
         patron = re.compile(
-            r'^(Degustaci[oó]n\s+[A-Za-záéíóúñ]+(?:\s+\d+/\d+)?)\s+'  # Descripción con fecha opcional
-            r'(\d+)\s+'                                                # Unidades
-            r'(\d+[.,]\d{2})\s*€\s+'                                   # Precio unitario
-            r'(\d+[.,]\d{2})\s*€',                                     # Total
-            re.MULTILINE | re.IGNORECASE
+            r'^([A-Za-záéíóúñÁÉÍÓÚÑ][A-Za-záéíóúñÁÉÍÓÚÑ0-9\s/,\.]+?)\s+'  # Descripción
+            r'(\d+)\s+'                                                    # Unidades
+            r'([\d,]+)\s*€\s+'                                            # Precio unitario
+            r'([\d,]+)\s*€',                                              # Total línea
+            re.MULTILINE
         )
         
         for match in patron.finditer(texto):
@@ -73,7 +78,10 @@ class ExtractorPabloRuiz(ExtractorBase):
             precio_ud = self._convertir_europeo(match.group(3))
             total = self._convertir_europeo(match.group(4))
             
+            # Filtrar líneas vacías o de cabecera
             if total < 0.01:
+                continue
+            if any(x in descripcion.upper() for x in ['DESCRIPCION', 'UNIDADES', 'PRECIO']):
                 continue
             
             lineas.append({
@@ -88,21 +96,47 @@ class ExtractorPabloRuiz(ExtractorBase):
         
         return lineas
     
-    def extraer_numero_factura(self, texto: str) -> Optional[str]:
+    def extraer_total(self, texto: str) -> Optional[float]:
         """
-        Extrae número de factura.
-        Formato: "Número de factura: TB-2025-03"
-        """
-        patron = re.search(r'Número\s+de\s+factura:\s*(TB-\d{4}-\d+)', texto, re.IGNORECASE)
-        if patron:
-            return patron.group(1)
+        Extrae total de la factura.
         
-        # Alternativa sin acento
-        patron2 = re.search(r'Numero\s+de\s+factura:\s*(TB-\d{4}-\d+)', texto, re.IGNORECASE)
-        if patron2:
-            return patron2.group(1)
+        FORMATO LA DOLOROSA:
+            150,03 €
+            TOTAL
+        
+        El número € viene ANTES de la palabra TOTAL.
+        El total final es el último match de este patrón.
+        """
+        # Patrón: número € seguido de TOTAL (con posible salto de línea)
+        matches = re.findall(r'([\d,.]+)\s*€\s*\n?\s*TOTAL', texto)
+        if matches:
+            # El último match es el total final
+            return self._convertir_europeo(matches[-1])
+        
+        # Alternativa: buscar todos los importes € y tomar el mayor
+        todos = re.findall(r'([\d,.]+)\s*€', texto)
+        if todos:
+            valores = [self._convertir_europeo(v) for v in todos]
+            return max(valores)
         
         return None
+    
+    def extraer_base_iva(self, texto: str) -> tuple:
+        """Extrae base imponible e IVA."""
+        base = 0.0
+        iva = 0.0
+        
+        # BASE: primer número € antes de TOTAL
+        matches = re.findall(r'([\d,.]+)\s*€\s*\n?\s*TOTAL', texto)
+        if len(matches) >= 2:
+            base = self._convertir_europeo(matches[0])
+        
+        # IVA: buscar "IVA(21%)" o "IVA:" seguido de número
+        m_iva = re.search(r'IVA\(?21%?\)?\s*:?\s*([\d,.]+)\s*€', texto)
+        if m_iva:
+            iva = self._convertir_europeo(m_iva.group(1))
+        
+        return base, iva
     
     def extraer_fecha(self, texto: str) -> Optional[str]:
         """Extrae fecha de factura."""
@@ -111,45 +145,22 @@ class ExtractorPabloRuiz(ExtractorBase):
             return patron.group(1)
         return None
     
-    def extraer_total(self, texto: str) -> Optional[float]:
+    def extraer_referencia(self, texto: str) -> Optional[str]:
         """
-        Extrae total de la factura.
-        El total final está en una línea sola antes del segundo "TOTAL".
-        Formato: "405,11 €" seguido de "TOTAL"
+        Extrae número de factura.
+        Formato: "Número de factura: TB-2025-03"
         """
-        # Buscar importe seguido de € en línea sola (el mayor)
-        importes = re.findall(r'^(\d+[.,]\d{2})\s*€\s*$', texto, re.MULTILINE)
-        if importes:
-            return self._convertir_europeo(importes[-1])
-        
-        # Alternativa: buscar todos los importes y tomar el mayor
-        todos = re.findall(r'(\d+[.,]\d{2})\s*€', texto)
-        if todos:
-            valores = [self._convertir_europeo(v) for v in todos]
-            return max(valores)
-        
-        return None
-    
-    def extraer_base_total(self, texto: str) -> Optional[float]:
-        """
-        Extrae base imponible.
-        Formato: "Comentarios adicionales: 334,80 €" o "TOTAL 334,80 €"
-        """
-        patron = re.search(r'Comentarios\s+adicionales:\s*(\d+[.,]\d{2})\s*€', texto)
+        # Con acento
+        patron = re.search(r'Número\s+de\s+factura:\s*(TB-\d{4}-\d+)', texto, re.IGNORECASE)
         if patron:
-            return self._convertir_europeo(patron.group(1))
+            return patron.group(1)
+        
+        # Sin acento
+        patron2 = re.search(r'Numero\s+de\s+factura:\s*(TB-\d{4}-\d+)', texto, re.IGNORECASE)
+        if patron2:
+            return patron2.group(1)
+        
         return None
     
-    def _convertir_europeo(self, texto: str) -> float:
-        """Convierte formato europeo a float."""
-        if not texto:
-            return 0.0
-        texto = texto.strip().replace('€', '').strip()
-        if '.' in texto and ',' in texto:
-            texto = texto.replace('.', '').replace(',', '.')
-        elif ',' in texto:
-            texto = texto.replace(',', '.')
-        try:
-            return float(texto)
-        except:
-            return 0.0
+    # Alias para compatibilidad
+    extraer_numero_factura = extraer_referencia

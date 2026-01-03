@@ -1,6 +1,6 @@
 # PROVEEDORES - Estado de Extractores
 
-**Actualizado:** 31/12/2025 | **Versión:** v5.4
+**Actualizado:** 01/01/2026 (noche) | **Versión:** v5.7
 
 ---
 
@@ -8,10 +8,60 @@
 
 | Estado | Cantidad | % |
 |--------|----------|---|
-| ✅ Con extractor funcionando | **~140** | ~95% |
-| ⚠️ Parcial/OCR | ~5 | 3% |
-| ❌ Sin extractor | ~3 | 2% |
-| **Total proveedores activos** | **~148** | 100% |
+| ✅ Con extractor funcionando | **~145** | ~96% |
+| ⚠️ Parcial/OCR | ~3 | 2% |
+| ❌ Sin extractor | ~2 | 2% |
+| **Total proveedores activos** | **~150** | 100% |
+
+---
+
+## ✅ SESIÓN 01/01/2026 NOCHE (1 corregido + 4 verificados)
+
+| # | Proveedor | CIF | IBAN | Facturas | Método |
+|---|-----------|-----|------|----------|--------|
+| 1 | **LA ROSQUILLERIA** | B73814949 | - | ✅ | OCR |
+| 2 | LA BARRA DULCE | B19981141 | ES76 2100 5606 4802 0017 4138 | 9/9 ✅ | pdfplumber |
+| 3 | CONSERVERA PREPIRINEO | F50765338 | ES78 2085 0871 6703 3009 9948 | 2/2 ✅ | pdfplumber |
+| 4 | QUESOS CATI | F12499455 | ES89 2100 7363 72 1100030799 | 3/3 ✅ | pdfplumber |
+| 5 | TIRSO PAPEL Y BOLSAS | B86005006 | - | ⚠️ OCR | OCR (malo) |
+
+### Características especiales
+
+| Proveedor | IVA | Peculiaridad |
+|-----------|-----|--------------|
+| **LA ROSQUILLERIA** | **10%/0%** | ⚠️ **CORREGIDO:** IVA era 4%, ahora 10%. Portes IVA 0% en línea separada. OCR con preprocesamiento. |
+| LA BARRA DULCE | 10% | Pastelería artesanal (bizcochos, galletas) |
+| CONSERVERA PREPIRINEO | 10% | Conservas vegetales aragonesas |
+| QUESOS CATI | 4% | Quesos de cabra de Castellón. Cuadro fiscal. |
+| TIRSO PAPEL Y BOLSAS | 21% | OCR muy malo. Requiere revisión manual. |
+
+### Corrección LA ROSQUILLERIA
+
+**Problema anterior:**
+- IVA asumido: 4% (incorrecto)
+- Portes prorrateados (causaba descuadre)
+- Método: TOTAL / 1.04
+
+**Solución v5.7:**
+- IVA productos: **10%** (rosquillas = alimentación elaborada)
+- Portes: **0%** (línea separada)
+- Método: OCR + cuadro fiscal + líneas individuales
+
+---
+
+## ✅ SESIÓN 01/01/2026 MAÑANA (1 nuevo + 1 verificado)
+
+| # | Proveedor | CIF | IBAN | Facturas | Método |
+|---|-----------|-----|------|----------|--------|
+| 1 | **BM SUPERMERCADOS** | B20099586 | N/A (tarjeta) | 6/6 ✅ | pdfplumber |
+| 2 | FELISA GOURMET | B72113897 | ES68 0182 1076 9502 0169 3908 | 13/13 ✅ | pdfplumber |
+
+### Características especiales
+
+| Proveedor | IVA | Peculiaridad |
+|-----------|-----|--------------|
+| **BM SUPERMERCADOS** | 4%/10%/21% | ⚠️ **Tickets con IVA incluido** - Conversión a base. IVA deducido por reglas: producto > sección > diccionario. |
+| FELISA GOURMET | 10%/21% | Conservas premium Barbate. 10% productos, 21% transporte (8,30€ fijo). |
 
 ---
 
@@ -27,83 +77,9 @@
 
 | Proveedor | IVA | Peculiaridad |
 |-----------|-----|--------------|
-| **LAVAPIES** | 10%/21% | ⚠️ **IVA deducido de factura** - Proveedor con errores frecuentes. Algoritmo subset-sum para determinar IVA. Genera avisos de discrepancia. |
+| **LAVAPIES** | 10%/21% | ⚠️ **IVA deducido de factura** - Algoritmo subset-sum para determinar IVA. |
 | BODEGAS MUÑOZ | 21% | **Híbrido pdfplumber+OCR** - Algunas facturas escaneadas |
-| LOS GREDALES | 21% | Líneas individuales con categorías (SAUVIGNON, SYRAH, CABERNET...) |
-
-### Productos LAVAPIES
-
-| REF | Producto | IVA esperado | Categoría |
-|-----|----------|--------------|-----------|
-| AGUVIC | AGUA VICHY CATALAN | 10% | AGUA CON GAS |
-| ZULINMA/PE/TO | ZUMOS LINDA | 10% | ZUMOS |
-| REFSIFG/SIFT | SIFONES | 10% | SIFON |
-| ZUMMOG1 | MOSTO GREIP | 21% | MOSTO |
-| REFCAS1 | GASEOSA CASERA | 21% | GASEOSA |
-| REFREV2 | REVOLTOSA LIMON | 21% | REFRESCO DE LIMON |
-| REFFRIX | FRIXEN COLA | 21% | REFRESCO DE COLA |
-| PALESZE/CO | PALESTINA | 21% | REFRESCO DE COLA |
-| SCHT15 | SCHWEPPES TÓNICA | 21% | TONICA |
-| REFSEV | SEVEN UP | 21% | REFRESCO DE LIMON |
-
----
-
-## ✅ SESIÓN 30/12/2025 (4 corregidos)
-
-| # | Proveedor | CIF | Estado | Cambio |
-|---|-----------|-----|--------|--------|
-| 1 | DE LUIS | B78380685 | ✅ | Deduplicación + total |
-| 2 | ALFARERIA TALAVERANA | B45007374 | ✅ | Descuento/portes |
-| 3 | PORVAZ | E36131709 | ✅ | Bug Ñ en ZAMBURIÑA |
-| 4 | INMAREPRO | B86310109 | ✅ NUEVO | Mantenimiento extintores |
-
----
-
-## ✅ SESIÓN 29/12/2025 (Bugs corregidos)
-
-| Proveedor | Problema | Solución |
-|-----------|----------|----------|
-| DEBORA GARCIA | IRPF mal calculado | Fórmula corregida |
-| FELISA | No detectaba alias | Alias añadido en @registrar |
-| HERNÁNDEZ BODEGA | Encoding Ñ | UTF-8 correcto |
-| SILVA CORDERO | IVA mixto | Separación 10%/21% |
-| **base.py** | extraer_referencia vacío | Llama a extraer_numero_factura automáticamente |
-
----
-
-## ✅ SESIÓN 28/12/2025 (6 nuevos)
-
-| # | Proveedor | CIF | Facturas | Método |
-|---|-----------|-----|----------|--------|
-| 1 | ECOMS SUPERMARKET | B72738602 | 9/14 | Híbrido (letras IVA) |
-| 2 | VIRGEN DE LA SIERRA | F50019868 | 7/7 ✅ | Híbrido |
-| 3 | MARITA COSTA | 48207369J | 7/7 ✅ | pdfplumber |
-| 4 | CASA DEL DUQUE | B23613697 | 8/10 | OCR |
-| 5 | CELONIS/MAKE | DE315052800 | 10/10 ✅ | pdfplumber |
-| 6 | PIFEMA | B79048914 | 5/5 ✅ | pdfplumber |
-
----
-
-## ✅ SESIÓN 26/12/2025 (16 nuevos)
-
-| # | Proveedor | CIF | IVA | Método |
-|---|-----------|-----|-----|--------|
-| 1 | YOIGO | A81020715 | 21% | pdfplumber |
-| 2 | SOM ENERGIA | F55091367 | 21% | pdfplumber |
-| 3 | SEGURMA | B86414901 | 21% | pdfplumber |
-| 4 | TRUCCO | 05247386M | 21% | pdfplumber |
-| 5 | MRM | A80280845 | 10% | pdfplumber |
-| 6 | BIELLEBI | IT06089700725 | 0% | pdfplumber |
-| 7 | PANRUJE | B13858014 | 4% | pdfplumber |
-| 8 | LA PURISIMA | F30005193 | 21% | pdfplumber |
-| 9 | MERCADONA | A46103834 | Variable | pdfplumber |
-| 10 | WEBEMPRESA | B65739856 | 21% | pdfplumber |
-| 11 | OPENAI | EU372041333 | 0% | pdfplumber |
-| 12 | ANTHROPIC | - (USA) | 0% | pdfplumber |
-| 13 | LA ALACENA | B45776233 | 10% | pdfplumber |
-| 14 | DEBORA GARCIA | 53401030Y | 21% | pdfplumber |
-| 15 | BORBOTON | B09530601 | 21% | pdfplumber |
-| 16 | LAVAPIES (v1) | F88424072 | 10%/21% | pdfplumber |
+| LOS GREDALES | 21% | Líneas individuales con categorías (SAUVIGNON, SYRAH...) |
 
 ---
 
@@ -111,16 +87,30 @@
 
 | # | Proveedor | Errores | Tipo | Impacto |
 |---|-----------|---------|------|---------|
-| 1 | **BM SUPERMERCADOS** | 37 | DESCUADRE | ALTO |
+| 1 | ~~BM SUPERMERCADOS~~ | ~~37~~ | ~~DESCUADRE~~ | ✅ HECHO |
 | 2 | **JIMELUZ** | 19 | OCR | ALTO |
-| 3 | **FELISA GOURMET** | 12 | DESCUADRE | MEDIO |
-| 4 | **LA ROSQUILLERIA** | 10 | OCR | MEDIO |
-| 5 | JAMONES BERNAL | 6 | DESCUADRE | BAJO |
-| 6 | SILVA CORDERO | 5 | DESCUADRE | BAJO |
+| 3 | ~~LA ROSQUILLERIA~~ | ~~10~~ | ~~OCR~~ | ✅ HECHO |
+| 4 | **DIA** | 6+ | SIN_LINEAS | MEDIO |
+| 5 | **JAMONES BERNAL** | 6 | DESCUADRE | BAJO |
+| 6 | **QUESOS ROYCA** | 3 | SIN_LINEAS | BAJO |
 
 ---
 
 ## 📋 EXTRACTORES POR ARCHIVO (Sesiones recientes)
+
+### Sesión 01/01/2026 noche
+| Archivo | Proveedor | CIF | Estado |
+|---------|-----------|-----|--------|
+| `la_rosquilleria.py` | LA ROSQUILLERIA | B73814949 | **CORREGIDO** |
+| `main.py` | (aliases TIRSO, CONSERVERA, BARRA DULCE) | - | v5.7 |
+| `__init__.py` | (imports actualizados) | - | v5.7 |
+| `settings.py` | (VERSION) | - | v5.7 |
+
+### Sesión 01/01/2026 mañana
+| Archivo | Proveedor | CIF |
+|---------|-----------|-----|
+| `bm.py` | BM SUPERMERCADOS | B20099586 |
+| `felisa.py` | FELISA GOURMET (actualizado) | B72113897 |
 
 ### Sesión 31/12/2025
 | Archivo | Proveedor | CIF |
@@ -129,71 +119,18 @@
 | `bodegas_munoz.py` | BODEGAS MUÑOZ MARTIN | E83182683 |
 | `gredales.py` | LOS GREDALES DE EL TOBOSO | B83594150 |
 
-### Sesión 30/12/2025
-| Archivo | Proveedor | CIF |
-|---------|-----------|-----|
-| `de_luis.py` | DE LUIS DISTRIBUCION | B78380685 |
-| `alfareria.py` | ALFARERIA TALAVERANA | B45007374 |
-| `porvaz.py` | CONSERVAS PORVAZ | E36131709 |
-| `inmarepro.py` | INMAREPRO | B86310109 |
-
-### Sesión 28/12/2025
-| Archivo | Proveedor | CIF |
-|---------|-----------|-----|
-| `ecoms.py` | ECOMS SUPERMARKET | B72738602 |
-| `virgen_de_la_sierra.py` | VIRGEN DE LA SIERRA | F50019868 |
-| `marita_costa.py` | MARITA COSTA | 48207369J |
-| `casa_del_duque.py` | CASA DEL DUQUE | B23613697 |
-| `celonis.py` | CELONIS/MAKE | DE315052800 |
-| `pifema.py` | PIFEMA | B79048914 |
-
-### Sesión 26/12/2025
-| Archivo | Proveedor |
-|---------|-----------|
-| `yoigo.py` | YOIGO |
-| `som_energia.py` | SOM ENERGIA |
-| `segurma.py` | SEGURMA |
-| `trucco.py` | TRUCCO |
-| `mrm.py` | MRM |
-| `biellebi.py` | BIELLEBI |
-| `panruje.py` | PANRUJE |
-| `la_purisima.py` | LA PURISIMA |
-| `mercadona.py` | MERCADONA |
-| `webempresa.py` | WEBEMPRESA |
-| `openai.py` | OPENAI |
-| `anthropic.py` | ANTHROPIC |
-| `la_alacena.py` | LA ALACENA |
-| `debora_garcia.py` | DEBORA GARCIA |
-| `borboton.py` | BORBOTON |
-
-### Sesiones anteriores (21/12/2025)
-| Archivo | Proveedores |
-|---------|-------------|
-| `zucca.py` | QUESERIA ZUCCA |
-| `lidl.py` | LIDL |
-| `la_rosquilleria.py` | LA ROSQUILLERIA (OCR) |
-| `gaditaun.py` | GADITAUN (OCR) |
-| `manipulados_abellan.py` | MANIPULADOS ABELLAN (OCR) |
-| `fishgourmet.py` | FISHGOURMET (OCR) |
-| `jaime_fernandez.py` | JAIME FERNÁNDEZ (alquiler IRPF) |
-| `benjamin_ortega.py` | BENJAMÍN ORTEGA (alquiler IRPF) |
-| `ibarrako.py` | IBARRAKO PIPARRAK |
-| `angel_loli.py` | ÁNGEL Y LOLI |
-| `abbati.py` | ABBATI CAFFE |
-| `panifiesto.py` | PANIFIESTO |
-| `julio_garcia.py` | JULIO GARCIA (híbrido) |
-| `productos_adell.py` | PRODUCTOS ADELL |
-
 ---
 
 ## 🔧 VARIANTES DE NOMBRES REGISTRADAS (nuevos)
 
 | Extractor | Variantes en @registrar() |
 |-----------|--------------------------|
-| LAVAPIES | DISTRIBUCIONES LAVAPIES, LAVAPIES, DIST LAVAPIES |
-| BODEGAS MUÑOZ | BODEGAS MUÑOZ MARTIN, BODEGAS MUNOZ, MUÑOZ MARTIN |
-| LOS GREDALES | LOS GREDALES, GREDALES, LOS GREDALES DE EL TOBOSO |
-| INMAREPRO | INMAREPRO, INMA REPRO |
+| LA ROSQUILLERIA | LA ROSQUILLERIA, ROSQUILLERIA, EL TORRO, ROSQUILLAS EL TORRO |
+| LA BARRA DULCE | LA BARRA DULCE, BARRA DULCE, LA BARRA DULCE S.L. |
+| CONSERVERA PREPIRINEO | LA CONSERVERA DEL PREPIRINEO, CONSERVERA PREPIRINEO, CONSERVERA DEL PREPIRINEO |
+| QUESOS CATI | QUESOS DEL CATI, QUESOS DE CATI, QUESOS CATI, CATI |
+| TIRSO | TIRSO PAPEL Y BOLSAS, TIRSO, TIRSO PAPEL, BOLSAS TIRSO |
+| BM SUPERMERCADOS | BM SUPERMERCADOS, BM, DISTRIBUCION SUPERMERCADOS |
 
 ---
 
@@ -201,14 +138,14 @@
 
 | Fecha | Cambio |
 |-------|--------|
-| **31/12/2025** | **+LAVAPIES (IVA deducido de factura), MUÑOZ OCR, GREDALES líneas** |
+| **01/01/2026 noche** | **LA ROSQUILLERIA corregido (IVA 10%), +4 verificados (BARRA DULCE, CONSERVERA, CATI, TIRSO)** |
+| 01/01/2026 mañana | +BM SUPERMERCADOS (IVA incluido→base), FELISA verificado |
+| 31/12/2025 | +LAVAPIES (IVA deducido de factura), MUÑOZ OCR, GREDALES líneas |
 | 30/12/2025 | DE LUIS, ALFARERIA, PORVAZ corregidos. +INMAREPRO |
 | 29/12/2025 | Bugs: DEBORA, FELISA, HERNÁNDEZ, SILVA. Fix base.py |
 | 28/12/2025 | +6: ECOMS, VIRGEN, MARITA, CASA DUQUE, CELONIS, PIFEMA |
 | 26/12/2025 | +16: YOIGO, SOM, OPENAI, ANTHROPIC, BIELLEBI... |
-| 21/12/2025 PM | +8: JAIME, BENJAMIN, IBARRAKO, ANGEL LOLI, ABBATI, PANIFIESTO, JULIO GARCIA, ADELL |
-| 21/12/2025 AM | +12: ZUCCA, PANRUJE, DISBER, LIDL, ROSQUILLERIA, GADITAUN, DE LUIS, ABELLAN, ECOMS, MARITA, SERRIN, FISHGOURMET |
 
 ---
 
-*Última actualización: 31/12/2025*
+*Última actualización: 01/01/2026 (noche)*

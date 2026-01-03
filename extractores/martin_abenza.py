@@ -37,6 +37,7 @@ class ExtractorMartinAbenza(ExtractorBase):
     cif = '74305431K'
     iban = ''
     metodo_pdf = 'pdfplumber'
+    categoria_fija = 'CONSERVAS'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         """

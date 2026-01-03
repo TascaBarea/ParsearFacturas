@@ -27,6 +27,7 @@ class ExtractorPilarRodriguez(ExtractorBase):
     cif = '06582655D'
     iban = 'ES30 5853 0199 2810 0235 62'
     metodo_pdf = 'pdfplumber'
+    categoria_fija = 'HUEVOS'
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         """

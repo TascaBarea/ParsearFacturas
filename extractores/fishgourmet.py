@@ -32,7 +32,7 @@ class ExtractorFishgourmet(ExtractorBase):
     cif = 'B85975126'
     iban = 'ES57 2100 2127 1502 0045 4128'
     metodo_pdf = 'ocr'
-    categoria_fija = 'AHUMADOS PESCADO'
+    categoria_fija = 'SALAZONES'
     
     def extraer_texto_ocr(self, pdf_path: str) -> str:
         """Extrae texto usando OCR optimizado."""

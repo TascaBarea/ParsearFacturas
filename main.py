@@ -1,33 +1,85 @@
 #!/usr/bin/env python3
 """
-PARSEAR FACTURAS v5.2
-=====================
+PARSEAR FACTURAS v5.10
+======================
 Sistema modular para extraccion y procesamiento de facturas.
+
+CAMBIOS v5.10 (04/01/2026):
+- Mensaje SIN_PROVEEDOR reemplazado por mensajes más específicos:
+  - SIN_EXTRACTOR: No hay extractor para este proveedor
+  - SIN_CATEGORIA: Hay extractor pero artículo no está en diccionario
+- Nuevo extractor: EL CARRASCAL (Jose Luis Sánchez)
+
+CAMBIOS v5.9 (02/01/2026):
+- FIX: categoria_fija del extractor se usa como fallback automático
+- Extractores con categoria_fija ya no requieren incluirla en cada línea
+- Resuelve SIN_PROVEEDOR en YOIGO, MOLLETES, CELONIS, etc.
+
+CAMBIOS v5.8 (02/01/2026):
+- FIX: Categorías hardcodeadas en extractores ahora se respetan
+- Condición corregida: solo requiere categoria (no id_categoria)
+- Proveedores con categoría definida ya no muestran SIN_PROVEEDOR
+
+CAMBIOS v5.7 (01/01/2026):
+- Alias añadidos: TIRSO PAPEL Y BOLSAS (6 variantes)
+- Alias añadidos: LA BARRA DULCE S.L.
+- Extractores nuevos: tirso_papel_bolsas.py (OCR), la_barra_dulce.py
+
+CAMBIOS v5.7 (01/01/2026):
+- ALIAS_DICCIONARIO ampliado (DEBORA, HERNÁNDEZ, SERRRIN, etc.)
+- Soporte para retenciones IRPF (JAIME FERNANDEZ 19%, DEBORA 1%, etc.)
+- Mejor detección de proveedor en archivos mal nombrados
+- normalizar_proveedor() mejorada (quita ATRASADA, prefijos de trimestre)
+- buscar_proveedor_en_nombre() nueva función
+
+CAMBIOS v5.5 (01/01/2026):
+- Limpieza automática de __pycache__ para cargar extractores actualizados
+- Soporte BM SUPERMERCADOS (IVA incluido → base)
+- Soporte LAVAPIES mejorado (IVA deducido de factura)
 
 CAMBIOS v5.2 (30/12/2025):
 - Prorrateo de portes mejorado para IVAs mixtos
 - Maneja productos IVA 4%/10% con portes IVA 21%
 - Recalcula base inversa para que total cuadre siempre
 
-CAMBIOS v5.1 (26/12/2025):
-- Mejorada normalización de proveedor usando alias de extractores
-- Búsqueda en diccionario con múltiples variantes del nombre
-
-CAMBIOS v5.0 (26/12/2025):
-- Prorrateo automático de PORTE/TRANSPORTE/SERVICIO URGENTE
-- Distribuye portes proporcionalmente al importe de cada artículo
-
-CAMBIOS v4.5 (22/12/2025):
-- Añadido fuzzy matching para categorización (80% similitud)
-
 Uso:
     python main.py -i "carpeta_facturas" [-o archivo.xlsx] [-d diccionario.xlsx]
 """
 
 import sys
-sys.dont_write_bytecode = True  # Evita generar __pycache__
-import argparse
+import shutil
 from pathlib import Path
+
+# ============================================================================
+# LIMPIEZA DE CACHÉ - EJECUTAR ANTES DE IMPORTAR EXTRACTORES
+# ============================================================================
+
+def limpiar_pycache():
+    """
+    Elimina __pycache__ de extractores para forzar recarga de módulos.
+    Esto asegura que siempre se usen los extractores más recientes.
+    """
+    script_dir = Path(__file__).parent
+    pycache_dirs = [
+        script_dir / 'extractores' / '__pycache__',
+        script_dir / 'nucleo' / '__pycache__',
+        script_dir / 'salidas' / '__pycache__',
+        script_dir / 'config' / '__pycache__',
+    ]
+    
+    for pycache in pycache_dirs:
+        if pycache.exists():
+            try:
+                shutil.rmtree(pycache)
+            except Exception:
+                pass  # Ignorar errores de permisos
+
+# Limpiar caché ANTES de cualquier import
+limpiar_pycache()
+
+sys.dont_write_bytecode = True  # Evita generar nuevos __pycache__
+
+import argparse
 from datetime import datetime
 import re
 from difflib import SequenceMatcher
@@ -35,7 +87,7 @@ from difflib import SequenceMatcher
 # Anadir el directorio del script al path
 sys.path.insert(0, str(Path(__file__).parent))
 
-# Importar modulos del proyecto
+# Importar modulos del proyecto (DESPUÉS de limpiar caché)
 from config.settings import VERSION, CIF_PROPIO, DICCIONARIO_DEFAULT
 from nucleo.factura import Factura, LineaFactura
 from nucleo.pdf import extraer_texto_pdf
@@ -80,28 +132,35 @@ KEYWORDS_EXCLUIR_PRORRATEO = [
 
 
 # ============================================================================
-# MAPEO DE ALIAS PARA NORMALIZACIÓN
+# MAPEO DE ALIAS PARA NORMALIZACIÓN (v5.7 - AMPLIADO)
 # ============================================================================
 
-# Mapeo manual de nombres de factura → nombre en diccionario
 ALIAS_DICCIONARIO = {
     # SABORES DE PATERNA
     'SABORES DE PATERNA': 'SABORES PATERNA',
     'PATERNA': 'SABORES PATERNA',
     # FELISA
     'FELISA GOURMET': 'FELISA',
+    'FELISA GOURMET DON FELIX': 'FELISA',
     'PESCADOS DON FELIX': 'FELISA',
     # ZUCCA
     'QUESERIA ZUCCA': 'ZUCCA',
     'FORMAGGIARTE': 'ZUCCA',
-    # SERRIN
+    'FORMAGGIARTE ZUCCA': 'ZUCCA',
+    'QUESOS ZUCCA': 'ZUCCA',
+    # SERRIN - incluyendo errores ortográficos
     'SERRIN NOCHAO': 'SERRIN NO CHAO',
     'SERRIN NO CHAN': 'SERRIN NO CHAO',
     'SERRIN': 'SERRIN NO CHAO',
+    'SERRRIN': 'SERRIN NO CHAO',  # error ortográfico con 3 R
+    'SERRRIN NO CHAO': 'SERRIN NO CHAO',
+    'SERRRIN TF': 'SERRIN NO CHAO',
     # DE LUIS
     'DE LUIS': 'DE LUIS SABORES UNICOS',
     # BERZAL
     'BERZAL': 'BERZAL HERMANOS',
+    'BERZAL HNOS': 'BERZAL HERMANOS',
+    'BERZAL HNOS.': 'BERZAL HERMANOS',
     # CONSERVAS TITO
     'PORVAZ': 'CONSERVAS TITO',
     'PORVAZ VILLAGARCIA': 'CONSERVAS TITO',
@@ -116,17 +175,21 @@ ALIAS_DICCIONARIO = {
     # QUESERIA NAVAS
     'CARLOS NAVAS': 'QUESERIA NAVAS',
     'QUESOS NAVAS': 'QUESERIA NAVAS',
+    'QUESERIA CARLOS NAVAS': 'QUESERIA NAVAS',
     # LA ALACENA
     'CONSERVAS LA ALACENA': 'LA ALACENA',
     # GADITAUN
     'MARILINA GADITAUN': 'GADITAUN',
     'GARDITAUN MARIA LINAREJOS': 'GADITAUN',
+    'GADITAUN MARIA LINAREJOS': 'GADITAUN',
+    'GADITAUN MARILINA': 'GADITAUN',
     'MARILINA': 'GADITAUN',
     # BORBOTON
     'BODEGAS BORBOTON': 'BORBOTON',
     # ARTESANOS DEL MOLLETE
     'ARTESANOS DEL MOLLETE': 'MOLLETES ARTESANOS',
     'MOLLETES ARTESANOS DE ANTEQUERA': 'MOLLETES ARTESANOS',
+    'ARTESANOS DEL MOLINO': 'MOLLETES ARTESANOS',
     # ZUBELZU
     'ZUBELZU PIPARRAK': 'ZUBELZU',
     'IBARRAKO': 'ZUBELZU',
@@ -137,21 +200,36 @@ ALIAS_DICCIONARIO = {
     'LAVAPIES': 'DISTRIBUCIONES LAVAPIES',
     # GRUPO DISBER
     'DISBER': 'GRUPO DISBER',
-    'GRUPO DISBER': 'DISBER',
     # MRM
     'INDUSTRIAS CARNICAS MRM': 'MRM',
     # PILAR RODRIGUEZ
     'EL MAJADAL': 'PILAR RODRIGUEZ',
+    'EL MAJADAL PILAR RODRIGUEZ': 'PILAR RODRIGUEZ',
     # TERRITORIO CAMPERO
     'GRUPO TERRITORIO CAMPERO': 'TERRITORIO CAMPERO',
+    'GRUPO CAMPERO': 'TERRITORIO CAMPERO',
     # MARITA
     'MARITA COSTA': 'MARITA',
     # LA BARRA DULCE
     'BARRA DULCE': 'LA BARRA DULCE',
+    'LA BARRA DULCE S.L.': 'LA BARRA DULCE',
+    # TIRSO PAPEL Y BOLSAS (NUEVO 01/01/2026)
+    'TIRSO': 'TIRSO PAPEL Y BOLSAS',
+    'TIRSO PAPEL': 'TIRSO PAPEL Y BOLSAS',
+    'BOLSAS TIRSO': 'TIRSO PAPEL Y BOLSAS',
+    'TIRSO PAPEL Y BOLSAS SL': 'TIRSO PAPEL Y BOLSAS',
+    'TIRSO PAPAEL Y BOLSAS': 'TIRSO PAPEL Y BOLSAS',  # typo en archivos
+    'TIRSO PAPAEL Y BOLSAS SL': 'TIRSO PAPEL Y BOLSAS',
+    # LA CONSERVERA DEL PREPIRINEO (NUEVO 01/01/2026)
+    'CONSERVERA PREPIRINEO': 'LA CONSERVERA DEL PREPIRINEO',
+    'CONSERVERA DEL PREPIRINEO': 'LA CONSERVERA DEL PREPIRINEO',
+    'LA CONSERVERA PREPIRINEO': 'LA CONSERVERA DEL PREPIRINEO',
     # MIGUEZ CAL
     'FORPLAN': 'MIGUEZ CAL',
     # MARTIN ABENZA
     'CONSERVAS EL MODESTO': 'MARTIN ABENZA',
+    'MARTIN ARBENZA': 'MARTIN ABENZA',
+    'MARTIN ARBENZA EL MODESTO': 'MARTIN ABENZA',
     # WELLDONE
     'RODOLFO DEL RIO': 'WELLDONE',
     'WELLDONE LACTICOS': 'WELLDONE',
@@ -170,6 +248,7 @@ ALIAS_DICCIONARIO = {
     'BODEGAS CVNE': 'CVNE',
     # LA PURISIMA
     'BODEGAS LA PURISIMA': 'LA PURISIMA',
+    'BODEGAS VIRGEN DE LA SIERRA': 'VIRGEN DE LA SIERRA',
     # FRANCISCO GUERRA
     'GUERRA': 'FRANCISCO GUERRA',
     # FISHGOURMET
@@ -179,36 +258,197 @@ ALIAS_DICCIONARIO = {
     # LOS GREDALES
     'GREDALES': 'LOS GREDALES',
     'LOS GREDALES DEL TOBOSO': 'LOS GREDALES',
+    
+    # ========== NUEVOS ALIAS v5.7 (01/01/2026) ==========
+    
+    # DEBORA GARCIA TOLEDANO - múltiples variantes
+    'DEBORA': 'DEBORA GARCIA TOLEDANO',
+    'DEBORAH': 'DEBORA GARCIA TOLEDANO',
+    'BEDORAH': 'DEBORA GARCIA TOLEDANO',
+    'DEBORA GARCIA': 'DEBORA GARCIA TOLEDANO',
+    'DEBORAH GARCIA': 'DEBORA GARCIA TOLEDANO',
+    'BEDORAH GARCIA': 'DEBORA GARCIA TOLEDANO',
+    'DEBORAH GARCIA TOLEDANO': 'DEBORA GARCIA TOLEDANO',
+    'BEDORAH GARCIA TOLEDANO': 'DEBORA GARCIA TOLEDANO',
+    
+    # HERNANDEZ SUMINISTROS
+    'HERNANDEZ': 'HERNANDEZ SUMINISTROS',
+    'HERNÁNDEZ': 'HERNANDEZ SUMINISTROS',
+    'HERNANDEZ SUMINISTROS HOSTELEROS': 'HERNANDEZ SUMINISTROS',
+    'HERNÁNDEZ SUMINISTROS HOSTELEROS': 'HERNANDEZ SUMINISTROS',
+    'HERNANDEZ SUM HOSTELEROS': 'HERNANDEZ SUMINISTROS',
+    
+    # ISAAC RODRIGUEZ / TRUCCO COPIAS
+    'TRUCCO COPIAS': 'ISAAC RODRIGUEZ',
+    'TRUCCO COPIAS ISAAC RODRIGUEZ': 'ISAAC RODRIGUEZ',
+    'TRUCCO ISSAC RODRIGUEZ': 'ISAAC RODRIGUEZ',
+    'TRUCCO COPIAS ISAAC HERNANDEZ': 'ISAAC RODRIGUEZ',
+    'ISAAC RODRIGUEZ TRUCCO COPIAS': 'ISAAC RODRIGUEZ',
+    
+    # LA DOLOROSA / PABLO RUIZ
+    'LA DOLOROSA': 'PABLO RUIZ',
+    'PABLO RUIZ LA DOLOROSA': 'PABLO RUIZ',
+    
+    # LUCERA / ENERGIA COLECTIVA
+    'ENERGIA COLECTIVA': 'LUCERA',
+    'ENERGIA COLECTIVA LUCERA': 'LUCERA',
+    
+    # JULIO GARCIA VIVAS
+    'GARCIA VIVAS': 'JULIO GARCIA VIVAS',
+    'GARCIA VIVAS JULIO': 'JULIO GARCIA VIVAS',
 }
 
 
 # ============================================================================
-# FUNCIÓN: Normalizar nombre de proveedor
+# RETENCIONES POR PROVEEDOR (NUEVO v5.7)
+# ============================================================================
+
+# Proveedores con retención IRPF (el importe de la factura incluye retención)
+# El descuadre esperado es = base * porcentaje_retencion
+RETENCIONES_PROVEEDOR = {
+    # Alquiler local - 19%
+    'JAIME FERNANDEZ': 0.19,
+    'BENJAMIN ORTEGA': 0.19,
+    'BENJAMIN ORTEGA ALONSO': 0.19,
+    # Otros servicios profesionales - 15%
+    'REGISTRO MERCANTIL': 0.15,
+    # Servicios - 1%
+    'DEBORA GARCIA TOLEDANO': 0.01,
+    'DEBORA': 0.01,
+    'DEBORAH': 0.01,
+    'BEDORAH': 0.01,
+}
+
+# Tolerancia para descuadre por retención (€)
+TOLERANCIA_RETENCION = 0.50
+
+
+# ============================================================================
+# FUNCIÓN: Normalizar nombre de proveedor (MEJORADA v5.7)
 # ============================================================================
 
 def normalizar_proveedor(nombre: str) -> str:
     """
     Normaliza nombre de proveedor:
-    1. Quita prefijos de fecha/referencia (ej: "4T25 1031")
+    1. Quita prefijos de fecha/referencia (ej: "4T25 1031", "ATRASADA")
     2. Quita sufijos numéricos (ej: " 2")
-    3. Aplica mapeo de alias conocidos
+    3. Quita sufijos de tipo factura (TF, TR, TJ, EF, RC)
+    4. Aplica mapeo de alias conocidos
     """
     if not nombre:
         return ""
     
+    nombre_original = nombre
+    
     # Paso 1: Quitar prefijos tipo "4T25 1031 " o "1T25 0331 "
     nombre = re.sub(r'^\d[TQ]\d{2}\s+\d{3,4}\s+', '', nombre)
     
-    # Quitar sufijos numéricos tipo " 2" o " 3"
+    # Paso 1b: Quitar prefijo "ATRASADA" o "ATRASADA 3T25" etc.
+    nombre = re.sub(r'^ATRASADA\s*(\d[TQ]\d{2})?\s*\d*\s*', '', nombre, flags=re.IGNORECASE)
+    
+    # Paso 1c: Quitar prefijo solo trimestre "4T25 " sin número
+    nombre = re.sub(r'^\d[TQ]\d{2}\s+', '', nombre)
+    
+    # Paso 1d: Quitar prefijo número solo "442 "
+    nombre = re.sub(r'^\d{3,4}\s+', '', nombre)
+    
+    # Paso 2: Quitar sufijos tipo factura: TF, TR, TJ, EF, RC (con o sin punto)
+    nombre = re.sub(r'\s+(TF|TR|TJ|EF|RC|EG)\.?$', '', nombre, flags=re.IGNORECASE)
+    
+    # Paso 3: Quitar sufijos numéricos tipo " 2" o " 3"
     nombre = re.sub(r'\s+\d+$', '', nombre)
+    
+    # Paso 4: Quitar extensión .pdf si quedó
+    nombre = re.sub(r'\.pdf$', '', nombre, flags=re.IGNORECASE)
     
     nombre = nombre.strip().upper()
     
-    # Paso 2: Aplicar mapeo de alias
+    # Paso 5: Aplicar mapeo de alias
     if nombre in ALIAS_DICCIONARIO:
         return ALIAS_DICCIONARIO[nombre]
     
+    # Paso 6: Buscar coincidencia parcial en alias (para nombres con errores)
+    for alias, normalizado in ALIAS_DICCIONARIO.items():
+        # Si el nombre contiene el alias completo
+        if alias in nombre:
+            return normalizado
+        # Si el alias contiene el nombre (nombre es substring)
+        if len(nombre) >= 5 and nombre in alias:
+            return normalizado
+    
     return nombre
+
+
+# ============================================================================
+# FUNCIÓN: Buscar proveedor en nombre de archivo (NUEVA v5.7)
+# ============================================================================
+
+def buscar_proveedor_en_nombre(nombre_archivo: str, extractores_disponibles: dict) -> str:
+    """
+    Busca el nombre del proveedor en cualquier parte del nombre del archivo.
+    Útil para archivos que no siguen el formato estándar "XXXX XTxx FECHA PROVEEDOR".
+    
+    Args:
+        nombre_archivo: Nombre del archivo PDF
+        extractores_disponibles: Diccionario de extractores {nombre: clase}
+    
+    Returns:
+        Nombre del proveedor encontrado o None
+    """
+    nombre_upper = nombre_archivo.upper()
+    
+    # Lista de proveedores conocidos (ordenados por longitud descendente para match más específico)
+    proveedores_conocidos = sorted(
+        list(extractores_disponibles.keys()) + list(ALIAS_DICCIONARIO.keys()),
+        key=len,
+        reverse=True
+    )
+    
+    for proveedor in proveedores_conocidos:
+        if proveedor.upper() in nombre_upper:
+            # Normalizar el proveedor encontrado
+            return normalizar_proveedor(proveedor)
+    
+    return None
+
+
+# ============================================================================
+# FUNCIÓN: Calcular descuadre con retención (NUEVA v5.7)
+# ============================================================================
+
+def calcular_descuadre_con_retencion(total_lineas: float, total_factura: float, proveedor: str) -> tuple:
+    """
+    Calcula el descuadre considerando posible retención IRPF.
+    
+    Returns:
+        (descuadre_real, tiene_retencion, porcentaje_retencion)
+    """
+    proveedor_upper = proveedor.upper().strip()
+    
+    # Buscar por nombre exacto o normalizado
+    porcentaje = None
+    if proveedor_upper in RETENCIONES_PROVEEDOR:
+        porcentaje = RETENCIONES_PROVEEDOR[proveedor_upper]
+    else:
+        # Buscar por nombre parcial
+        for nombre_ret, porc in RETENCIONES_PROVEEDOR.items():
+            if nombre_ret in proveedor_upper or proveedor_upper in nombre_ret:
+                porcentaje = porc
+                break
+    
+    if porcentaje is not None:
+        # La factura tiene retención: total_pagado = total_bruto - retencion
+        # total_lineas es el bruto, total_factura es lo que se paga
+        # descuadre = total_lineas - total_factura debería ser ≈ retención
+        retencion_esperada = total_lineas * porcentaje
+        descuadre = abs(total_lineas - total_factura)
+        
+        # Si el descuadre es aproximadamente igual a la retención esperada, es OK
+        if abs(descuadre - retencion_esperada) < TOLERANCIA_RETENCION:
+            return (0, True, porcentaje)
+    
+    # Sin retención: descuadre normal
+    return (abs(total_lineas - total_factura), False, 0)
 
 
 def buscar_en_diccionario(proveedor: str, indice: dict) -> str:
@@ -249,197 +489,194 @@ def buscar_en_diccionario(proveedor: str, indice: dict) -> str:
 # FUNCIÓN: Prorratear portes/transporte entre productos
 # ============================================================================
 
+def es_linea_porte(articulo: str) -> bool:
+    """Detecta si una línea es un porte/transporte."""
+    articulo_upper = articulo.upper()
+    
+    for excluir in KEYWORDS_EXCLUIR_PRORRATEO:
+        if excluir in articulo_upper:
+            return False
+    
+    for keyword in KEYWORDS_PRORRATEO:
+        if keyword in articulo_upper:
+            return True
+    
+    return False
+
+
 def prorratear_portes(lineas: list) -> list:
     """
-    Prorratea los portes/transporte proporcionalmente entre los productos.
+    Distribuye portes proporcionalmente entre productos.
     
-    MEJORADO v5.2 (30/12/2025):
-    - Maneja IVAs mixtos (productos 4%/10% + portes 21%)
-    - Distribuye el total del porte CON IVA proporcionalmente
-    - Recalcula base para que: base × (1 + iva/100) = total_asignado
-    - Garantiza que suma de lineas = total factura
-    
-    Casos que maneja:
-    - Productos IVA 4% + Portes IVA 21% (quesos)
-    - Productos IVA 10% + Portes IVA 21% (alimentacion)
-    - Productos IVA 21% + Portes IVA 21% (general)
-    - Mezcla de IVAs en productos + Portes
+    Soporta IVAs mixtos: el porte se distribuye en proporción
+    al importe de cada producto, manteniendo el IVA del porte.
     """
     if not lineas:
         return lineas
     
-    lineas_porte = []
     lineas_producto = []
-    lineas_excluidas = []
+    lineas_porte = []
     
     for linea in lineas:
-        articulo_upper = (linea.articulo or '').upper()
-        
-        es_porte = any(kw in articulo_upper for kw in KEYWORDS_PRORRATEO)
-        es_excluida = any(kw in articulo_upper for kw in KEYWORDS_EXCLUIR_PRORRATEO)
-        
-        if es_porte:
+        if es_linea_porte(linea.articulo):
             lineas_porte.append(linea)
-        elif es_excluida:
-            lineas_excluidas.append(linea)
         else:
             lineas_producto.append(linea)
     
-    # Si no hay portes, devolver todo sin cambios
-    if not lineas_porte:
+    if not lineas_porte or not lineas_producto:
         return lineas
     
-    # Si no hay productos, devolver todo sin cambios
-    if not lineas_producto:
+    total_porte_base = sum(l.base for l in lineas_porte)
+    total_productos_base = sum(l.base for l in lineas_producto)
+    
+    if total_productos_base <= 0:
         return lineas
     
-    # Calcular total del porte CON IVA (normalmente 21%)
-    total_porte_con_iva = 0
-    for linea in lineas_porte:
-        if linea.base and linea.base > 0:
-            iva_porte = linea.iva if linea.iva is not None else 21
-            total_porte_con_iva += linea.base * (1 + iva_porte / 100)
-    
-    if total_porte_con_iva <= 0:
-        return lineas
-    
-    # Calcular total de productos CON IVA (cada uno con su IVA)
-    totales_producto = []
-    for linea in lineas_producto:
-        if linea.base and linea.base > 0:
-            iva_prod = linea.iva if linea.iva is not None else 21
-            total_con_iva = linea.base * (1 + iva_prod / 100)
-            totales_producto.append((linea, total_con_iva, iva_prod))
-    
-    if not totales_producto:
-        return lineas
-    
-    suma_totales_producto = sum(t[1] for t in totales_producto)
-    
-    if suma_totales_producto <= 0:
-        return lineas
-    
-    # Distribuir porte proporcionalmente y recalcular base
-    for linea, total_prod_con_iva, iva_prod in totales_producto:
-        # Proporcion segun total con IVA
-        proporcion = total_prod_con_iva / suma_totales_producto
+    # Distribuir cada porte proporcionalmente
+    for porte in lineas_porte:
+        porte_base = porte.base
+        porte_iva = porte.iva
         
-        # Parte del porte que le corresponde (ya con IVA incluido)
-        porte_asignado = total_porte_con_iva * proporcion
-        
-        # Nuevo total de la linea (producto + su parte de porte)
-        nuevo_total = total_prod_con_iva + porte_asignado
-        
-        # Recalcular base usando el IVA del producto
-        # nueva_base = nuevo_total / (1 + iva/100)
-        nueva_base = nuevo_total / (1 + iva_prod / 100)
-        
-        # Actualizar linea
-        linea.base = round(nueva_base, 2)
-        
-        # Recalcular precio unitario si hay cantidad
-        if linea.cantidad and linea.cantidad > 0:
-            linea.precio_ud = round(linea.base / linea.cantidad, 4)
+        for i, prod in enumerate(lineas_producto):
+            proporcion = prod.base / total_productos_base
+            incremento_base = round(porte_base * proporcion, 2)
+            
+            # Si el IVA del producto es diferente al del porte,
+            # recalculamos la base para que el total cuadre
+            if prod.iva != porte_iva:
+                # El incremento viene con IVA del porte
+                # Lo convertimos a base equivalente con IVA del producto
+                total_porte_linea = incremento_base * (1 + porte_iva / 100)
+                incremento_base = round(total_porte_linea / (1 + prod.iva / 100), 2)
+            
+            prod.base = round(prod.base + incremento_base, 2)
     
-    # Devolver productos (con porte prorrateado) + excluidas
-    # Los portes se eliminan porque ya estan incluidos
-    return lineas_producto + lineas_excluidas
+    return lineas_producto
 
 
 # ============================================================================
 # FUNCIÓN: cargar_diccionario
 # ============================================================================
 
-def cargar_diccionario(ruta: Path) -> tuple:
+def cargar_diccionario(ruta_excel: Path):
     """
-    Carga el diccionario de categorias.
+    Carga el diccionario de proveedores y categorías.
+    Hoja: 'Articulos' con columnas: PROVEEDOR, ARTICULO, CATEGORIA, TIPO_IVA, COD LOYVERSE
     """
     import pandas as pd
     
+    # Intentar primero 'Articulos', luego 'COMPRAS' por compatibilidad
     try:
-        xlsx = pd.ExcelFile(ruta)
-        articulos = pd.read_excel(xlsx, sheet_name='Articulos')
-        
-        try:
-            patrones = pd.read_excel(xlsx, sheet_name='Patrones especificos')
-        except:
-            try:
-                patrones = pd.read_excel(xlsx, sheet_name='Patrones')
-            except:
-                patrones = pd.DataFrame()
-        
-        indice = {}
-        for _, row in articulos.iterrows():
-            prov = str(row.get('PROVEEDOR', '')).upper().strip()
-            if prov and prov != 'NAN':
-                if prov not in indice:
-                    indice[prov] = []
-                indice[prov].append({
-                    'articulo': str(row.get('ARTICULO', '')),
-                    'categoria': str(row.get('CATEGORIA', 'PENDIENTE')),
-                    'id_categoria': row.get('ID_CATEGORIA', '')
-                })
-        
-        return articulos, patrones, indice
-        
-    except Exception as e:
-        print(f"Aviso: Error cargando diccionario: {e}")
-        return None, None, {}
-
-
-# ============================================================================
-# FUNCIÓN: categorizar_linea con FUZZY MATCHING y normalización mejorada
-# ============================================================================
-
-def categorizar_linea(linea: LineaFactura, proveedor: str, indice: dict) -> None:
-    """
-    Asigna categoria a una linea segun el diccionario.
-    """
-    # Normalizar proveedor
-    prov_normalizado = normalizar_proveedor(proveedor)
+        df = pd.read_excel(ruta_excel, sheet_name='Articulos')
+    except ValueError:
+        df = pd.read_excel(ruta_excel, sheet_name='COMPRAS')
     
-    # Buscar en diccionario con múltiples estrategias
+    articulos = {}
+    proveedores = {}
+    indice = {}
+    
+    for _, row in df.iterrows():
+        proveedor = str(row.get('PROVEEDOR', '')).strip().upper()
+        articulo = str(row.get('ARTICULO', '')).strip().upper()
+        categoria = str(row.get('CATEGORIA', '')).strip()
+        # Soporta ambos nombres de columna
+        id_cat = str(row.get('COD LOYVERSE', row.get('ID_CATEGORIA', ''))).strip()
+        iva = row.get('TIPO_IVA', 21)
+        
+        if not proveedor or not articulo:
+            continue
+        
+        if proveedor not in indice:
+            indice[proveedor] = {}
+        
+        indice[proveedor][articulo] = {
+            'categoria': categoria,
+            'id_categoria': id_cat,
+            'iva': int(iva) if pd.notna(iva) else 21
+        }
+        
+        articulos[articulo] = {
+            'proveedor': proveedor,
+            'categoria': categoria,
+            'id_categoria': id_cat,
+            'iva': int(iva) if pd.notna(iva) else 21
+        }
+        
+        if proveedor not in proveedores:
+            proveedores[proveedor] = []
+        proveedores[proveedor].append(articulo)
+    
+    return articulos, proveedores, indice
+
+
+# ============================================================================
+# FUNCIÓN: categorizar_linea
+# ============================================================================
+
+def categorizar_linea(linea, proveedor: str, indice: dict, tiene_extractor: bool = True):
+    """
+    Categoriza una línea buscando en el diccionario.
+    
+    Args:
+        linea: LineaFactura a categorizar
+        proveedor: Nombre del proveedor
+        indice: Diccionario de categorías
+        tiene_extractor: True si hay extractor específico, False si usa genérico
+    """
+    import pandas as pd
+    
+    # Respetar categoría ya asignada por el extractor (hardcodeada)
+    if linea.categoria and linea.categoria not in ('', 'PENDIENTE', None):
+        linea.match_info = 'EXTRACTOR'
+        return
+    
+    prov_normalizado = normalizar_proveedor(proveedor)
     prov_diccionario = buscar_en_diccionario(prov_normalizado, indice)
     
-    # Lista de proveedores a probar
-    proveedores_a_probar = [prov_diccionario]
-    if prov_normalizado != prov_diccionario:
-        proveedores_a_probar.append(prov_normalizado)
-    prov_original = proveedor.upper().strip() if proveedor else ''
-    if prov_original and prov_original not in proveedores_a_probar:
-        proveedores_a_probar.append(prov_original)
+    if prov_diccionario not in indice:
+        # v5.10: Distinguir entre SIN_EXTRACTOR y SIN_CATEGORIA
+        if tiene_extractor:
+            linea.categoria = 'SIN_CATEGORIA'
+            linea.match_info = 'ARTICULO_NO_EN_DICCIONARIO'
+        else:
+            linea.categoria = 'SIN_EXTRACTOR'
+            linea.match_info = 'PROVEEDOR_SIN_EXTRACTOR'
+        return
     
-    articulo_upper = linea.articulo.upper() if linea.articulo else ''
+    articulos_prov = indice[prov_diccionario]
+    articulo_upper = linea.articulo.upper().strip()
     
+    # 1. Match exacto
+    if articulo_upper in articulos_prov:
+        data = articulos_prov[articulo_upper]
+        linea.categoria = data['categoria']
+        linea.id_categoria = data['id_categoria']
+        linea.match_info = 'EXACTO'
+        return
+    
+    # 2. Match parcial (substring)
+    for art_dic, data in articulos_prov.items():
+        if art_dic in articulo_upper or articulo_upper in art_dic:
+            linea.categoria = data['categoria']
+            linea.id_categoria = data['id_categoria']
+            linea.match_info = 'PARCIAL'
+            return
+    
+    # 3. Fuzzy matching (80% similitud)
+    mejor_ratio = 0
     mejor_match = None
-    mejor_similitud = 0
-    mejor_tipo = None
+    mejor_tipo = 'FUZZY'
     
-    for prov_test in proveedores_a_probar:
-        if prov_test not in indice:
-            continue
-            
-        for entry in indice[prov_test]:
-            patron = entry['articulo'].upper()
-            
-            # 1. Match exacto (substring)
-            if patron in articulo_upper or articulo_upper in patron:
-                linea.categoria = entry['categoria']
-                linea.id_categoria = entry.get('id_categoria', '')
-                linea.match_info = 'EXACTO'
-                return
-            
-            # 2. Fuzzy matching
-            similitud = SequenceMatcher(None, patron, articulo_upper).ratio()
-            
-            if similitud > mejor_similitud and similitud >= 0.80:
-                mejor_similitud = similitud
-                mejor_match = entry
-                mejor_tipo = f'FUZZY_{int(similitud*100)}%'
+    for art_dic, data in articulos_prov.items():
+        ratio = SequenceMatcher(None, articulo_upper, art_dic).ratio()
+        if ratio > mejor_ratio and ratio >= 0.8:
+            mejor_ratio = ratio
+            mejor_match = data
+            mejor_tipo = f'FUZZY_{int(ratio*100)}%'
     
     if mejor_match:
         linea.categoria = mejor_match['categoria']
-        linea.id_categoria = mejor_match.get('id_categoria', '')
+        linea.id_categoria = mejor_match['id_categoria']
         linea.match_info = mejor_tipo
         return
     
@@ -449,7 +686,7 @@ def categorizar_linea(linea: LineaFactura, proveedor: str, indice: dict) -> None
 
 
 # ============================================================================
-# FUNCIÓN: procesar_factura
+# FUNCIÓN: procesar_factura (MEJORADA v5.7)
 # ============================================================================
 
 def procesar_factura(ruta_pdf: Path, indice: dict) -> Factura:
@@ -466,6 +703,16 @@ def procesar_factura(ruta_pdf: Path, indice: dict) -> Factura:
     )
     
     extractor = obtener_extractor(factura.proveedor)
+    
+    # v5.7: Si no encontró extractor, buscar proveedor en el nombre del archivo
+    if extractor is None:
+        proveedor_alternativo = buscar_proveedor_en_nombre(ruta_pdf.name, EXTRACTORES)
+        if proveedor_alternativo:
+            factura.proveedor = proveedor_alternativo
+            extractor = obtener_extractor(proveedor_alternativo)
+    
+    # v5.10: Guardar si hay extractor específico (no genérico)
+    tiene_extractor_especifico = extractor is not None
     
     if extractor is None:
         extractor = ExtractorGenerico()
@@ -515,6 +762,11 @@ def procesar_factura(ruta_pdf: Path, indice: dict) -> Factura:
             else:
                 iva_valor = int(iva_raw)
             
+            # Categoría: usar la de la línea, o categoria_fija del extractor como fallback
+            cat_linea = linea_raw.get('categoria', '')
+            cat_extractor = getattr(extractor, 'categoria_fija', '') if extractor else ''
+            categoria_final = cat_linea or cat_extractor
+            
             linea = LineaFactura(
                 articulo=linea_raw.get('articulo', ''),
                 base=float(linea_raw.get('base', 0.0) or 0),
@@ -522,7 +774,7 @@ def procesar_factura(ruta_pdf: Path, indice: dict) -> Factura:
                 codigo=str(linea_raw.get('codigo', '') or ''),
                 cantidad=linea_raw.get('cantidad'),
                 precio_ud=linea_raw.get('precio_ud'),
-                categoria=linea_raw.get('categoria', ''),
+                categoria=categoria_final,
                 id_categoria=str(linea_raw.get('id_categoria', '') or '')
             )
         else:
@@ -535,16 +787,46 @@ def procesar_factura(ruta_pdf: Path, indice: dict) -> Factura:
     
     # Categorizar cada línea
     for linea in lineas_prorrateadas:
-        categorizar_linea(linea, factura.proveedor, indice)
+        categorizar_linea(linea, factura.proveedor, indice, tiene_extractor_especifico)
         factura.agregar_linea(linea)
     
-    factura.cuadre = validar_cuadre(factura.lineas, factura.total)
+    # v5.7: Validar cuadre considerando retenciones
+    factura.cuadre = validar_cuadre_con_retencion(factura.lineas, factura.total, factura.proveedor)
     
     errores = validar_factura(factura)
     for error in errores:
         factura.agregar_error(error)
     
     return factura
+
+
+# ============================================================================
+# FUNCIÓN: validar_cuadre_con_retencion (NUEVA v5.7)
+# ============================================================================
+
+def validar_cuadre_con_retencion(lineas, total, proveedor=''):
+    """
+    Valida el cuadre de la factura considerando posibles retenciones IRPF.
+    """
+    if total is None:
+        return 'SIN_TOTAL'
+    if not lineas:
+        return 'SIN_LINEAS'
+    
+    total_lineas = sum(l.base * (1 + l.iva/100) for l in lineas)
+    
+    # Considerar retención si aplica
+    descuadre, tiene_retencion, porcentaje = calcular_descuadre_con_retencion(
+        total_lineas, total, proveedor
+    )
+    
+    if tiene_retencion:
+        return f'OK_RETENCION_{int(porcentaje*100)}%'
+    
+    if descuadre < 0.02:
+        return 'OK'
+    else:
+        return f'DESCUADRE_{descuadre:.2f}'
 
 
 # ============================================================================
@@ -577,7 +859,7 @@ def detectar_trimestre(carpeta_nombre: str) -> str:
 def main():
     """Funcion principal."""
     parser = argparse.ArgumentParser(
-        description='ParsearFacturas v5.2',
+        description='ParsearFacturas v5.10',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Ejemplos:
@@ -594,7 +876,7 @@ Ejemplos:
                         help='DiccionarioProveedoresCategoria.xlsx')
     parser.add_argument('--listar-extractores', action='store_true',
                         help='Listar extractores disponibles y salir')
-    parser.add_argument('--version', '-v', action='version', version='v5.2')
+    parser.add_argument('--version', '-v', action='version', version='v5.10')
     
     args = parser.parse_args()
     
@@ -627,7 +909,7 @@ Ejemplos:
         print(f"   {len(indice)} proveedores indexados")
     
     print("\n" + "="*60)
-    print("PARSEAR FACTURAS v5.2")
+    print("PARSEAR FACTURAS v5.10")
     print("="*60)
     
     script_dir = Path(__file__).parent

@@ -1,12 +1,12 @@
 """
-Configuración global de ParsearFacturas v4.0.
+Configuración global de ParsearFacturas v5.7.
 """
 from pathlib import Path
 
 # ==============================================================================
 # VERSIÓN
 # ==============================================================================
-VERSION = "5.0"
+VERSION = "5.7"
 
 # ==============================================================================
 # DATOS DE LA EMPRESA

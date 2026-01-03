@@ -29,6 +29,7 @@ class ExtractorTerritorioCampero(ExtractorBase):
     cif = 'B16690141'
     iban = 'ES53 0182 6035 4102 0152 8536'
     metodo_pdf = 'pdfplumber'
+    categoria_fija = 'PATATAS FRITAS APERITIVO'
     
     def extraer_texto_pdfplumber(self, pdf_path: str) -> str:
         """Extrae texto del PDF."""

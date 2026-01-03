@@ -29,6 +29,7 @@ class ExtractorArtesanosMollete(ExtractorBase):
     nombre = 'ARTESANOS DEL MOLLETE'
     cif = 'B93662708'
     metodo_pdf = 'pdfplumber'
+    categoria_fija = 'PAN Y BOLLERIA'
     
     def extraer_texto_pdfplumber(self, pdf_path: str) -> str:
         """Extrae texto del PDF."""

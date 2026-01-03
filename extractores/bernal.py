@@ -17,8 +17,12 @@ Lotes: 3252;
 
 IVA: 10% productos, 21% portes
 
+IMPORTANTE: La columna IMPORTE de la factura es la BASE (sin IVA).
+El sistema espera el importe CON IVA para el cuadre.
+
 Creado: 19/12/2025
 Corregido: 27/12/2025 - Patrón regex mejorado, descripciones completas
+Corregido: 02/01/2026 - FIX CRÍTICO: Calcular importe CON IVA (línea 96)
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -44,6 +48,9 @@ class ExtractorBernal(ExtractorBase):
         CÓDIGO DESCRIPCIÓN_PARCIAL C.SEC UNIDADES PRECIO %DES %IVA IMPORTE
         DESCRIPCIÓN_CONTINUACIÓN (opcional)
         Lotes: XXX;
+        
+        NOTA: La columna IMPORTE es la BASE (sin IVA).
+        Calculamos el importe con IVA para el cuadre.
         """
         lineas = []
         lineas_texto = texto.split('\n')
@@ -58,7 +65,7 @@ class ExtractorBernal(ExtractorBase):
             r'(\d+,\d{4})\s+'                       # Precio unitario
             r'(\d+,\d{2})\s+'                       # %Descuento
             r'(\d+,\d{2})\s+'                       # %IVA
-            r'(\d+,\d{3})$'                         # Importe
+            r'(\d+,\d{3})$'                         # Importe (BASE sin IVA)
         )
         
         for i, linea in enumerate(lineas_texto):
@@ -70,7 +77,7 @@ class ExtractorBernal(ExtractorBase):
                 unidades = self._convertir_europeo(match.group(4))
                 precio = self._convertir_europeo(match.group(5))
                 iva = int(self._convertir_europeo(match.group(7)))
-                importe = self._convertir_europeo(match.group(8))
+                importe_base = self._convertir_europeo(match.group(8))  # BASE sin IVA
                 
                 # Buscar continuación de descripción en línea siguiente
                 if i + 1 < len(lineas_texto):
@@ -86,11 +93,15 @@ class ExtractorBernal(ExtractorBase):
                 descripcion = re.sub(r'\s+', ' ', descripcion).strip()
                 
                 # Filtrar líneas con importe muy bajo (excepto ajustes)
-                if importe < 0.50:
+                if importe_base < 0.50:
                     continue
                 
                 # Determinar cantidad: usar C.Sec si > 0, sino Unidades
                 cantidad = csec if csec > 0 else unidades
+                
+                # CORRECCIÓN 02/01/2026: Calcular importe CON IVA
+                # La factura muestra la BASE, pero el sistema necesita el total con IVA
+                importe_con_iva = importe_base * (1 + iva / 100)
                 
                 lineas.append({
                     'codigo': codigo,
@@ -98,7 +109,7 @@ class ExtractorBernal(ExtractorBase):
                     'cantidad': int(cantidad) if cantidad == int(cantidad) else round(cantidad, 3),
                     'precio_ud': round(precio, 2),
                     'iva': iva,
-                    'base': round(importe, 2)
+                    'base': round(importe_con_iva, 2)  # CORREGIDO: Importe CON IVA
                 })
         
         return lineas

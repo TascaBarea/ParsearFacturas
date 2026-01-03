@@ -1,24 +1,25 @@
 """
-Extractor para QUESERIA ZUCCA / FORMAGGIARTE SL
+Extractor para FORMAGGIARTE SL (Quesería ZUCCA)
 
-Quesería artesanal italiana en Portillo (Valladolid)
-Productos: Burrata, Ciliegine, Scamorza, Yogur de Oveja
+Quesos italianos artesanales.
 CIF: B42861948
+IBAN: ES05 1555 0001 2000 1157 7624
 
-Formato factura (pdfplumber):
-- Múltiples albaranes por factura
-- Líneas: CODIGO DESCRIPCION CANTIDAD PRECIO SUBTOTAL TOTAL
-- Desglose fiscal al final por tipo IVA
+Formato factura:
+CÓDIGO DESCRIPCIÓN CANTIDAD PRECIO SUBTOTAL TOTAL
 
-IVA:
-- 4%: Quesos (Burrata, Ciliegine, Scamorza) + PORTES
-- 10%: Yogur de Oveja
+Ejemplo:
+00042 Burrata Individual SN 8,00 3,40 27,20 27,20
 
-IMPORTANTE: Este proveedor incluye los portes en la base del 4%,
-no los separa al 21% como es habitual.
+IVA por producto:
+- Quesos (Burrata, Ciliegine, Scamorza, Stracciatella) → 4%
+- Yogur de Oveja → 10%
+- Portes → se prorratean al 4%
 
-Creado: 20/12/2025
-Validado: 7/7 facturas (2T25, 3T25, 4T25)
+IMPORTANTE: La columna TOTAL muestra BASE sin IVA.
+El sistema espera el importe CON IVA para el cuadre.
+
+Creado: 02/01/2026
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -30,12 +31,15 @@ import pdfplumber
 @registrar('QUESERIA ZUCCA', 'ZUCCA', 'FORMAGGIARTE', 'FORMAGGIARTE SL', 
            'ZUCCA FORMAGGIARTE', 'FORMAGGIARTE ZUCCA')
 class ExtractorZucca(ExtractorBase):
-    """Extractor para facturas de QUESERIA ZUCCA / FORMAGGIARTE."""
+    """Extractor para facturas de QUESERÍA ZUCCA / FORMAGGIARTE."""
     
     nombre = 'QUESERIA ZUCCA'
     cif = 'B42861948'
-    iban = 'ES0515500001200011577624'
+    iban = 'ES0515500001200011577624'  # Sin espacios como el original
     metodo_pdf = 'pdfplumber'
+    
+    # Productos con IVA 10% (el resto va al 4%)
+    PRODUCTOS_IVA_10 = ['yogur', 'yogurt']
     
     def extraer_texto_pdfplumber(self, pdf_path: str) -> str:
         """Extrae texto del PDF."""
@@ -52,62 +56,55 @@ class ExtractorZucca(ExtractorBase):
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         """
-        Extrae líneas INDIVIDUALES de productos.
+        Extrae líneas de productos.
         
-        IVA por producto:
-        - 00015 Yogur de Oveja → 10%
-        - Todo lo demás (quesos + portes) → 4%
-        
-        El proveedor incluye los portes en la base del 4%.
+        Formato: CÓDIGO DESCRIPCIÓN CANTIDAD PRECIO SUBTOTAL TOTAL
         """
         lineas = []
         
         # Patrón para líneas de producto
-        # Formato: CODIGO DESCRIPCION CANTIDAD PRECIO SUBTOTAL TOTAL
-        # Ejemplos:
-        # 00042 Burrata Individual SN 10,00 3,40 34,00 34,00
-        # 00029 Scamorza Ahumada Kg 0,85 17,58 14,94 14,94
-        # 07 Scamorza Ahumada 2,00 5,41 10,82 10,82
-        # 00017 Eenvio SEUR Frio 13:30 1,00 10,50 10,50 10,50
-        patron_linea = re.compile(
-            r'^(\d{2,5})\s+'                    # Código (2-5 dígitos)
-            r'(.+?)\s+'                          # Descripción
-            r'(\d+,\d{2})\s+'                    # Cantidad
-            r'(\d+,\d{2})\s+'                    # Precio unitario
-            r'(\d+,\d{2})\s+'                    # Subtotal
-            r'(\d+,\d{2})$'                      # Total
-        , re.MULTILINE)
+        # CODIGO (2-5 dígitos) DESCRIPCION CANTIDAD PRECIO SUBTOTAL TOTAL
+        patron = re.compile(
+            r'^(\d{2,5})\s+'                        # Código (00042, 07, etc.)
+            r'(.+?)\s+'                              # Descripción
+            r'(\d+,\d{2})\s+'                        # Cantidad
+            r'(\d+,\d{2})\s+'                        # Precio unitario
+            r'(\d+,\d{2})\s+'                        # Subtotal
+            r'(\d+,\d{2})$'                          # Total (BASE sin IVA)
+        )
         
-        for match in patron_linea.finditer(texto):
-            codigo = match.group(1).strip()
-            descripcion = match.group(2).strip()
-            cantidad = self._convertir_europeo(match.group(3))
-            precio = self._convertir_europeo(match.group(4))
-            importe = self._convertir_europeo(match.group(6))  # Columna TOTAL
-            
-            # Filtrar cabeceras y líneas inválidas
-            if any(x in descripcion.upper() for x in ['DESCRIPCION', 'ARTÍCULO', 'TIPO']):
-                continue
-            
-            if importe < 0.01:
-                continue
-            
-            # IVA según producto:
-            # - Yogur = 10%
-            # - Todo lo demás (quesos + portes) = 4%
-            if 'YOGUR' in descripcion.upper() or codigo == '00015':
-                iva = 10
-            else:
-                iva = 4
-            
-            lineas.append({
-                'codigo': codigo,
-                'articulo': descripcion[:50],
-                'cantidad': cantidad,
-                'precio_ud': round(precio, 2),
-                'iva': iva,
-                'base': round(importe, 2)
-            })
+        for linea in texto.split('\n'):
+            linea = linea.strip()
+            match = patron.match(linea)
+            if match:
+                codigo = match.group(1)
+                descripcion = match.group(2).strip()
+                cantidad = self._convertir_europeo(match.group(3))
+                precio = self._convertir_europeo(match.group(4))
+                importe_base = self._convertir_europeo(match.group(6))  # TOTAL = BASE sin IVA
+                
+                # Determinar IVA según producto
+                desc_lower = descripcion.lower()
+                if any(prod in desc_lower for prod in self.PRODUCTOS_IVA_10):
+                    iva = 10
+                else:
+                    iva = 4  # Quesos y portes van al 4%
+                
+                # Filtrar líneas con importe muy bajo
+                if importe_base < 0.50:
+                    continue
+                
+                # Calcular importe CON IVA
+                importe_con_iva = importe_base * (1 + iva / 100)
+                
+                lineas.append({
+                    'codigo': codigo,
+                    'articulo': descripcion[:50],
+                    'cantidad': int(cantidad) if cantidad == int(cantidad) else round(cantidad, 2),
+                    'precio_ud': round(precio, 2),
+                    'iva': iva,
+                    'base': round(importe_con_iva, 2)  # Importe CON IVA para cuadre
+                })
         
         return lineas
     
@@ -115,7 +112,7 @@ class ExtractorZucca(ExtractorBase):
         """Convierte formato europeo (1.234,56) a float."""
         if not texto:
             return 0.0
-        texto = texto.strip()
+        texto = str(texto).strip()
         if '.' in texto and ',' in texto:
             texto = texto.replace('.', '').replace(',', '.')
         elif ',' in texto:
@@ -127,19 +124,16 @@ class ExtractorZucca(ExtractorBase):
     
     def extraer_total(self, texto: str) -> Optional[float]:
         """Extrae total de la factura."""
-        patron = re.search(r'TOTAL:\s*(\d+,\d{2})', texto, re.IGNORECASE)
+        # Buscar patrón "TOTAL: XXX,XX"
+        patron = re.search(r'TOTAL:\s*([\d.,]+)', texto, re.IGNORECASE)
         if patron:
             return self._convertir_europeo(patron.group(1))
         return None
     
     def extraer_fecha(self, texto: str) -> Optional[str]:
-        """Extrae fecha de la factura (fecha del documento, no de albarán)."""
-        # Buscar fecha en formato DD/MM/YYYY después de "Factura 1 XXXXXX 1"
-        patron = re.search(r'Factura\s+1\s+\d+\s+1\s+(\d{2}/\d{2}/\d{4})', texto)
-        if patron:
-            return patron.group(1)
-        # Alternativa: buscar en cabecera
-        patron = re.search(r'(\d{2}/\d{2}/\d{4})', texto)
+        """Extrae fecha de la factura."""
+        # Buscar en formato "Factura 1 000XXX 1 DD/MM/YYYY"
+        patron = re.search(r'Factura\s+\d+\s+\d+\s+\d+\s+(\d{2}/\d{2}/\d{4})', texto)
         if patron:
             return patron.group(1)
         return None

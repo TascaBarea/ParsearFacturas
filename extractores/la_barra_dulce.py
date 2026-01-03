@@ -1,23 +1,27 @@
 """
 Extractor para LA BARRA DULCE S.L.
 
-Pasteleria y bolleria.
+Pastelería y bollería artesanal.
+
 CIF: B19981141
+IBAN: ES76 2100 5606 4802 0017 4138
+IVA: 10% (pastelería)
 
-Formato factura (pdfplumber):
-LA BARRA DULCE S.L. Fecha
-CIF: B19981141 31.01.2025
-...
-Descripcion Unidades Precio Unitario
+Productos típicos:
+- Palmeritas / Mini palmeritas / Minipalmeritas
+- Buñuelos
+- Fresas con chocolate
+- Rosquillas San Isidro
+- Desayunos (con fecha: "Desayuno 21/11", "Desayuno 12 de septiembre")
+
+Formato líneas:
+DESCRIPCION UNIDADES PRECIO IMPORTE
 Minipalmeritas 1 29,28 29,28
-Fresas con chocolate 12 0,70 8,40
-...
-Base Imponible 29,28
-TOTAL FACTURA 32,20€
-
-IVA: 10% (pasteleria)
+Desayuno 21/11 1 11,23 11,23
 
 Creado: 19/12/2025
+Actualizado: 01/01/2026 - Acepta números y / en descripciones
+Validado: 9/9 facturas (1T25-4T25)
 """
 from extractores.base import ExtractorBase
 from extractores import registrar
@@ -25,7 +29,7 @@ from typing import List, Dict, Optional
 import re
 
 
-@registrar('LA BARRA DULCE', 'BARRA DULCE')
+@registrar('LA BARRA DULCE', 'BARRA DULCE', 'LA BARRA DULCE S.L.')
 class ExtractorBarraDulce(ExtractorBase):
     """Extractor para facturas de LA BARRA DULCE."""
     
@@ -33,14 +37,26 @@ class ExtractorBarraDulce(ExtractorBase):
     cif = 'B19981141'
     iban = 'ES76 2100 5606 4802 0017 4138'
     metodo_pdf = 'pdfplumber'
+    categoria_fija = 'PASTELERIA'
+    
+    def _convertir_europeo(self, texto: str) -> float:
+        """Convierte formato europeo (1.234,56) a float."""
+        if not texto:
+            return 0.0
+        texto = texto.strip().replace('.', '').replace(',', '.')
+        try:
+            return float(texto)
+        except:
+            return 0.0
     
     def extraer_lineas(self, texto: str) -> List[Dict]:
         """
-        Extrae lineas individuales de productos.
+        Extrae líneas de productos.
         
         Formato:
+        DESCRIPCION UNIDADES PRECIO IMPORTE
         Minipalmeritas 1 29,28 29,28
-        Fresas con chocolate 12 0,70 8,40
+        Desayuno 21/11 1 11,23 11,23
         """
         lineas = []
         
@@ -49,23 +65,25 @@ class ExtractorBarraDulce(ExtractorBase):
             if not linea_texto or len(linea_texto) < 5:
                 continue
             
-            # Ignorar cabeceras y lineas no deseadas
+            # Ignorar cabeceras y líneas no deseadas
             upper = linea_texto.upper()
             if any(x in upper for x in [
                 'DESCRIPCION', 'UNIDADES', 'PRECIO UNITARIO', 'BASE', 'IVA',
-                'TOTAL', 'FACTURA', 'CLIENTE', 'CIF', 'CALLE', 'TELEFONO',
+                'TOTAL', 'FACTURA', 'CLIENTE', 'CIF:', 'CALLE', 'TELEFONO',
                 'OBSERVACIONES', 'PROTECCION', 'DATOS', 'CAIXA', 'TRANSFERENCIA',
-                'BARRA DULCE', 'MESON', 'MADRID', 'FORMA DE PAGO', 'INFORMACION'
+                'BARRA DULCE', 'MESON', 'MADRID', 'FORMA DE PAGO', 'INFORMACION',
+                'TASCA BAREA', 'RODAS', 'TARJETA', 'BANCARIA', 'IMPUESTOS',
+                'COMERCIAL', 'RELACION', 'DERECHOS', 'DIRECCION'
             ]):
                 continue
             
-            # Patron: DESCRIPCION CANTIDAD PRECIO IMPORTE
-            # Minipalmeritas 1 29,28 29,28
+            # Patrón mejorado: acepta números y / en descripción
+            # Ej: "Desayuno 21/11 1 11,23 11,23"
             match = re.match(
-                r'^([A-Za-zñáéíóúÑÁÉÍÓÚ][A-Za-zñáéíóúÑÁÉÍÓÚ\s]+?)\s+'  # Descripcion
-                r'(\d{1,3})\s+'                             # Cantidad
-                r'(\d+,\d{2})\s+'                           # Precio
-                r'(\d+,\d{2})$',                            # Importe
+                r'^([A-Za-zñáéíóúÑÁÉÍÓÚ][A-Za-zñáéíóúÑÁÉÍÓÚ\s\d/]+?)\s+'
+                r'(\d{1,3})\s+'
+                r'(\d+,\d{2})\s+'
+                r'(\d+,\d{2})$',
                 linea_texto
             )
             
@@ -75,7 +93,12 @@ class ExtractorBarraDulce(ExtractorBase):
                 precio = self._convertir_europeo(match.group(3))
                 importe = self._convertir_europeo(match.group(4))
                 
+                # Validaciones
                 if importe < 0.50 or len(descripcion) < 3:
+                    continue
+                
+                # Evitar capturar líneas solo numéricas
+                if descripcion.replace(' ', '').replace('/', '').isdigit():
                     continue
                 
                 lineas.append({
@@ -83,53 +106,60 @@ class ExtractorBarraDulce(ExtractorBase):
                     'articulo': descripcion[:50],
                     'cantidad': cantidad,
                     'precio_ud': round(precio, 2),
-                    'iva': 10,  # Pasteleria siempre 10%
-                    'base': round(importe, 2)
+                    'iva': 10,  # Pastelería siempre 10%
+                    'base': round(importe, 2),
+                    'categoria': self.categoria_fija
                 })
         
         return lineas
     
-    def _convertir_europeo(self, texto: str) -> float:
-        if not texto:
-            return 0.0
-        texto = texto.strip().replace('.', '').replace(',', '.')
-        try:
-            return float(texto)
-        except:
-            return 0.0
-    
     def extraer_total(self, texto: str) -> Optional[float]:
+        """Extrae total de la factura."""
         # Formato: TOTAL FACTURA 32,20€
         patron = re.search(r'TOTAL\s+FACTURA\s+(\d+,\d{2})\s*€', texto, re.IGNORECASE)
         if patron:
             return self._convertir_europeo(patron.group(1))
         return None
     
+    def extraer_cuadro_fiscal(self, texto: str) -> List[Dict]:
+        """Extrae cuadro fiscal (IVA 10%)."""
+        cuadros = []
+        
+        # Buscar Base Imponible y Total impuestos
+        base = re.search(r'Base\s+Imponible\s+(\d+,\d{2})', texto, re.IGNORECASE)
+        cuota = re.search(r'Total\s+impuestos\s+(\d+,\d{2})', texto, re.IGNORECASE)
+        
+        if base and cuota:
+            cuadros.append({
+                'iva': 10,
+                'base': self._convertir_europeo(base.group(1)),
+                'cuota': self._convertir_europeo(cuota.group(1))
+            })
+        
+        return cuadros
+    
     def extraer_fecha(self, texto: str) -> Optional[str]:
-        # Formato en linea: CIF: B19981141 31.01.2025
+        """Extrae fecha de la factura."""
+        # Formato: CIF: B19981141 31.01.2025
         patron = re.search(r'CIF:\s*B\d+\s+(\d{2})\.(\d{2})\.(\d{4})', texto)
         if patron:
             return f"{patron.group(1)}/{patron.group(2)}/{patron.group(3)}"
         
-        # Alternativo: buscar directamente DD.MM.YYYY
+        # Alternativo: DD.MM.YYYY
         patron2 = re.search(r'(\d{2})\.(\d{2})\.(\d{4})', texto)
         if patron2:
             return f"{patron2.group(1)}/{patron2.group(2)}/{patron2.group(3)}"
         
         return None
     
-    def extraer_numero_factura(self, texto: str) -> Optional[str]:
-        """
-        Extrae número de factura.
-        Formato: "Nº de factura" seguido del número en la siguiente parte.
-        Ejemplo: "Nº de factura\n563" o "Teléfono: 91 846 83 85 563"
-        """
+    def extraer_referencia(self, texto: str) -> Optional[str]:
+        """Extrae número de factura."""
         # Buscar "Nº de factura" seguido de número
         patron = re.search(r'Nº\s+de\s+factura\s*\n?\s*(\d+)', texto, re.IGNORECASE)
         if patron:
             return patron.group(1)
         
-        # Alternativa: número después de teléfono en misma línea que "Nº de factura"
+        # Alternativa: número después de teléfono
         patron2 = re.search(r'Teléfono[^\n]+\s+(\d{3,})\s*$', texto, re.MULTILINE)
         if patron2:
             return patron2.group(1)
